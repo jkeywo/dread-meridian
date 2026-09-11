@@ -129,10 +129,12 @@ void ADMCombatant::Tick(float DeltaSeconds)
             if (!bIsEnemy) { Label->SetTextRenderColor(Investigator->Color().ToFColor(true)); }
             if (auto* PC = UGameplayStatics::GetPlayerController(this, 0))
             {
-                // Full look-at: with the fixed, steep camera pitch this lays the badge flat and horizontal,
-                // facing straight up at the viewer, rather than standing it upright edge-on to the camera.
+                // Align to the camera's view plane, not its position. The camera sits almost directly above the
+                // local pawn, so aiming each badge at the camera's location swivels it toward that pawn instead.
+                // Facing back along the view direction gives every badge the same screen-parallel angle, laid
+                // flat and horizontal by the camera's own pitch.
                 if (PC->PlayerCameraManager)
-                { Label->SetWorldRotation((PC->PlayerCameraManager->GetCameraLocation() - Label->GetComponentLocation()).Rotation()); }
+                { Label->SetWorldRotation((-PC->PlayerCameraManager->GetCameraRotation().Vector()).Rotation()); }
             }
         }
         Presentation->UpdatePresentation();
