@@ -269,8 +269,9 @@ void UDMPrimaryComponent::Step(int32 Tick)
         if (!IsValid(Spirit)) { continue; }
         if (Spirit->bTravelling && !bManifest) { continue; }
         auto* Bound = Spirit->BoundTarget.Get();
-        if (Bound) { Spirit->SetActorLocation(Bound->GetActorLocation() - FVector(0, 0, 70)); }
-        else { Actor->Investigator->UpdateSpiritLocationById(Spirit->SpiritId, Spirit->GetActorLocation()); }
+        // The marker anchors itself to BoundTarget every frame in its own Tick(). Writing the position again
+        // here at combat-tick rate fought that, snapping the spirit off its drift ten times a second.
+        if (!Bound) { Actor->Investigator->UpdateSpiritLocationById(Spirit->SpiritId, Spirit->GetActorLocation()); }
         if (Bound && Bound->IsDown() && !Bound->bIsEnemy && Tick % 10 == 0) { Actor->Investigator->ThinPlace(Bound->GetActorLocation(), 2); }
         const auto* Resource = Actor->Investigator->Spirits.FindByPredicate([&](const auto& S) { return S.Id == Spirit->SpiritId; });
         Spirit->Attention = Resource ? Resource->Value : 0;
