@@ -1,0 +1,74 @@
+[
+  {
+    "file": "C:\\Coding\\dread-meridian\\design\\art\\lineups\\2026-09-11\\individuals/players/sapper-tpose.png",
+    "source": "player-characters-tpose",
+    "x": 0,
+    "width": 622,
+    "height": 734,
+    "padding": 20
+  },
+  {
+    "file": "C:\\Coding\\dread-meridian\\design\\art\\lineups\\2026-09-11\\individuals/players/photographer-tpose.png",
+    "source": "player-characters-tpose",
+    "x": 622,
+    "width": 450,
+    "height": 734,
+    "padding": 20
+  },
+  {
+    "file": "C:\\Coding\\dread-meridian\\design\\art\\lineups\\2026-09-11\\individuals/players/medium-tpose.png",
+    "source": "player-characters-tpose",
+    "x": 1072,
+    "width": 500,
+    "height": 734,
+    "padding": 20
+  },
+  {
+    "file": "C:\\Coding\\dread-meridian\\design\\art\\lineups\\2026-09-11\\individuals/players/smuggler-tpose.png",
+    "source": "player-characters-tpose",
+    "x": 1572,
+    "width": 570,
+    "height": 734,
+    "padding": 20
+  },
+  {
+    "file": "C:\\Coding\\dread-meridian\\design\\art\\lineups\\2026-09-11\\individuals/smugglers/gunman-tpose.png",
+    "source": "smugglers-tpose",
+    "x": 0,
+    "width": 404,
+    "height": 724,
+    "padding": 20
+  },
+  {
+    "file": "C:\\Coding\\dread-meridian\\design\\art\\lineups\\2026-09-11\\individuals/smugglers/bruiser-tpose.png",
+    "source": "smugglers-tpose",
+    "x": 404,
+    "width": 470,
+    "height": 724,
+    "padding": 20
+  },
+  {
+    "file": "C:\\Coding\\dread-meridian\\design\\art\\lineups\\2026-09-11\\individuals/smugglers/lookout-tpose.png",
+    "source": "smugglers-tpose",
+    "x": 874,
+    "width": 417,
+    "height": 724,
+    "padding": 20
+  },
+  {
+    "file": "C:\\Coding\\dread-meridian\\design\\art\\lineups\\2026-09-11\\individuals/smugglers/bomber-tpose.png",
+    "source": "smugglers-tpose",
+    "x": 1291,
+    "width": 430,
+    "height": 724,
+    "padding": 20
+  },
+  {
+    "file": "C:\\Coding\\dread-meridian\\design\\art\\lineups\\2026-09-11\\individuals/smugglers/gang-boss-tpose.png",
+    "source": "smugglers-tpose",
+    "x": 1721,
+    "width": 451,
+    "height": 724,
+    "padding": 20
+  }
+]

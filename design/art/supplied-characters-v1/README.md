@@ -1,6 +1,6 @@
 # Supplied character rigs
 
-Nine accepted user-supplied meshes replace the earlier procedural game models. Original input SHA-256 hashes are recorded in `source-inventory.json`. The committed art includes the final rigs, texture maps, sockets, previews and validation; raw input copies, intermediate models, previous-native backups and duplicate delivery ZIPs remain local only.
+Nine accepted user-supplied meshes replace the earlier procedural game models. Original input SHA-256 hashes are recorded in `source-inventory.json`. The committed art includes the final rigs, texture maps, sockets, previews and validation. Redundant raw input copies, intermediate models, previous-native backups and duplicate delivery ZIPs were removed after verifying that the original Downloads inputs and prior Git assets remain recoverable.
 
 ## Character mapping
 
@@ -26,7 +26,7 @@ The rigs use the existing stock Manny reference hierarchy and axes: 88 Blender b
 
 `blender-validation.json` records 15 sampled poses per character, finite/bounded deformation, weighted vertices, bone-parented sockets, three GLB clips and embedded texture presence. Walk and T-pose renders were visually inspected, including corrections to sleeve weights and seams.
 
-**Native replacement completed on 2026-09-11 in Unreal 5.8.2.** All nine canonical mesh paths already referenced by DMCombatPresentation now contain the supplied rigs. Previous native mesh files are preserved locally under `previous-native/`, outside this commit. Supplied materials/textures and existing attachment sockets were saved and read back in a fresh Unreal process.
+**Native replacement completed on 2026-09-11 in Unreal 5.8.2.** All nine canonical mesh paths already referenced by DMCombatPresentation now contain the supplied rigs. Previous native mesh files are recoverable from Git history before commit `88ba447`. Supplied materials/textures and existing attachment sockets were saved and read back in a fresh Unreal process.
 
 Runtime visual scale is 1.10 for Sapper, Gunman and Gang Boss, and 1.20 for Smuggler and Bruiser. The other characters use 1.00. Equipment inherits the visual scale, while gameplay collision and movement remain unchanged. Standalone rigs retain stock reference scale.
 
