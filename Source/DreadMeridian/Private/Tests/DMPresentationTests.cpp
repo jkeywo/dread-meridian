@@ -82,6 +82,19 @@ bool FDMPresentationTest::RunTest(const FString& Parameters)
         A->InitializeCombatant(TEXT("enemy.presentation"),true,0,10);A->Presentation->UpdatePresentation();
         TestEqual(TEXT("All enemy models play death"),A->Presentation->CurrentClip(),FString(TEXT("A_DM_Death_1")));
     }
+    // Named-kit clips. A missing retarget leaves a null entry in the clip list and every cue that uses it silently
+    // does nothing, so the assets are checked directly rather than through a cue that does not exist yet.
+    const TCHAR* KitClips[] = { TEXT("KB_Projectile_1"), TEXT("KB_Projectile_Up"), TEXT("KB_Block_Start"), TEXT("KB_Block_End"),
+        TEXT("KB_Superpunch"), TEXT("KB_SkipFwd_1"), TEXT("KB_m_Backelbow_R"), TEXT("KB_GroundAttack"),
+        TEXT("Anim_IN_check_CO"), TEXT("MG_shoot"), TEXT("Anim_EM_call_out") };
+    for (const TCHAR* Name : KitClips)
+    {
+        const FString Path = FString::Printf(TEXT("/Game/DreadMeridian/Presentation/Animations/A_DM_%s"), Name);
+        auto* Clip = LoadObject<UAnimSequence>(nullptr, *Path);
+        if (!TestNotNull(*FString::Printf(TEXT("Kit clip %s retargeted"), Name), Clip)) { continue; }
+        TestTrue(TEXT("Kit clip has duration"), Clip->GetPlayLength() > 0);
+        TestTrue(TEXT("Kit clip cannot drive gameplay root motion"), !Clip->bEnableRootMotion && Clip->bForceRootLock);
+    }
     World->DestroyWorld(false); GEngine->DestroyWorldContext(World);
     return true;
 }

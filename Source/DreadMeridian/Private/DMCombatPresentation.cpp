@@ -10,7 +10,9 @@
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
 
-namespace { enum EClip { Idle, Jog, RifleIdle, RifleAim, RifleJog, RifleFire, RifleAimFire, Death, Hit, GetUp, JabR, JabL, FightIdle, Grenade, Hold, CastGesture, Place, Start, Stop, TurnL, TurnR, RifleStart, RifleStop, RifleTurnL, RifleTurnR }; }
+// Index into Clips: the two Paths entries first, then AnimNames in order. Append only, and keep both lists in step.
+namespace { enum EClip { Idle, Jog, RifleIdle, RifleAim, RifleJog, RifleFire, RifleAimFire, Death, Hit, GetUp, JabR, JabL, FightIdle, Grenade, Hold, CastGesture, Place, Start, Stop, TurnL, TurnR, RifleStart, RifleStop, RifleTurnL, RifleTurnR,
+    Cast1, CastUp, BlockStart, BlockEnd, Superpunch, SkipFwd, Backelbow, GroundSlam, CameraCheck, MGShoot, CallOut, ClipCount }; }
 UDMCombatPresentation::UDMCombatPresentation()
 {
     const TCHAR* Names[] = { TEXT("Sapper"), TEXT("Photographer"), TEXT("Medium"), TEXT("Smuggler") };
@@ -33,8 +35,12 @@ UDMCombatPresentation::UDMCombatPresentation()
     { ConstructorHelpers::FObjectFinder<UStaticMesh> M(*FString::Printf(TEXT("/Game/DreadMeridian/Characters/Enemies/Smugglers/Equipment/SM_%s"),Name)); EnemyItems.Add(M.Object); }
     const TCHAR* Paths[] = { TEXT("/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle"), TEXT("/Game/Characters/Mannequins/Anims/Unarmed/Jog/MF_Unarmed_Jog_Fwd") };
     for (const TCHAR* Path : Paths) { ConstructorHelpers::FObjectFinder<UAnimSequence> Clip(Path); Clips.Add(Clip.Object); }
-    const TCHAR* AnimNames[] = { TEXT("Idle_Rifle_Hip"), TEXT("Idle_Rifle_Ironsights"), TEXT("Jog_Fwd_Rifle"), TEXT("Fire_Rifle_Hip"), TEXT("Fire_Rifle_Ironsights"), TEXT("Death_1"), TEXT("Hit_React_1"), TEXT("Prone_To_Stand"), TEXT("KB_p_Jab_R_1"), TEXT("KB_p_Jab_L_1"), TEXT("KB_Idle_1"), TEXT("KB_Grenade"), TEXT("KB_Block_Loop"), TEXT("KB_KnifeThrow"), TEXT("Anim_IN_SA_pick_up_ground"), TEXT("Locomotion_M_Neutral_Run_Start_F_Rfoot"), TEXT("Locomotion_M_Neutral_Run_Stop_F_Rfoot"), TEXT("Locomotion_M_Neutral_Stand_Turn_090_L"), TEXT("Locomotion_M_Neutral_Stand_Turn_090_R"), TEXT("Locomotion_M_Neutral_Run_Start_F_Rfoot_Rifle"), TEXT("Locomotion_M_Neutral_Run_Stop_F_Rfoot_Rifle"), TEXT("Locomotion_M_Neutral_Stand_Turn_090_L_Rifle"), TEXT("Locomotion_M_Neutral_Stand_Turn_090_R_Rifle") };
+    const TCHAR* AnimNames[] = { TEXT("Idle_Rifle_Hip"), TEXT("Idle_Rifle_Ironsights"), TEXT("Jog_Fwd_Rifle"), TEXT("Fire_Rifle_Hip"), TEXT("Fire_Rifle_Ironsights"), TEXT("Death_1"), TEXT("Hit_React_1"), TEXT("Prone_To_Stand"), TEXT("KB_p_Jab_R_1"), TEXT("KB_p_Jab_L_1"), TEXT("KB_Idle_1"), TEXT("KB_Grenade"), TEXT("KB_Block_Loop"), TEXT("KB_KnifeThrow"), TEXT("Anim_IN_SA_pick_up_ground"), TEXT("Locomotion_M_Neutral_Run_Start_F_Rfoot"), TEXT("Locomotion_M_Neutral_Run_Stop_F_Rfoot"), TEXT("Locomotion_M_Neutral_Stand_Turn_090_L"), TEXT("Locomotion_M_Neutral_Stand_Turn_090_R"), TEXT("Locomotion_M_Neutral_Run_Start_F_Rfoot_Rifle"), TEXT("Locomotion_M_Neutral_Run_Stop_F_Rfoot_Rifle"), TEXT("Locomotion_M_Neutral_Stand_Turn_090_L_Rifle"), TEXT("Locomotion_M_Neutral_Stand_Turn_090_R_Rifle"),
+        // Named-kit clips, in EClip order from Cast1.
+        TEXT("KB_Projectile_1"), TEXT("KB_Projectile_Up"), TEXT("KB_Block_Start"), TEXT("KB_Block_End"), TEXT("KB_Superpunch"),
+        TEXT("KB_SkipFwd_1"), TEXT("KB_m_Backelbow_R"), TEXT("KB_GroundAttack"), TEXT("Anim_IN_check_CO"), TEXT("MG_shoot"), TEXT("Anim_EM_call_out") };
     for (const TCHAR* Name : AnimNames) { ConstructorHelpers::FObjectFinder<UAnimSequence> Clip(*FString::Printf(TEXT("/Game/DreadMeridian/Presentation/Animations/A_DM_%s"), Name)); Clips.Add(Clip.Object); }
+    static_assert(UE_ARRAY_COUNT(AnimNames) + UE_ARRAY_COUNT(Paths) == ClipCount, "EClip out of sync with the clip lists");
     const TCHAR* PropNames[] = { TEXT("SapperCarbine_Held"), TEXT("PhotographerRifle_Held"), TEXT("PhotographerCamera_Stowed"), TEXT("PhotographerCamera_Held"), TEXT("PhotographerRifle_Stowed"), TEXT("MediumWisp_Held") };
     for (const TCHAR* Name : PropNames) { ConstructorHelpers::FObjectFinder<UStaticMesh> Item(*FString::Printf(TEXT("/Game/DreadMeridian/Presentation/Props/SM_%s"), Name)); Items.Add(Item.Object); }
     ConstructorHelpers::FObjectFinder<UNiagaraSystem> Blast(TEXT("/Game/Explosions_W3Vol1/Niagara/NS_ImpactExplosion")); Explosion = Blast.Object;

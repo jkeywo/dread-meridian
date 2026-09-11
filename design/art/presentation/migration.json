@@ -1003,5 +1003,265 @@
       "/Game/NiagaraEffectMix2/Eff/NewNiagaraSystem1",
       "/Game/NiagaraEffectMix2/Eff/NewNiagaraSystem6"
     ]
+  },
+  "kit_animations": {
+    "source_project": "HoldingProject",
+    "requested": [
+      "/Game/FightingAnimsetPro/Animations/InPlace/KB_Projectile_1",
+      "/Game/FightingAnimsetPro/Animations/InPlace/KB_Projectile_Up",
+      "/Game/FightingAnimsetPro/Animations/InPlace/KB_Block_Start",
+      "/Game/FightingAnimsetPro/Animations/InPlace/KB_Block_End",
+      "/Game/FightingAnimsetPro/Animations/InPlace/KB_Superpunch",
+      "/Game/FightingAnimsetPro/Animations/InPlace/KB_SkipFwd_1",
+      "/Game/FightingAnimsetPro/Animations/InPlace/KB_m_Backelbow_R",
+      "/Game/FightingAnimsetPro/Animations/InPlace/KB_GroundAttack",
+      "/Game/OpenWorldAnimset/Animations/NPC/Anim_IN_check_CO",
+      "/Game/OpenWorldAnimset/Animations/MachineGun/MG_shoot",
+      "/Game/OpenWorldAnimset/Animations/Emotes/Anim_EM_call_out"
+    ],
+    "files": [
+      {
+        "path": "/Game/FightingAnimsetPro/Animations/InPlace/KB_Block_End",
+        "sha256": "bf60dc8a1a36e7bcb714c86351a5e8d4f6add05435dfa0dc813028e06416d5eb",
+        "bytes": 118758
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/Animations/InPlace/KB_Block_Start",
+        "sha256": "922c28e027d4bc4df78b745dd810f3be4cf1b6bb0721f851a9c11bb8426f1a7b",
+        "bytes": 119866
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/Animations/InPlace/KB_GroundAttack",
+        "sha256": "df12d5e24d0d658cd1f1f86b0fe89d0a93195b8ff410e5d4db9a75f0bd536dda",
+        "bytes": 267461
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/Animations/InPlace/KB_Projectile_1",
+        "sha256": "e4bf336c3b3f591d0050f1023aa77ee3a31b7d1040a87046df994b83d068b822",
+        "bytes": 241331
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/Animations/InPlace/KB_Projectile_Up",
+        "sha256": "fb34436c63946cda67c694ea620f7614164e790ecad6832798fba0d1055f8b69",
+        "bytes": 303586
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/Animations/InPlace/KB_SkipFwd_1",
+        "sha256": "8a16a80410323bf7c33d3d5f6cc85e23eadd1f0aa08810269b2ac26f21df592f",
+        "bytes": 418760
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/Animations/InPlace/KB_Superpunch",
+        "sha256": "064edb5e10b30e51fb996515a5b1dfcde6637ef0d80f24daafaee3bfcd88f2a7",
+        "bytes": 271094
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/Animations/InPlace/KB_m_Backelbow_R",
+        "sha256": "7947846e0fe12ddfc17855267d4569a5cd6d9aff029ff8bf61e6b0278ba2c8bc",
+        "bytes": 238708
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Materials/M_UE4Man_Body",
+        "sha256": "e822eea4a6c4955269ea0c5dbf94f4e7a5953ff5d51c98db5143967205465abb",
+        "bytes": 138803
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Materials/M_UE4Man_ChestLogo",
+        "sha256": "88e67c98e84be1d6041d1deb51116e38aabeb8ced4c2b7cf65418274f0ea4b18",
+        "bytes": 91055
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Materials/MaterialLayers/ML_GlossyBlack_Latex_UE4",
+        "sha256": "31ced63de2b1b5a8329c56b14d26b08a571ca236c3762d2eebd09d9f4dd482eb",
+        "bytes": 106731
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Materials/MaterialLayers/ML_Plastic_Shiny_Beige",
+        "sha256": "0cc020a05a46c928462bde69d77553ff42abeac29705098b65c5e4bcc70e6e49",
+        "bytes": 101108
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Materials/MaterialLayers/ML_Plastic_Shiny_Beige_LOGO",
+        "sha256": "12821a2bbd5a26aa0f32669e03452180db004330318a07f7420fd2c6291e73dd",
+        "bytes": 102228
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Materials/MaterialLayers/ML_SoftMetal_UE4",
+        "sha256": "afb748b0e80cf2ee14bf77ae190e4c6aaf8330b732de49b3e5bb35af6e79cbc3",
+        "bytes": 106318
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Materials/MaterialLayers/T_ML_Aluminum01",
+        "sha256": "80bed7bcfb583fbe2117189438f81d1ba16beb4df032099cdedb60a3c367c9ef",
+        "bytes": 434829
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Materials/MaterialLayers/T_ML_Aluminum01_N",
+        "sha256": "4c58c4cd7d78186002ab48e0a7d753c94c6f6b95b72bdff2474a2acc28620b16",
+        "bytes": 405698
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Materials/MaterialLayers/T_ML_Rubber_Blue_01_D",
+        "sha256": "abd6b0efce53f88073bd74c2fdf3082d453d956c2f21765ef20bb357c0b5203d",
+        "bytes": 471190
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Materials/MaterialLayers/T_ML_Rubber_Blue_01_N",
+        "sha256": "93b49762f10692102aa7eca57b672166dc1f62babcd9b4a77bc025e8c4ef2831",
+        "bytes": 362559
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin",
+        "sha256": "58d74596f602c55f29ac648962ccdcca9f437b36797083163390ec178b6c5e4e",
+        "bytes": 3772551
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin_PhysicsAsset",
+        "sha256": "775a4e03b12c3d85b2bfcb3e7fab04983ae36004db4a041b58781188b317a984",
+        "bytes": 28013
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton",
+        "sha256": "84c25f20bdeb261190319a1658b86eaeed802d97ee57c0eafd85b4fc0b08bc21",
+        "bytes": 17925
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Textures/UE4Man_Logo_N",
+        "sha256": "c48eccb338e4d1f2dfa79f68a01d2596158cb61e08535f6e665ee4f5b61f2bbd",
+        "bytes": 162207
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Textures/UE4_LOGO_CARD",
+        "sha256": "d3c69e3b6c0a3cfceb2f318ddb4ece3dcab9336594f4f599d4708bdc28b0182f",
+        "bytes": 95592
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Textures/UE4_Mannequin_MAT_MASKA",
+        "sha256": "eda8b3e995093647a26083b3a3cb25157bb4d8e5fb1ca8b08a7cf86be3f060b5",
+        "bytes": 275325
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Textures/UE4_Mannequin__normals",
+        "sha256": "eee61f7ea395803af614c7194ac6ce20c6556947794eb9e95d9f83597e0c8d4b",
+        "bytes": 5481515
+      },
+      {
+        "path": "/Game/FightingAnimsetPro/UE4_Mannequin/Textures/UE4_Mannequin_occlusion_Mobile",
+        "sha256": "8e506fe62f26d7c331c40ba5f97709668c05e71e0f8f3f3b41ec029102d33c6e",
+        "bytes": 362777
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/Animations/Emotes/Anim_EM_call_out",
+        "sha256": "7f909665bee4f1424b1e4530cc90ddd5e9fb30bc676022cdc78e68c1f945b208",
+        "bytes": 506966
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/Animations/MachineGun/MG_shoot",
+        "sha256": "fc62743c562c48479773bbf9e5d0e8e475285ee5abc4dcd81edafd9b900397f8",
+        "bytes": 180919
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/Animations/NPC/Anim_IN_check_CO",
+        "sha256": "4cbc4f0bc132402c5afcac2aaf6e893b8189c929c69192716c75dc0c97f30eb0",
+        "bytes": 1931402
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Materials/M_UE4Man_Body",
+        "sha256": "389faabf356326044168c549ded0130728e3254bf465beb8bde9d94a7d285e23",
+        "bytes": 137655
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Materials/M_UE4Man_ChestLogo",
+        "sha256": "a47a37c0835bc4b2a479ece595b62e73dfd85f662219d6d668521116fffbe7e7",
+        "bytes": 94381
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Materials/MaterialLayers/ML_GlossyBlack_Latex_UE4",
+        "sha256": "a0f7ceb11a1d8f9e792ca0126fd2f21c21010decf3bda3aeed47d874faf73ed7",
+        "bytes": 106466
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Materials/MaterialLayers/ML_Plastic_Shiny_Beige",
+        "sha256": "489f3341383d61d7fdbfc62b969e574c2d5f7b9edd5e7f50f7829724c83efc7d",
+        "bytes": 84766
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Materials/MaterialLayers/ML_Plastic_Shiny_Beige_LOGO",
+        "sha256": "767eac8468252476db6fdcffbd0f54bd4188023d1e6e948ecbbc071acf6d3955",
+        "bytes": 85644
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Materials/MaterialLayers/ML_SoftMetal_UE4",
+        "sha256": "fe2a9fb388795dcd5e4efb4b0b8aa414ac33febabc16adf4f3ba8b19134784c4",
+        "bytes": 98565
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Materials/MaterialLayers/T_ML_Aluminum01",
+        "sha256": "c762a060e8e4088dd6c84095fb9c0790e4afcb002dee34c88880812ec33d9edc",
+        "bytes": 434411
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Materials/MaterialLayers/T_ML_Aluminum01_N",
+        "sha256": "dbf5401fe7015f011ef0e77ae5853909f95b802873b6d972c3d76aaca16b76ae",
+        "bytes": 405257
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Materials/MaterialLayers/T_ML_Rubber_Blue_01_D",
+        "sha256": "83346b22b0767390f96efc2f053890c54c6c648f917df8644a86a4b2436ff6ab",
+        "bytes": 470772
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Materials/MaterialLayers/T_ML_Rubber_Blue_01_N",
+        "sha256": "5552fcebf9ef271973acca2b1f4eb8e7f3b1f24b1e8db7a8a8603cf936ad67f9",
+        "bytes": 362118
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin",
+        "sha256": "29b4c8f3bcb1915bf3cc6620b0eafde24141f323a1e5a76d1d9457da076ff5ac",
+        "bytes": 3774800
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin_PhysicsAsset",
+        "sha256": "6de5669427441dfdacda9c1c88f12f7e660ae3f81ce6d8cce2294bfc753685a9",
+        "bytes": 26067
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton",
+        "sha256": "bbe67a494fe732d5831b99cb05fec34bd1e6879a4afaae7aa5dc422c47eb814a",
+        "bytes": 11183
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Textures/UE4Man_Logo_N",
+        "sha256": "9840a05491b91c84d01e1d496511042c4b6a31d23567f0d13171b5c3eeef06b3",
+        "bytes": 161771
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Textures/UE4_LOGO_CARD",
+        "sha256": "182a7a62a0439f6d58c5dab2a8893f3cdecd426942e406d84eaaedf96a5ea8ab",
+        "bytes": 95174
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Textures/UE4_Mannequin_MAT_MASKA",
+        "sha256": "91b6aa3bb7fc88d1815c811585cb8246fbb8ac12808180ffa0f279c7a53ad251",
+        "bytes": 274907
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Textures/UE4_Mannequin__normals",
+        "sha256": "a12f2768befeb95a7a651fbd7a85433c08a38cd2bb68612a963c2f5f49193840",
+        "bytes": 5481079
+      },
+      {
+        "path": "/Game/OpenWorldAnimset/UE4_Mannequin/Textures/UE4_Mannequin_occlusion_Mobile",
+        "sha256": "1c8b6fe12db6a0e31b23b09e4453ed616ff33353a0c672f964549a070be401c1",
+        "bytes": 362359
+      }
+    ],
+    "unresolved_references": [
+      "/Game/Anim_EM_call_out",
+      "/Game/Anim_IN_check_CO",
+      "/Game/FightingAnimsetPro/Animations/InPlace/KB_Projectile",
+      "/Game/FightingAnimsetPro/Animations/InPlace/KB_SkipFwd",
+      "/Game/OpenWorldAnimationPack/Animations/MachineGun/MG_shoot"
+    ]
   }
 }
