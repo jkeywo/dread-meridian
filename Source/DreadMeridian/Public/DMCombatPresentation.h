@@ -46,6 +46,8 @@ private:
     bool bCameraHeld = false;
     float ActionUntil = 0;
     float LastHitTime = -1;
+    /** Yaw offset (relative to the actor) left over from the last attack facing; cleared once real movement resumes. */
+    float FacingOffset = 0;
     FVector AimPoint = FVector::ZeroVector;
     float AimUntil = -1;
 };

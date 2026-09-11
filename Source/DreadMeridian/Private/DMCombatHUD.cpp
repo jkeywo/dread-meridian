@@ -155,8 +155,12 @@ void ADMCombatHUD::DrawCone(const FVector& Origin, const FVector& Dir, float Hal
 void ADMCombatHUD::DrawUnitWorld(const FDMHudUnit& Unit, bool bSelected)
 {
     const FVector Feet = Unit.Location - FVector(0, 0, DMHud::CapsuleHalfHeight);
-    const FLinearColor Ring = Unit.bLocal ? DMHud::Brass : (Unit.bEnemy ? DMHud::Danger : (Unit.bDown ? DMHud::Bone : DMHud::Ally));
-    DrawRing(Feet, Unit.bLocal ? 62.f : 55.f, Ring, Unit.bEnemy || Unit.bDown);
+    // A dead enemy is inert scenery, not a unit to track - drop its floor ring too.
+    if (!(Unit.bEnemy && Unit.bDown))
+    {
+        const FLinearColor Ring = Unit.bLocal ? DMHud::Brass : (Unit.bEnemy ? DMHud::Danger : (Unit.bDown ? DMHud::Bone : DMHud::Ally));
+        DrawRing(Feet, Unit.bLocal ? 62.f : 55.f, Ring, Unit.bEnemy || Unit.bDown);
+    }
 
     FVector2D Head;
     if (!ProjectPoint(Unit.Location + FVector(0, 0, 205), Head)) { return; }

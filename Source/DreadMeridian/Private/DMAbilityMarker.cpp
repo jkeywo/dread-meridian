@@ -50,7 +50,17 @@ void ADMAbilityMarker::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
     if (HasAuthority() && (bSpirit || bHostile) && !bTravelling && IsValid(BoundTarget))
-    { SetActorLocation(BoundTarget->GetActorLocation() - FVector(0, 0, 70)); }
+    {
+        FVector Anchor = BoundTarget->GetActorLocation() - FVector(0, 0, 70);
+        if (bSpirit)
+        {
+            // Deterministic per-spirit drift so a bound spirit doesn't sit rigidly pinned to the corpse.
+            const float Seed = (GetTypeHash(SpiritId) % 1000) * .01f;
+            const float T = GetWorld()->GetTimeSeconds() + Seed;
+            Anchor += FVector(FMath::Sin(T * .6f) * 22.f, FMath::Cos(T * .45f) * 22.f, 0);
+        }
+        SetActorLocation(Anchor);
+    }
     if (GetNetMode() == NM_DedicatedServer) { return; }
     const FLinearColor Color = bHostile ? FLinearColor(1,.08f,.03f) : bSpirit ? FLinearColor(.7f, .25f, 1)
         : Shape == EDMMarkerShape::Cone ? FLinearColor(1, .7f, .2f) : FLinearColor(1, .5f, .05f);

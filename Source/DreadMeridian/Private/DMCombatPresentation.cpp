@@ -167,7 +167,9 @@ void UDMCombatPresentation::UpdatePresentation()
     const float Rate = Duration > 0 && MotionClip ? MotionClip->GetPlayLength() / Duration :
         Motion == EDMLocomotion::Run ? FMath::Clamp(Speed / 420.f, .4f, 1.5f) : 1.f;
     Play(MotionClip, Duration == 0, Rate, Previous != Motion);
-    Actor->GetMesh()->SetRelativeRotation(FRotator(0, -90 + Locomotion.VisualYaw(Now), 0));
+    // Real movement supersedes the cosmetic attack-facing hold; stationary poses keep facing the last attack target.
+    if (Speed > 35.f) { FacingOffset = 0.f; }
+    Actor->GetMesh()->SetRelativeRotation(FRotator(0, -90 + Locomotion.VisualYaw(Now) + FacingOffset, 0));
 }
 FString UDMCombatPresentation::CurrentClip() const { return Playing ? Playing->GetName() : TEXT("none"); }
 void UDMCombatPresentation::Cue(uint8 Event, FVector Target)
@@ -229,7 +231,11 @@ void UDMCombatPresentation::Cue(uint8 Event, FVector Target)
     else if (Event == 7) { Action(Kind == 15 ? EnemyActions[2] : Clips[CastGesture],.7f); Burst(Target,Target,FLinearColor(2,.12f,.05f),Kind == 15 ? 8 : 7); }
     else if (Event == 3) { Action(Clips[Grenade], .4f); Burst(Target, Target, FLinearColor(2, 1.5f, .4f), 4); }
     const FVector Direction = Target - Actor->GetActorLocation();
-    if (!Direction.IsNearlyZero()) { Actor->GetMesh()->SetRelativeRotation(FRotator(0, Direction.Rotation().Yaw - Actor->GetActorRotation().Yaw - 90, 0)); }
+    if (!Direction.IsNearlyZero())
+    {
+        FacingOffset = FRotator::NormalizeAxis(Direction.Rotation().Yaw - Actor->GetActorRotation().Yaw);
+        Actor->GetMesh()->SetRelativeRotation(FRotator(0, FacingOffset - 90, 0));
+    }
 }
 
 bool UDMCombatPresentation::UsesGunPose() const { return Kind == 1 || Kind == 2 || Kind == 11 || Kind == 13 || Kind == 15; }

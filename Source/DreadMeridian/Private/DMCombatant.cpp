@@ -116,11 +116,26 @@ void ADMCombatant::Tick(float DeltaSeconds)
     if (GetNetMode() != NM_DedicatedServer)
     {
         // Health now reads from the overhead bar the HUD projects; the world label carries identity only.
-        Label->SetText(FText::FromString(DisplayName()));
-        Label->SetTextRenderColor(bIsEnemy ? FColor(255, 100, 80) : FColor(100, 220, 255));
-        if (!bIsEnemy) { Label->SetTextRenderColor(Investigator->Color().ToFColor(true)); }
-        if (auto* PC = UGameplayStatics::GetPlayerController(this, 0))
-        { if (PC->PlayerCameraManager) { Label->SetWorldRotation((PC->PlayerCameraManager->GetCameraLocation() - Label->GetComponentLocation()).Rotation()); } }
+        // A dead enemy is inert scenery, not a unit to track - drop its nameplate.
+        const bool bShowLabel = !(bIsEnemy && IsDown());
+        Label->SetVisibility(bShowLabel);
+        if (bShowLabel)
+        {
+            Label->SetText(FText::FromString(DisplayName()));
+            Label->SetTextRenderColor(bIsEnemy ? FColor(255, 100, 80) : FColor(100, 220, 255));
+            if (!bIsEnemy) { Label->SetTextRenderColor(Investigator->Color().ToFColor(true)); }
+            if (auto* PC = UGameplayStatics::GetPlayerController(this, 0))
+            {
+                // Yaw-only billboard: with the fixed steep camera pitch, a full look-at would tilt the badge
+                // toward the sky instead of standing it upright facing the viewer.
+                if (PC->PlayerCameraManager)
+                {
+                    FRotator Facing = (PC->PlayerCameraManager->GetCameraLocation() - Label->GetComponentLocation()).Rotation();
+                    Facing.Pitch = 0; Facing.Roll = 0;
+                    Label->SetWorldRotation(Facing);
+                }
+            }
+        }
         Presentation->UpdatePresentation();
     }
 }

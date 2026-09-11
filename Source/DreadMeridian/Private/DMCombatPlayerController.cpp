@@ -73,6 +73,7 @@ void ADMCombatPlayerController::SetupInputComponent()
     Mapping->MapKey(ReviveAction, EKeys::Gamepad_FaceButton_Left);
     Input->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ADMCombatPlayerController::Move);
     Input->BindAction(ClickAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::Click);
+    Input->BindAction(ClickAction, ETriggerEvent::Triggered, this, &ADMCombatPlayerController::Click);
     Input->BindAction(AttackAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::Attack);
     Input->BindAction(CycleAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::Cycle);
     Input->BindAction(ReviveAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::StartRevive);
