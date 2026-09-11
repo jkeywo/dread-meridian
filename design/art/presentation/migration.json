@@ -751,5 +751,257 @@
     "/Script/Niagara",
     "/Script/NiagaraEditor"
   ],
-  "bytes": 61306845
+  "bytes": 61306845,
+  "kits": {
+    "source_project": "HoldingProject",
+    "requested": [
+      "/Game/Explosions_W3Vol1/Niagara/NS_Burst2",
+      "/Game/Explosions_W3Vol1/Niagara/NS_highimpact",
+      "/Game/BigNiagaraBundle/NiagaraEffectMix2/Effects/NS_ShockWave",
+      "/Game/BigNiagaraBundle/NiagaraEffectsMix/Effects/NS_EnergyLife",
+      "/Game/NiagaraExamples/FX_Markers/NS_Marker_Target",
+      "/Game/Explosions_W3Vol1/Niagara/NS_FlareShimmer1",
+      "/Game/BigNiagaraBundle/NiagaraBlackAndWhite/NiagaraSystems/White/NS_ShiningWhite",
+      "/Game/BigNiagaraBundle/NiagaraAbstractSpace3/Effects/NS_The_Birth_Of_Photons",
+      "/Game/BigNiagaraBundle/NiagaraEffectMix2/Effects/NS_Orb_and_Trails",
+      "/Game/BigNiagaraBundle/NiagaraEffectMix2/Effects/NS_Spirits_of_Colors",
+      "/Game/BigNiagaraBundle/NiagaraAbstractSpace2/Effects/NS_ReverseBurst",
+      "/Game/BigNiagaraBundle/NiagaraEffectMix3/Effects/BlackEffects/NS_RingGrowingBlack",
+      "/Game/BigNiagaraBundle/NiagaraEffectMix3/Effects/NS_PlasmaBlueWithRing",
+      "/Game/BigNiagaraBundle/NiagaraAbstractSpace2/Effects/NS_RingOfOmnipotence",
+      "/Game/BigNiagaraBundle/NiagaraAbstractSpace2/Effects/NS_NoisyBurst",
+      "/Game/Explosions_W3Vol1/Niagara/NS_shockwave1",
+      "/Game/BigNiagaraBundle/NiagaraEffectMix4/Effects/NS_Rings",
+      "/Game/Explosions_W3Vol1/Niagara/NS_shockwave2",
+      "/Game/BigNiagaraBundle/NiagaraAbstractSpace3/Effects/NS_Otherworldly_Mirror"
+    ],
+    "files": [
+      {
+        "path": "/Game/BigNiagaraBundle/NiagaraAbstractSpace2/Effects/NS_NoisyBurst",
+        "sha256": "663c551a043268da3740b001fa2e0b471639a3dfc7faf300a88fdeafe765fc86",
+        "bytes": 1198446
+      },
+      {
+        "path": "/Game/BigNiagaraBundle/NiagaraAbstractSpace2/Effects/NS_ReverseBurst",
+        "sha256": "96c0f3de9d9656f43c467294285c42b5edfd668577e7b233daea2ce9240e73e7",
+        "bytes": 888294
+      },
+      {
+        "path": "/Game/BigNiagaraBundle/NiagaraAbstractSpace2/Effects/NS_RingOfOmnipotence",
+        "sha256": "1b482274c9a721d2de04704c177bfae77087f6935df66f782ce42158e95eaa85",
+        "bytes": 1987452
+      },
+      {
+        "path": "/Game/BigNiagaraBundle/NiagaraAbstractSpace3/Effects/NS_Otherworldly_Mirror",
+        "sha256": "69f01602c50d97a9515e0de7aba405ee2adaf73d4aaa00df483deddcfc608e13",
+        "bytes": 1165288
+      },
+      {
+        "path": "/Game/BigNiagaraBundle/NiagaraAbstractSpace3/Effects/NS_The_Birth_Of_Photons",
+        "sha256": "cd41397364e9f2fec36c3f5b2ef178ae9a51ce009c732e0c3e099bdfc87d0313",
+        "bytes": 2708752
+      },
+      {
+        "path": "/Game/BigNiagaraBundle/NiagaraBlackAndWhite/NiagaraSystems/White/NS_ShiningWhite",
+        "sha256": "247638b0ce0823674e96ee342a62ec51906f44e21c52196cd34a84c0547ddbd0",
+        "bytes": 1270244
+      },
+      {
+        "path": "/Game/BigNiagaraBundle/NiagaraEffectMix2/Effects/NS_Orb_and_Trails",
+        "sha256": "4f314628d43ca1c8affb856bdb59da3b7738f11ae1f850640fe9736eca467a3b",
+        "bytes": 2452572
+      },
+      {
+        "path": "/Game/BigNiagaraBundle/NiagaraEffectMix2/Effects/NS_ShockWave",
+        "sha256": "1629b1233ed531e01996975cdd6b2043840b7c182666344f9fc04d3462e8b282",
+        "bytes": 1148355
+      },
+      {
+        "path": "/Game/BigNiagaraBundle/NiagaraEffectMix2/Effects/NS_Spirits_of_Colors",
+        "sha256": "80b7d23d38f9c6e9ecb1f11fb76da59a942e4bd1b0d989fdf77b4c2f4a5ea6fa",
+        "bytes": 1563839
+      },
+      {
+        "path": "/Game/BigNiagaraBundle/NiagaraEffectMix2/Materials/M_Fresnel",
+        "sha256": "88b43af4c4582be3dbb74c9e1ec4073660bd0bc6707da90856eec666c280917f",
+        "bytes": 74743
+      },
+      {
+        "path": "/Game/BigNiagaraBundle/NiagaraEffectMix3/Effects/BlackEffects/NS_RingGrowingBlack",
+        "sha256": "499d70170bdbb2d84c6d60e999e9985c73649dba8c08565917ecca8a85d9f78a",
+        "bytes": 1087033
+      },
+      {
+        "path": "/Game/BigNiagaraBundle/NiagaraEffectMix3/Effects/NS_PlasmaBlueWithRing",
+        "sha256": "34ad525a31aa7709f5e6c92d78cf081aa3b684acb6a23ad32511ded52e57d417",
+        "bytes": 1425244
+      },
+      {
+        "path": "/Game/BigNiagaraBundle/NiagaraEffectMix3/Materials/M_BlackHoleInnert",
+        "sha256": "dc77732db83341dd3123363f697502bbb8e655ea9abffbc5ff2d0c9a59c7c0b6",
+        "bytes": 75712
+      },
+      {
+        "path": "/Game/BigNiagaraBundle/NiagaraEffectMix4/Effects/NS_Rings",
+        "sha256": "62095ab1156aed19652cc562a1d17a52611ff616babb03e99de74292f9a5c6e4",
+        "bytes": 3045505
+      },
+      {
+        "path": "/Game/BigNiagaraBundle/NiagaraEffectsMix/Effects/NS_EnergyLife",
+        "sha256": "e1c6506ced9aa60f1b8bc6c809d3f7bb08c0fdf0a8708ed05986f95325064d78",
+        "bytes": 950583
+      },
+      {
+        "path": "/Game/BigNiagaraBundle/NiagaraEffectsMix/Material/M_ParticleColor",
+        "sha256": "31b8bb8eb903076abba5f2772c24ca8dad674f8e7f8de78f8749b3deeca937da",
+        "bytes": 65453
+      },
+      {
+        "path": "/Game/Explosions_W3Vol1/Mats/Burst2",
+        "sha256": "2766dc089ed2699a555148c10f79450e79f533a923c7461ff92f19ab3e64e004",
+        "bytes": 17832
+      },
+      {
+        "path": "/Game/Explosions_W3Vol1/Mats/Shocktorus",
+        "sha256": "edc8128c802303f88f0772f7fd91045fb18075a6039653f0922e9d2dff9861cd",
+        "bytes": 22424
+      },
+      {
+        "path": "/Game/Explosions_W3Vol1/Mats/Shocktorus_r",
+        "sha256": "24a9a2859391f17930f6e528ded82f2276803fa4908363899f6795b283643414",
+        "bytes": 22497
+      },
+      {
+        "path": "/Game/Explosions_W3Vol1/Mats/flareshimmer1",
+        "sha256": "9793edd096722e1cf176e89cd53fdbad4ef2e240b25483fbb15922e4333f3087",
+        "bytes": 17649
+      },
+      {
+        "path": "/Game/Explosions_W3Vol1/Mesh/brokenwave1",
+        "sha256": "0a0c39b42d769f0570db7c2218eb38d7e0d2afe2e888cd524cb66e30d36e7b09",
+        "bytes": 32435
+      },
+      {
+        "path": "/Game/Explosions_W3Vol1/Mesh/shockcracklepoles",
+        "sha256": "3ae73fe698be261def034a62b509ce3f9b74915f9cd70dd145f07bc01071b54b",
+        "bytes": 71579
+      },
+      {
+        "path": "/Game/Explosions_W3Vol1/Mesh/shockwavetorus",
+        "sha256": "a1f1a3f7669817fac422234bfb97f6bab5847b839bb857b7a1d8ab157cbcad63",
+        "bytes": 45374
+      },
+      {
+        "path": "/Game/Explosions_W3Vol1/Niagara/NS_Burst2",
+        "sha256": "300911bfc0b805395818b1a27dd61f584748efc1871da8fb518c90fa228d1ad8",
+        "bytes": 613023
+      },
+      {
+        "path": "/Game/Explosions_W3Vol1/Niagara/NS_FlareShimmer1",
+        "sha256": "dfd6d5f89e40a4e7062574a63bf8c23554e747355dace88712b19f707949c839",
+        "bytes": 624566
+      },
+      {
+        "path": "/Game/Explosions_W3Vol1/Niagara/NS_highimpact",
+        "sha256": "24798447cff1f4685c7ef95598cb3919ddb4058f44fb37e87c52e65810b9102e",
+        "bytes": 1045878
+      },
+      {
+        "path": "/Game/Explosions_W3Vol1/Niagara/NS_shockwave1",
+        "sha256": "f18622b7ca4677fd2509135faeb4435dfa911f520a5bce965109c2a72866bff6",
+        "bytes": 609750
+      },
+      {
+        "path": "/Game/Explosions_W3Vol1/Niagara/NS_shockwave2",
+        "sha256": "f105fb9433342f15c3b3dfd3a064352a2eb65dfc5fef60118a36c3b50c63ccd7",
+        "bytes": 552152
+      },
+      {
+        "path": "/Game/Explosions_W3Vol1/Textures/Burst2",
+        "sha256": "4455ca2990aa3e7281ab343daabde7fafe48044d07a8c32383427c8f50309b58",
+        "bytes": 528211
+      },
+      {
+        "path": "/Game/Explosions_W3Vol1/Textures/Noise_cloudsmed",
+        "sha256": "2c6f7308320c99ab1544c8358c919a47441eeb6d21c7a96b8cf6e47cdb398260",
+        "bytes": 4174954
+      },
+      {
+        "path": "/Game/Explosions_W3Vol1/Textures/flares2",
+        "sha256": "9342fc8326974dc28dc98cf3a5758c2dd5035609fe75ed315afd3ce97f881074",
+        "bytes": 221042
+      },
+      {
+        "path": "/Game/Explosions_W3Vol1/Textures/smoothNormalSphere",
+        "sha256": "f71411cfd1060da68b65a7a647e48901bc1e3ccbb4fd788a2339b768cb144130",
+        "bytes": 311249
+      },
+      {
+        "path": "/Game/Explosions_W3Vol1/Textures/water_n",
+        "sha256": "fee64f38eada2f7a1fdab7ee3032e704db7a48da5035838f50de22caa2735642",
+        "bytes": 477312
+      },
+      {
+        "path": "/Game/NiagaraExamples/EffectTypes/NET_Gameplay_Burst",
+        "sha256": "a27e1e3835546bdb44a621386c1a8911ea3d1de5330ea4b7c4e55214ebe0be61",
+        "bytes": 11397
+      },
+      {
+        "path": "/Game/NiagaraExamples/FX_Markers/NS_Marker_Target",
+        "sha256": "abea7b8b38535b20bf1ba590947f7ba1049670f7621fd7c679af78db3b77dc63",
+        "bytes": 477217
+      },
+      {
+        "path": "/Game/NiagaraExamples/MPC_NiagaraExamples",
+        "sha256": "4455ec7e8c3c9c908062751b51c1e55728456c356c82f6ac35714f0cee2d5c5c",
+        "bytes": 1881
+      },
+      {
+        "path": "/Game/NiagaraExamples/Materials/MI_Boundary_TechGrid",
+        "sha256": "dd42f0a72ad9ec863ecf1e97ed9ca1f78d0c20ea2fb13e54e638109bc0a93b49",
+        "bytes": 7913
+      },
+      {
+        "path": "/Game/NiagaraExamples/Materials/MI_Marker_Target",
+        "sha256": "fdacde6499e485b4041de4a162fe4553a8dd299f6992f9d0eea9ba2783ed4ac9",
+        "bytes": 9866
+      },
+      {
+        "path": "/Game/NiagaraExamples/Materials/MasterMaterials/M_Mesh_Add",
+        "sha256": "e99e3a79bf3e64c09a50bda3948ab62b29e0e5ecfc455253aa46a6fed2c768b0",
+        "bytes": 59902
+      },
+      {
+        "path": "/Game/NiagaraExamples/Materials/MaterialFunctions/MF_ExposureCompensation",
+        "sha256": "3fa969c1e9761e99a70cb62e0f9b28db575eb71831b0ad6a3deb49b5c5d5e10c",
+        "bytes": 13944
+      },
+      {
+        "path": "/Game/NiagaraExamples/StaticMesh/SM_Cylinder_1Unit",
+        "sha256": "62cb1f032168b5c9e90fac9a1f41f2e9e3470bffc702ab0e4313045e0ceddb9e",
+        "bytes": 17353
+      },
+      {
+        "path": "/Game/NiagaraExamples/Textures/Noise/T_Hermite2Noise_CenteredTiling",
+        "sha256": "e2d8d43b7a8da528ee154d7ab5ec7a8ee440610a734b275e0746f2dc4b354722",
+        "bytes": 3812552
+      }
+    ],
+    "unresolved_references": [
+      "/Game/Explosions/Particles/P_Burst2_Converted",
+      "/Game/Explosions/Particles/P_FlareShimmer1_Converted",
+      "/Game/Explosions/Particles/P_highimpact_Converted",
+      "/Game/Explosions/Particles/P_shockwave1_Converted",
+      "/Game/Explosions/Particles/P_shockwave2_Converted",
+      "/Game/NewFolder/NewNiagaraSystem",
+      "/Game/NewNiagaraEmitter2_System",
+      "/Game/NewNiagaraSystem",
+      "/Game/NewNiagaraSystem23",
+      "/Game/NewNiagaraSystem3",
+      "/Game/NiagaraAbstractEffects/Effects/NewNiagaraSystem1",
+      "/Game/NiagaraBlackAndWhite/NiagaraSystems/White/NewNiagaraSystem",
+      "/Game/NiagaraEffectMix2/Eff/NewNiagaraSystem1",
+      "/Game/NiagaraEffectMix2/Eff/NewNiagaraSystem6"
+    ]
+  }
 }

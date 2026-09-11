@@ -8,6 +8,17 @@ Existing entry: Manny/Quinn template content under `/Game/Characters`, copied
 from the installed Unreal 5.8.2 distribution and Epic-licensed. See
 [characters](characters.md).
 
+| Pack | Package root | Role | Removal condition |
+|---|---|---|---|
+| Animation Starter Pack, Fighting Animset Pro, Open World Animset | `/Game/AnimStarterPack`, `/Game/FightingAnimsetPro`, `/Game/OpenWorldAnimset` | Source clips retargeted into `/Game/DreadMeridian/Presentation/Animations` | Leaves when bespoke animation lands |
+| Explosions W3 Vol 1 | `/Game/Explosions_W3Vol1` | Satchel and kit impact/shockwave effects | Leaves when bespoke VFX lands |
+| Big Niagara Bundle | `/Game/BigNiagaraBundle` | Spirit, aura and ring effects for the Medium and the ultimates | Leaves when bespoke VFX lands |
+| Niagara Examples | `/Game/NiagaraExamples` | One target marker (`FX_Markers/NS_Marker_Target`) | Leaves when bespoke VFX lands |
+
+Each is a prototyping source whose individual assets should be replaced rather
+than shipped wholesale. Every migrated file is hashed in
+`design/art/presentation/migration.json`.
+
 ## Requested for acquisition
 
 None of the rows below are in `Content/` yet. Acquisition needs an Epic account
