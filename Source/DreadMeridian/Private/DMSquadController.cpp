@@ -299,8 +299,18 @@ FString ADMSquadController::Execute(ADMCombatGameMode& Mode, const FDMAIContext&
             // Both ends in one call: a bot must never be left holding half a wire.
             if (!Self->Kit->RequestWire(O.Point, O.Point2)) { Reject(Self->Kit->LastFailure, O.Action); }
             break;
-        case EDMAIAction::DeadGround:
+        case EDMAIAction::DeadGround: case EDMAIAction::ImpossiblePhotograph: case EDMAIAction::OpenSeance:
             if (!Self->Kit->Request(EDMKitSlot::R, nullptr, Self->GetActorLocation())) { Reject(Self->Kit->LastFailure, O.Action); }
+            break;
+        case EDMAIAction::Flashbulb: case EDMAIAction::Beckon:
+            if (!Self->Kit->Request(EDMKitSlot::W, nullptr, Point)) { Reject(Self->Kit->LastFailure, O.Action); }
+            break;
+        case EDMAIAction::Intercession:
+            if (!Self->Kit->Request(EDMKitSlot::E, nullptr, Self->GetActorLocation())) { Reject(Self->Kit->LastFailure, O.Action); }
+            break;
+        case EDMAIAction::Develop:
+            if (!Target) { Reject(TEXT("no_target"), O.Action); }
+            else if (!Self->Kit->Request(EDMKitSlot::E, Target, Target->GetActorLocation())) { Reject(Self->Kit->LastFailure, O.Action); }
             break;
         default: break;
         }

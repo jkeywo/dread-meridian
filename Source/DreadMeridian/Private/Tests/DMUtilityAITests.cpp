@@ -370,6 +370,94 @@ bool FDMUtilityAIConservationTest::RunTest(const FString& Parameters)
         D = R.Step();
         TestTrue(TEXT("Two enemies by a trap are worth deferring"), D.Chose(EDMAIAction::DeadGround));
     }
+    // ---- Photographer named kit.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Photographer, false);
+        FDMAIActorView& F = R.Add(FVector(300, 0, 0), true);
+        FDMAIDecision D = R.Step();
+        const FDMAIOption* Flash = FRig::Find(D, EDMAIAction::Flashbulb);
+        TestTrue(TEXT("One enemy in the cone is worth a flash"), Flash && Flash->Veto == nullptr && Flash->Score > 0);
+        const float Plain = Flash->Value;
+        F.bCommitted = true; D = R.Step();
+        Flash = FRig::Find(D, EDMAIAction::Flashbulb);
+        TestTrue(TEXT("A committed subject is worth more to the flash"), Flash && Flash->Value > Plain);
+        F.bCommitted = false;
+        // The cone is aimed at the focus, so what limits it is reach rather than aim.
+        F.Location = FVector(700, 0, 0); D = R.Step();
+        TestTrue(TEXT("Nothing within reach of the flash"), VetoIs(FRig::Find(D, EDMAIAction::Flashbulb), TEXT("out_of_range")));
+    }
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Photographer, false);
+        FDMAIActorView& F = R.Add(FVector(300, 0, 0), true);
+        F.Exposure = 20;
+        FDMAIDecision D = R.Step();
+        TestTrue(TEXT("Develop waits on a lightly exposed subject"), VetoIs(FRig::Find(D, EDMAIAction::Develop), TEXT("redundant")));
+        F.Exposure = 60; D = R.Step();
+        TestTrue(TEXT("A well exposed subject is developed"), D.Chose(EDMAIAction::Develop));
+        // Inside the ultimate the stored Exposure is not spent, so a smaller reading is still worth developing.
+        F.Exposure = 25; R.C.Self.bRActive = true; D = R.Step();
+        const FDMAIOption* Develop = FRig::Find(D, EDMAIAction::Develop);
+        TestTrue(TEXT("The ultimate lowers what Develop waits for"), Develop && Develop->Veto == nullptr);
+    }
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Photographer, false);
+        R.Add(FVector(400, 0, 0), true);
+        FDMAIDecision D = R.Step();
+        const FDMAIOption* Photo = FRig::Find(D, EDMAIAction::ImpossiblePhotograph);
+        TestTrue(TEXT("One subject is not worth the photograph"), Photo && Photo->Veto == nullptr && Photo->Score == 0);
+        R.Add(FVector(450, 0, 0), true); D = R.Step();
+        TestTrue(TEXT("Two visible subjects are"), D.Chose(EDMAIAction::ImpossiblePhotograph));
+    }
+    // ---- Medium named kit.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Medium, false);
+        R.Add(FVector(600, 0, 0), true);
+        FDMAIActorView& Ally = R.Add(FVector(-300, 0, 0), false, 20);
+        R.Add(FVector(-320, 0, 0), false);
+        FDMAIDecision D = R.Step();
+        TestTrue(TEXT("Beckon needs spirits to call"), VetoIs(FRig::Find(D, EDMAIAction::Beckon), TEXT("redundant")));
+        // A spirit out by the enemy, while a hurt ally needs it back here.
+        R.Marker(FDMAIMarkerView::Spirit, FVector(600, 0, 0)).Attention = 30;
+        D = R.Step();
+        const FDMAIOption* Call = FRig::Find(D, EDMAIAction::Beckon);
+        TestTrue(TEXT("Spirits are called to the threatened ally"), Call && Call->Veto == nullptr && Call->Score > 0);
+        TestTrue(TEXT("Called to the ally, not the enemy"), Call && FVector::Dist2D(Call->Point, Ally.Location) < 1.f);
+        // Already gathered where they are wanted: nothing to gain by calling again.
+        R.C.Markers[0].Location = Ally.Location;
+        D = R.Step();
+        TestTrue(TEXT("No call when the spirits are already there"), VetoIs(FRig::Find(D, EDMAIAction::Beckon), TEXT("redundant")));
+    }
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Medium, false);
+        FDMAIActorView& F = R.Add(FVector(300, 0, 0), true);
+        FDMAIDecision D = R.Step();
+        TestTrue(TEXT("Intercession needs a listening spirit"), VetoIs(FRig::Find(D, EDMAIAction::Intercession), TEXT("redundant")));
+        // A spirit riding the enemy, with enough Attention to be worth spending.
+        FDMAIMarkerView& Haunt = R.Marker(FDMAIMarkerView::Spirit, F.Location);
+        Haunt.Attention = 80; Haunt.BoundIndex = F.Index;
+        R.C.Self.MaxAttention = 80;
+        D = R.Step();
+        TestTrue(TEXT("A well attended hostile binding is spent"), D.Chose(EDMAIAction::Intercession));
+        // Barely listening: worth keeping for a real intervention instead.
+        Haunt.Attention = 20; R.C.Self.MaxAttention = 20;
+        D = R.Step();
+        const FDMAIOption* Call = FRig::Find(D, EDMAIAction::Intercession);
+        TestTrue(TEXT("A barely attended spirit is kept"), Call && Call->Veto == nullptr && Call->Score == 0);
+    }
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Medium, false);
+        R.Add(FVector(300, 0, 0), true);
+        FDMAIDecision D = R.Step();
+        TestTrue(TEXT("Open Seance needs spirits"), VetoIs(FRig::Find(D, EDMAIAction::OpenSeance), TEXT("redundant")));
+        R.Marker(FDMAIMarkerView::Spirit, FVector(300, 0, 0)).Attention = 50;
+        D = R.Step();
+        const FDMAIOption* Seance = FRig::Find(D, EDMAIAction::OpenSeance);
+        TestTrue(TEXT("One spirit on one enemy is not a seance"), Seance && Seance->Veto == nullptr && Seance->Score == 0);
+        for (int32 I = 0; I < 3; ++I) { R.Add(FVector(320 + I * 20, 40, 0), true); }
+        R.Marker(FDMAIMarkerView::Spirit, FVector(320, 0, 0)).Attention = 50;
+        D = R.Step();
+        TestTrue(TEXT("Spirits standing in a crowd are worth manifesting"), D.Chose(EDMAIAction::OpenSeance));
+    }
     {
         FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
         R.C.Self.AttackRange = 600;

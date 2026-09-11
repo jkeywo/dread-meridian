@@ -123,8 +123,16 @@ HAND_KNOBS: dict[str, list[Knob]] = {
                Knob("Abilities.SuppressingFire.Base", 1, 60, 10), Knob("Abilities.Tripwire.Base", 1, 60, 16),
                Knob("Abilities.DeadGround.Base", 1, 120, 32),
                Knob("Abilities.DeadGround.ThresholdCooldownCap", 50, 600, 150, True)],
-    "Photographer": COMPANION + [Knob("Abilities.Frame.Base", 1, 60, 20)],
-    "Medium": COMPANION + [Knob("Abilities.BindSpirit.Base", 1, 40, 10), Knob("ThreatenedAllyHealth", 20, 90, 50)],
+    # Develop.Radius is the Exposure a bot waits for before spending a subject, which is the real decision here.
+    "Photographer": COMPANION + [Knob("Abilities.Frame.Base", 1, 60, 20),
+                     Knob("Abilities.Flashbulb.Base", 1, 40, 6), Knob("Abilities.Develop.Base", 1, 40, 10),
+                     Knob("Abilities.Develop.Radius", 10, 90, 40),
+                     Knob("Abilities.ImpossiblePhotograph.Base", 1, 60, 11.7),
+                     Knob("Abilities.ImpossiblePhotograph.ThresholdCooldownCap", 50, 600, 150, True)],
+    "Medium": COMPANION + [Knob("Abilities.BindSpirit.Base", 1, 40, 10), Knob("ThreatenedAllyHealth", 20, 90, 50),
+               Knob("Abilities.Beckon.Base", 1, 40, 8), Knob("Abilities.Intercession.Base", 1, 40, 10),
+               Knob("Abilities.OpenSeance.Base", 1, 90, 27),
+               Knob("Abilities.OpenSeance.ThresholdCooldownCap", 50, 600, 150, True)],
     "Smuggler": COMPANION + [Knob("Abilities.Clinch.Base", 1, 40, 10)],
 }
 KNOBS: dict[str, list[Knob]] = {profile: with_baked_defaults(profile, knobs) for profile, knobs in HAND_KNOBS.items()}

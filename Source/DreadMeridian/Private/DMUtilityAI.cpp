@@ -561,6 +561,111 @@ namespace
                     Ability(EDMAIAction::DeadGround, nullptr, S.Location, Veto, T->Magnitude * WorthNearArmedTraps(T->Radius), -1, 0);
                 }
             }
+            // The Photographer's kit is emitted outside the base-Q gate on purpose: Flashbulb and Develop are both
+            // castable while framing, and the frame is exactly when a bot has Exposure worth spending.
+            if (bCompanion && !S.bProfileRange && S.Kind == EDMInvestigator::Photographer)
+            {
+                if (const FDMAIAbilityTemplate* T = W.FindAbility(EDMAIAction::Flashbulb); T && F)
+                {
+                    // Worth what it catches: a subject mid-telegraph gives up more Exposure to the flash.
+                    float Value = 0;
+                    const FVector Direction = (F->Location - S.Location).GetSafeNormal2D();
+                    for (const FDMAIActorView& A : C.Actors)
+                    {
+                        if (!Hostile(A) || !DMKitRules::PointInCone(S.Location, Direction, T->Radius, T->Range, A.Location)) { continue; }
+                        Value += T->Magnitude * Worth(A) + (A.bCommitted ? T->SecondaryMagnitude : 0.f);
+                    }
+                    // The cone is aimed at the focus, so the focus is always inside it; range is what decides
+                    // whether anything is caught at all, and the value speaks for how much.
+                    const TCHAR* Veto = F->Distance2D > T->Range ? VetoOutOfRange : !S.bWReady ? VetoCooldown : nullptr;
+                    Ability(EDMAIAction::Flashbulb, F, F->Location, Veto, Value, -1, 0);
+                }
+                if (const FDMAIAbilityTemplate* T = W.FindAbility(EDMAIAction::Develop); T && F)
+                {
+                    // Exposure is an investment in a subject: spend it once it is worth more than another frame.
+                    const float Ready = S.bRActive ? T->SecondaryMagnitude : T->Radius;
+                    const TCHAR* Veto = F->Exposure < Ready ? VetoRedundant
+                        : F->Distance2D > T->Range ? VetoOutOfRange
+                        : DyingCheck(F, T) <= 0 ? VetoDying
+                        : !S.bEReady ? VetoCooldown : nullptr;
+                    Ability(EDMAIAction::Develop, F, F->Location, Veto, T->Magnitude * F->Exposure * Worth(*F), -1, 0);
+                }
+                if (const FDMAIAbilityTemplate* T = W.FindAbility(EDMAIAction::ImpossiblePhotograph))
+                {
+                    float Value = 0;
+                    for (const FDMAIActorView& A : C.Actors)
+                    { if (Hostile(A) && A.bVisible && A.Distance2D <= T->Range) { Value += T->Magnitude * Worth(A); } }
+                    const TCHAR* Veto = Value <= 0 ? VetoRedundant : !S.bRReady ? VetoCooldown : nullptr;
+                    Ability(EDMAIAction::ImpossiblePhotograph, nullptr, S.Location, Veto, Value, -1, 0);
+                }
+            }
+            if (bCompanion && !S.bProfileRange && S.Kind == EDMInvestigator::Medium)
+            {
+                if (const FDMAIAbilityTemplate* T = W.FindAbility(EDMAIAction::Beckon))
+                {
+                    // Call the spirits to whoever needs them: a threatened ally first, otherwise the focus.
+                    const FDMAIActorView* Threatened = nullptr;
+                    for (const FDMAIActorView& A : C.Actors)
+                    { if (Friendly(A) && A.Health < W.ThreatenedAllyHealth && (!Threatened || A.Health < Threatened->Health)) { Threatened = &A; } }
+                    const FDMAIActorView* Destination = Threatened ? Threatened : F;
+                    if (Destination)
+                    {
+                        int32 Spirits = 0, Away = 0;
+                        for (const FDMAIMarkerView& Mk : C.Markers)
+                        {
+                            if (Mk.Kind != FDMAIMarkerView::Spirit) { continue; }
+                            ++Spirits;
+                            if (FVector::Dist2D(Mk.Location, Destination->Location) > T->Radius) { ++Away; }
+                        }
+                        // Units the arrival would actually reach, friend or foe: the pulse does both.
+                        int32 Reached = 0;
+                        for (const FDMAIActorView& A : C.Actors)
+                        { if (!A.bDown && A.Index != S.Index && FVector::Dist2D(A.Location, Destination->Location) <= T->Radius) { ++Reached; } }
+                        const TCHAR* Veto = Spirits == 0 ? VetoRedundant
+                            : Away == 0 ? VetoRedundant           // already gathered where they are wanted
+                            : Destination->Distance2D > T->Range ? VetoOutOfRange
+                            : !S.bWReady ? VetoCooldown : nullptr;
+                        Ability(EDMAIAction::Beckon, nullptr, Destination->Location, Veto, T->Magnitude * Spirits * Reached, -1, 0);
+                    }
+                }
+                if (const FDMAIAbilityTemplate* T = W.FindAbility(EDMAIAction::Intercession))
+                {
+                    // Intercession spends the spirit, so it is worth what that spirit can do where it stands.
+                    float Value = 0;
+                    for (const FDMAIMarkerView& Mk : C.Markers)
+                    {
+                        if (Mk.Kind != FDMAIMarkerView::Spirit || Mk.bTravelling || Mk.Attention < S.MaxAttention) { continue; }
+                        const FDMAIActorView* Bound = Actor(Mk.BoundIndex);
+                        const float Scale = Mk.Attention / 100.f + .5f;
+                        if (Bound && Hostile(*Bound)) { Value = (T->Magnitude + Mk.Attention * .3f) * Worth(*Bound) * Scale; }
+                        else if (Bound && Friendly(*Bound)) { Value = (Bound->Health < W.ThreatenedAllyHealth ? T->SecondaryMagnitude : T->SecondaryMagnitude * .3f) * Scale; }
+                        else
+                        {
+                            int32 Reached = 0;
+                            for (const FDMAIActorView& A : C.Actors)
+                            { if (!A.bDown && A.Index != S.Index && FVector::Dist2D(A.Location, Mk.Location) <= T->Radius) { ++Reached; } }
+                            Value = 10.f * Reached * Scale;
+                        }
+                        break;
+                    }
+                    const TCHAR* Veto = S.MaxAttention < 20 ? VetoRedundant : !S.bEReady ? VetoCooldown : nullptr;
+                    Ability(EDMAIAction::Intercession, nullptr, S.Location, Veto, Value, -1, 0);
+                }
+                if (const FDMAIAbilityTemplate* T = W.FindAbility(EDMAIAction::OpenSeance))
+                {
+                    int32 Spirits = 0;
+                    float Value = 0;
+                    for (const FDMAIMarkerView& Mk : C.Markers)
+                    {
+                        if (Mk.Kind != FDMAIMarkerView::Spirit) { continue; }
+                        ++Spirits;
+                        for (const FDMAIActorView& A : C.Actors)
+                        { if (Hostile(A) && FVector::Dist2D(A.Location, Mk.Location) <= T->Radius) { Value += T->Magnitude * Worth(A); } }
+                    }
+                    const TCHAR* Veto = Spirits == 0 ? VetoRedundant : !S.bRReady ? VetoCooldown : nullptr;
+                    Ability(EDMAIAction::OpenSeance, nullptr, S.Location, Veto, Value, -1, 0);
+                }
+            }
 
             // Pickups (Sapper).
             if (bCompanion && S.Kind == EDMInvestigator::Sapper && S.Charges < S.ChargeCapacity)
@@ -885,10 +990,35 @@ namespace DMUtilityAI
         case EDMInvestigator::Medium:
             D.Template(EDMAIAction::BindSpirit, 650, 0, 40, 20, 10, 25, 0, false);
             D.Add(EDMAIAction::BindSpirit, EDMAIRank::Tactical, 1, ChCast, QCons());
+            // Radius is the arrival pulse. Routine: repositioning spirits should not pre-empt binding a new one or
+            // spending one that is ready. Base 8 -> threshold 21.2, so one spirit reaching two units (24) is worth it.
+            D.Template(EDMAIAction::Beckon, 650, 180, 12, 0, 8, 80, 0, false);
+            D.Add(EDMAIAction::Beckon, EDMAIRank::Routine, 1, ChCast, QCons());
+            // Magnitude/Secondary are the hostile and protective interventions; Radius is the ground pulse.
+            // Base 10 -> threshold 21.8: a haunt at the minimum Attention is worth 18.2 and is kept, per K.4's
+            // "do not expend Intercession simply because it is available". A threatened ally is worth it at once.
+            D.Template(EDMAIAction::Intercession, 0, 180, 20, 45, 10, 100, 0, false);
+            D.Add(EDMAIAction::Intercession, EDMAIRank::Tactical, 1, ChCast, QCons());
+            // Base 27 with the cap -> threshold 141: two spirits with two hostiles each (100) still holds; the
+            // ultimate wants the spirits already placed where the fight is.
+            D.Template(EDMAIAction::OpenSeance, 0, 300, 25, 0, 27, 600, 0, false, 150);
+            D.Add(EDMAIAction::OpenSeance, EDMAIRank::Tactical, 1, ChCast, QCons());
             break;
         case EDMInvestigator::Photographer:
             D.Template(EDMAIAction::Frame, 850, 0, 30, 0, 20, 20, 30, false);
             D.Add(EDMAIAction::Frame, EDMAIRank::Tactical, 1, ChAll, QCons());
+            // Radius carries the flash half-angle and SecondaryMagnitude the bonus for catching a committed enemy.
+            // Routine for the same reason as the Sapper's suppression: disruption should not pre-empt the frame or
+            // the Develop it is feeding. Base 6 -> threshold 15.7, so one common in the cone (20) is worth a flash.
+            D.Template(EDMAIAction::Flashbulb, 350, 35, 20, 15, 6, 100, 0, false);
+            D.Add(EDMAIAction::Flashbulb, EDMAIRank::Routine, 1, ChCast, QCons());
+            // Radius is the Exposure a bot waits for and SecondaryMagnitude the lower bar inside the ultimate.
+            // Base 10 -> threshold 29.7: developing 40 Exposure (28) still waits, 50 (35) spends.
+            D.Template(EDMAIAction::Develop, 850, 40, .7f, 20, 10, 60, 0, false);
+            D.Add(EDMAIAction::Develop, EDMAIRank::Tactical, 1, ChCast, QCons());
+            // Base 11.7 with the cap -> threshold 55.4: two visible commons (60) are worth the photograph, one is not.
+            D.Template(EDMAIAction::ImpossiblePhotograph, 1200, 0, 30, 0, 11.7f, 600, 0, false, 150);
+            D.Add(EDMAIAction::ImpossiblePhotograph, EDMAIRank::Tactical, 1, ChCast, QCons());
             break;
         case EDMInvestigator::Smuggler:
             D.Template(EDMAIAction::Clinch, 180, 0, 10, 0, 10, 40, 0, false);

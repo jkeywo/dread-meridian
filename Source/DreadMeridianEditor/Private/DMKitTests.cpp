@@ -201,4 +201,329 @@ bool FDMSapperKitTest::RunTest(const FString& Parameters)
     return true;
 }
 
+/**
+ * The Photographer's kit: a flash that exposes and disrupts what it catches, Develop spending that Exposure, and
+ * Impossible Photograph exposing the visible battlefield and holding those readings while it runs.
+ */
+class FDMVerifyPhotographerKit : public IAutomationLatentCommand
+{
+public:
+    explicit FDMVerifyPhotographerKit(FAutomationTestBase* InTest) : Test(InTest)
+    {
+        bHadPreference = GConfig->GetString(TEXT("DreadMeridian.EditorPlay"), TEXT("Investigator"), Original, GEditorPerProjectIni);
+    }
+    virtual ~FDMVerifyPhotographerKit() override
+    {
+        if (bHadPreference) { GConfig->SetString(TEXT("DreadMeridian.EditorPlay"), TEXT("Investigator"), *Original, GEditorPerProjectIni); }
+        else { GConfig->RemoveKey(TEXT("DreadMeridian.EditorPlay"), TEXT("Investigator"), GEditorPerProjectIni); }
+        GConfig->Flush(false, GEditorPerProjectIni);
+        if (Settings) { Settings->RemoveFromRoot(); }
+    }
+
+    virtual bool Update() override
+    {
+        if (Stage == 0)
+        {
+            DMEditorPlaySelection::Save(TEXT("Photographer"));
+            Settings = DuplicateObject<ULevelEditorPlaySettings>(GetDefault<ULevelEditorPlaySettings>(), GetTransientPackage());
+            Settings->AddToRoot(); Settings->SetPlayNetMode(PIE_Standalone);
+            Settings->SetPlayNumberOfClients(1); Settings->SetRunUnderOneProcess(true);
+            Window = SNew(SWindow).Title(FText::FromString(TEXT("Photographer kit verification"))).ClientSize(FVector2D(640, 480));
+            FSlateApplication::Get().AddWindow(Window.ToSharedRef(), false);
+            FRequestPlaySessionParams Params;
+            Params.EditorPlaySettings = Settings;
+            Params.GlobalMapOverride = TEXT("/Game/DreadMeridian/Maps/L_CombatSandbox");
+            Params.CustomPIEWindow = Window;
+            Params.bAllowOnlineSubsystem = false;
+            GEditor->RequestPlaySession(Params);
+            GEditor->StartQueuedPlaySessionRequest();
+            Deadline = FPlatformTime::Seconds() + 90; Stage = 1;
+            return false;
+        }
+        if (Stage == 1 && GEditor->PlayWorld)
+        {
+            APlayerController* Player = GEditor->PlayWorld->GetFirstPlayerController();
+            ADMCombatant* Hero = Player ? Cast<ADMCombatant>(Player->GetPawn()) : nullptr;
+            if (!Hero) { return Timeout(); }
+            Test->TestEqual(TEXT("PIE possesses the Photographer"), static_cast<int32>(Hero->Investigator->Kind), static_cast<int32>(EDMInvestigator::Photographer));
+            Subject = Hero;
+            auto* Mode = GEditor->PlayWorld->GetAuthGameMode<ADMCombatGameMode>();
+            int32 N = 0;
+            for (ADMCombatant* A : Mode->GetCombatants())
+            {
+                A->bProfileRange = true; A->NextAttackTick = 100000;
+                A->GetCharacterMovement()->DisableMovement(); A->SetActorLocation(FVector(1400, -700 + N++ * 160, 95));
+                if (A->bIsEnemy && !Enemy.IsValid()) { Enemy = A; }
+                else if (A->bIsEnemy && !Second.IsValid()) { Second = A; }
+            }
+            Hero->SetActorLocation(FVector(-1200, 0, 95));
+            Test->TestFalse(TEXT("Develop refused without Exposure"), Hero->Kit->Request(EDMKitSlot::E, Enemy.Get(), Enemy->GetActorLocation()));
+            Test->TestFalse(TEXT("The photograph needs something in view"), Hero->Kit->Request(EDMKitSlot::R, nullptr, Hero->GetActorLocation()));
+            Test->TestTrue(TEXT("Refusals spend no cooldown"), Hero->Kit->IsReady(EDMKitSlot::E) && Hero->Kit->IsReady(EDMKitSlot::R));
+
+            Enemy->SetActorLocation(Hero->GetActorLocation() + FVector(250, 0, 0));
+            EnemyHealth = Enemy->Health();
+            Test->TestTrue(TEXT("Flashbulb accepted"), Hero->Kit->Request(EDMKitSlot::W, nullptr, Hero->GetActorLocation() + FVector(400, 0, 0)));
+            Test->TestTrue(TEXT("The flash exposes what it catches"), Hero->Investigator->PeekExposure(Enemy->EntityId) > 0);
+            Test->TestTrue(TEXT("The flash staggers"), Enemy->NextAttackTick > Mode->GetCombatTick());
+            TestTick = Mode->GetCombatTick() + 2; Stage = 2;
+            return false;
+        }
+        if (Stage >= 2 && GEditor->PlayWorld && Subject.IsValid() && Enemy.IsValid())
+        {
+            auto* Mode = GEditor->PlayWorld->GetAuthGameMode<ADMCombatGameMode>();
+            auto* Hero = Subject.Get();
+            auto* Kit = Hero->Kit.Get();
+            if (Mode->GetCombatTick() < TestTick) { return false; }
+            switch (Stage)
+            {
+            case 2:
+            {
+                const float Exposure = Hero->Investigator->PeekExposure(Enemy->EntityId);
+                Test->TestTrue(TEXT("Develop accepted on an exposed subject"), Kit->Request(EDMKitSlot::E, Enemy.Get(), Enemy->GetActorLocation()));
+                Test->TestTrue(TEXT("Develop damages in proportion to Exposure"), Enemy->Health() <= EnemyHealth - Exposure * .5f);
+                Test->TestEqual(TEXT("Develop spends the stored Exposure"), Hero->Investigator->PeekExposure(Enemy->EntityId), 0.f);
+                Test->TestFalse(TEXT("Develop refused again with nothing stored"), Kit->Request(EDMKitSlot::E, Enemy.Get(), Enemy->GetActorLocation()));
+                TestTick = Mode->GetCombatTick() + 2; Stage = 3;
+                return false;
+            }
+            case 3:
+            {
+                // R: everything visible becomes heavily exposed, and those readings hold while the window runs.
+                if (Second.IsValid()) { Second->SetActorLocation(Hero->GetActorLocation() + FVector(300, 200, 0)); }
+                Test->TestFalse(TEXT("Develop is still cooling from its first use"), Kit->IsReady(EDMKitSlot::E));
+                Test->TestTrue(TEXT("Impossible Photograph accepted"), Kit->Request(EDMKitSlot::R, nullptr, Hero->GetActorLocation()));
+                Test->TestTrue(TEXT("The photograph exposes the visible battlefield"), Hero->Investigator->PeekExposure(Enemy->EntityId) >= 80);
+                if (Second.IsValid()) { Test->TestTrue(TEXT("Every visible subject is captured"), Hero->Investigator->PeekExposure(Second->EntityId) >= 80); }
+                Test->TestTrue(TEXT("The ultimate spikes Madness"), Hero->Investigator->Madness >= 30);
+                // The window brings the running Develop cooldown forward, well short of the 6 seconds it started.
+                Test->TestTrue(TEXT("The window brings Develop forward"), Kit->CooldownSeconds(EDMKitSlot::E) <= 2.1f);
+                TestTick = Mode->GetCombatTick() + 22; Stage = 4;
+                return false;
+            }
+            case 4:
+            {
+                Test->TestTrue(TEXT("Develop returns on the window's shorter wait"), Kit->IsReady(EDMKitSlot::E));
+                EnemyHealth = Enemy->Health();
+                const float Stored = Hero->Investigator->PeekExposure(Enemy->EntityId);
+                Test->TestTrue(TEXT("Develop accepted inside the window"), Kit->Request(EDMKitSlot::E, Enemy.Get(), Enemy->GetActorLocation()));
+                Test->TestTrue(TEXT("The developed shot still lands"), Enemy->Health() < EnemyHealth);
+                Test->TestEqual(TEXT("Stored Exposure survives Develop while the photograph holds"), Hero->Investigator->PeekExposure(Enemy->EntityId), Stored);
+                TestTick = Mode->GetCombatTick() + 70; Stage = 5;
+                return false;
+            }
+            case 5:
+                Test->TestFalse(TEXT("The window closes"), Kit->IsRActive());
+                Test->TestFalse(TEXT("Exposure thaws with it"), Hero->Investigator->bExposureFrozen);
+                GEditor->RequestEndPlayMap(); Stage = 6;
+                return false;
+            default: break;
+            }
+        }
+        if (Stage == 6 && !GEditor->PlayWorld)
+        {
+            if (Window) { Window->RequestDestroyWindow(); Window.Reset(); }
+            return true;
+        }
+        if (FPlatformTime::Seconds() > Deadline) { return Timeout(); }
+        return false;
+    }
+
+private:
+    bool Timeout()
+    {
+        Test->AddError(FString::Printf(TEXT("Photographer kit PIE verification timed out at stage %d."), Stage));
+        GEditor->RequestEndPlayMap();
+        if (Window) { Window->RequestDestroyWindow(); }
+        return true;
+    }
+    FAutomationTestBase* Test;
+    ULevelEditorPlaySettings* Settings = nullptr;
+    TSharedPtr<SWindow> Window;
+    FString Original;
+    bool bHadPreference = false;
+    TWeakObjectPtr<ADMCombatant> Subject, Enemy, Second;
+    float EnemyHealth = 0;
+    int32 TestTick = 0;
+    int32 Stage = 0;
+    double Deadline = 0;
+};
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FDMPhotographerKitTest, "DreadMeridian.Editor.Kits.Photographer",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FDMPhotographerKitTest::RunTest(const FString& Parameters)
+{
+    if (!GEditor || GEditor->PlayWorld) { AddError(TEXT("Run the kit check in an idle editor.")); return false; }
+    FAutomationTestFramework::Get().EnqueueLatentCommand(MakeShared<FDMVerifyPhotographerKit>(this));
+    return true;
+}
+
+/**
+ * The Medium's kit: spirits called across the field and pulsing where they land, an intervention whose shape
+ * depends on what the spirit is bound to, and a seance that stops the calling from exhausting them.
+ */
+class FDMVerifyMediumKit : public IAutomationLatentCommand
+{
+public:
+    explicit FDMVerifyMediumKit(FAutomationTestBase* InTest) : Test(InTest)
+    {
+        bHadPreference = GConfig->GetString(TEXT("DreadMeridian.EditorPlay"), TEXT("Investigator"), Original, GEditorPerProjectIni);
+    }
+    virtual ~FDMVerifyMediumKit() override
+    {
+        if (bHadPreference) { GConfig->SetString(TEXT("DreadMeridian.EditorPlay"), TEXT("Investigator"), *Original, GEditorPerProjectIni); }
+        else { GConfig->RemoveKey(TEXT("DreadMeridian.EditorPlay"), TEXT("Investigator"), GEditorPerProjectIni); }
+        GConfig->Flush(false, GEditorPerProjectIni);
+        if (Settings) { Settings->RemoveFromRoot(); }
+    }
+
+    virtual bool Update() override
+    {
+        if (Stage == 0)
+        {
+            DMEditorPlaySelection::Save(TEXT("Medium"));
+            Settings = DuplicateObject<ULevelEditorPlaySettings>(GetDefault<ULevelEditorPlaySettings>(), GetTransientPackage());
+            Settings->AddToRoot(); Settings->SetPlayNetMode(PIE_Standalone);
+            Settings->SetPlayNumberOfClients(1); Settings->SetRunUnderOneProcess(true);
+            Window = SNew(SWindow).Title(FText::FromString(TEXT("Medium kit verification"))).ClientSize(FVector2D(640, 480));
+            FSlateApplication::Get().AddWindow(Window.ToSharedRef(), false);
+            FRequestPlaySessionParams Params;
+            Params.EditorPlaySettings = Settings;
+            Params.GlobalMapOverride = TEXT("/Game/DreadMeridian/Maps/L_CombatSandbox");
+            Params.CustomPIEWindow = Window;
+            Params.bAllowOnlineSubsystem = false;
+            GEditor->RequestPlaySession(Params);
+            GEditor->StartQueuedPlaySessionRequest();
+            Deadline = FPlatformTime::Seconds() + 90; Stage = 1;
+            return false;
+        }
+        if (Stage == 1 && GEditor->PlayWorld)
+        {
+            APlayerController* Player = GEditor->PlayWorld->GetFirstPlayerController();
+            ADMCombatant* Hero = Player ? Cast<ADMCombatant>(Player->GetPawn()) : nullptr;
+            if (!Hero) { return Timeout(); }
+            Test->TestEqual(TEXT("PIE possesses the Medium"), static_cast<int32>(Hero->Investigator->Kind), static_cast<int32>(EDMInvestigator::Medium));
+            Subject = Hero;
+            auto* Mode = GEditor->PlayWorld->GetAuthGameMode<ADMCombatGameMode>();
+            int32 N = 0;
+            for (ADMCombatant* A : Mode->GetCombatants())
+            {
+                A->bProfileRange = true; A->NextAttackTick = 100000;
+                A->GetCharacterMovement()->DisableMovement(); A->SetActorLocation(FVector(1400, -700 + N++ * 160, 95));
+                if (A->bIsEnemy && !Enemy.IsValid()) { Enemy = A; }
+                if (!A->bIsEnemy && A != Hero && !Ally.IsValid()) { Ally = A; }
+            }
+            Hero->SetActorLocation(FVector(-1200, 0, 95));
+            Test->TestFalse(TEXT("Beckon refused with no spirits"), Hero->Kit->Request(EDMKitSlot::W, nullptr, Hero->GetActorLocation() + FVector(300, 0, 0)));
+            Test->TestFalse(TEXT("Intercession refused with no spirits"), Hero->Kit->Request(EDMKitSlot::E, nullptr, Hero->GetActorLocation()));
+            Test->TestFalse(TEXT("Open Seance refused with no spirits"), Hero->Kit->Request(EDMKitSlot::R, nullptr, Hero->GetActorLocation()));
+            Test->TestTrue(TEXT("Refusals spend no cooldown"), Hero->Kit->IsReady(EDMKitSlot::W) && Hero->Kit->IsReady(EDMKitSlot::E) && Hero->Kit->IsReady(EDMKitSlot::R));
+
+            // Bind a spirit to the enemy, then feed it Attention with Spirit Lash so it is worth calling on.
+            Enemy->SetActorLocation(Hero->GetActorLocation() + FVector(300, 0, 0));
+            Ally->SetActorLocation(Hero->GetActorLocation() + FVector(0, 300, 0));
+            Test->TestTrue(TEXT("Spirit bound to the enemy"), Hero->Primary->Request(Enemy.Get(), Enemy->GetActorLocation()));
+            for (int32 I = 0; I < 3; ++I) { Hero->DealCombatDamage(Enemy.Get(), 1, TEXT("ability.basic_attack"), true); }
+            TestTick = Mode->GetCombatTick() + 2; Stage = 2;
+            return false;
+        }
+        if (Stage >= 2 && GEditor->PlayWorld && Subject.IsValid() && Enemy.IsValid())
+        {
+            auto* Mode = GEditor->PlayWorld->GetAuthGameMode<ADMCombatGameMode>();
+            auto* Hero = Subject.Get();
+            auto* Kit = Hero->Kit.Get();
+            if (Mode->GetCombatTick() < TestTick) { return false; }
+            switch (Stage)
+            {
+            case 2:
+            {
+                ADMAbilityMarker* Spirit = Hero->Primary->Bindings.IsEmpty() ? nullptr : Hero->Primary->Bindings[0].Get();
+                if (!Spirit) { Test->AddError(TEXT("No bound spirit to work with.")); return Timeout(); }
+                SpiritId = Spirit->SpiritId;
+                Attention = Hero->Investigator->PeekAttention(SpiritId);
+                Test->TestTrue(TEXT("Spirit Lash feeds the bound spirit"), Attention >= 20);
+                EnemyHealth = Enemy->Health();
+                Test->TestTrue(TEXT("Intercession accepted on a listening spirit"), Kit->Request(EDMKitSlot::E, nullptr, Hero->GetActorLocation()));
+                Test->TestTrue(TEXT("A hostile binding is struck"), Enemy->Health() < EnemyHealth);
+                Test->TestTrue(TEXT("Calling on a spirit exhausts it"), Hero->Investigator->PeekAttention(SpiritId) < Attention);
+                TestTick = Mode->GetCombatTick() + 2; Stage = 3;
+                return false;
+            }
+            case 3:
+            {
+                // W: the spirit leaves the enemy and crosses to a chosen point, pulsing where it lands.
+                const FVector Destination = Hero->GetActorLocation() + FVector(0, 300, 0);
+                Test->TestTrue(TEXT("Beckon accepted"), Kit->Request(EDMKitSlot::W, nullptr, Destination));
+                ADMAbilityMarker* Spirit = Hero->Primary->Bindings.IsEmpty() ? nullptr : Hero->Primary->Bindings[0].Get();
+                Test->TestTrue(TEXT("The called spirit is in flight"), Spirit && Spirit->bTravelling);
+                Test->TestTrue(TEXT("A called spirit leaves what it was bound to"), Spirit && Spirit->BoundTarget == nullptr);
+                if (Ally.IsValid()) { AllyShield = Ally->Shield(); }
+                TestTick = Mode->GetCombatTick() + 12; Stage = 4;
+                return false;
+            }
+            case 4:
+            {
+                ADMAbilityMarker* Spirit = Hero->Primary->Bindings.IsEmpty() ? nullptr : Hero->Primary->Bindings[0].Get();
+                Test->TestTrue(TEXT("The spirit arrives"), Spirit && !Spirit->bTravelling);
+                if (Ally.IsValid()) { Test->TestTrue(TEXT("Arrival shields the ally it reaches"), Ally->Shield() > AllyShield); }
+                Test->TestTrue(TEXT("The arrival point is recorded for the resource"), Spirit && Hero->Investigator->Spirits.Num() > 0);
+                // R: the seance stops Intercession exhausting the spirit it calls on.
+                Hero->Investigator->AddExposure(TEXT("unused"), 0, false, Mode->GetCombatTick());
+                Hero->Investigator->ThinPlace(Spirit->GetActorLocation(), 40);
+                Attention = Hero->Investigator->PeekAttention(SpiritId);
+                Test->TestTrue(TEXT("Thin Places feeds the settled spirit"), Attention >= 20);
+                Test->TestFalse(TEXT("Intercession is still cooling from its first use"), Kit->IsReady(EDMKitSlot::E));
+                Test->TestTrue(TEXT("Open Seance accepted"), Kit->Request(EDMKitSlot::R, nullptr, Hero->GetActorLocation()));
+                Test->TestTrue(TEXT("The ultimate spikes Madness"), Hero->Investigator->Madness >= 30);
+                Test->TestTrue(TEXT("The seance brings Intercession forward"), Kit->CooldownSeconds(EDMKitSlot::E) <= 3.1f);
+                TestTick = Mode->GetCombatTick() + 32; Stage = 5;
+                return false;
+            }
+            case 5:
+                Test->TestTrue(TEXT("Intercession returns on the seance's shorter wait"), Kit->IsReady(EDMKitSlot::E));
+                Test->TestTrue(TEXT("Intercession accepted inside the seance"), Kit->Request(EDMKitSlot::E, nullptr, Hero->GetActorLocation()));
+                Test->TestEqual(TEXT("The seance spares the spirit it calls on"), Hero->Investigator->PeekAttention(SpiritId), Attention);
+                GEditor->RequestEndPlayMap(); Stage = 6;
+                return false;
+            default: break;
+            }
+        }
+        if (Stage == 6 && !GEditor->PlayWorld)
+        {
+            if (Window) { Window->RequestDestroyWindow(); Window.Reset(); }
+            return true;
+        }
+        if (FPlatformTime::Seconds() > Deadline) { return Timeout(); }
+        return false;
+    }
+
+private:
+    bool Timeout()
+    {
+        Test->AddError(FString::Printf(TEXT("Medium kit PIE verification timed out at stage %d."), Stage));
+        GEditor->RequestEndPlayMap();
+        if (Window) { Window->RequestDestroyWindow(); }
+        return true;
+    }
+    FAutomationTestBase* Test;
+    ULevelEditorPlaySettings* Settings = nullptr;
+    TSharedPtr<SWindow> Window;
+    FString Original, SpiritId;
+    bool bHadPreference = false;
+    TWeakObjectPtr<ADMCombatant> Subject, Enemy, Ally;
+    float EnemyHealth = 0, AllyShield = 0, Attention = 0;
+    int32 TestTick = 0;
+    int32 Stage = 0;
+    double Deadline = 0;
+};
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FDMMediumKitTest, "DreadMeridian.Editor.Kits.Medium",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FDMMediumKitTest::RunTest(const FString& Parameters)
+{
+    if (!GEditor || GEditor->PlayWorld) { AddError(TEXT("Run the kit check in an idle editor.")); return false; }
+    FAutomationTestFramework::Get().EnqueueLatentCommand(MakeShared<FDMVerifyMediumKit>(this));
+    return true;
+}
+
 #endif

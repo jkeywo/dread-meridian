@@ -115,6 +115,22 @@ void UDMInvestigatorComponent::UpdateSpiritLocationById(const FString& SpiritId,
     if (!Authority()) { return; }
     for (auto& Spirit : Spirits) { if (Spirit.Id == SpiritId) { Spirit.Location = Location; } }
 }
+void UDMInvestigatorComponent::ClearSpiritTarget(const FString& SpiritId)
+{
+    if (!Authority()) { return; }
+    for (int32 I = 0; I < Spirits.Num() && I < SpiritTargets.Num(); ++I)
+    { if (Spirits[I].Id == SpiritId) { SpiritTargets[I].Reset(); } }
+}
+void UDMInvestigatorComponent::SpendAttention(const FString& SpiritId, float Keep)
+{
+    if (!Authority()) { return; }
+    for (auto& Spirit : Spirits) { if (Spirit.Id == SpiritId) { Spirit.Value = FMath::Max(0.f, Spirit.Value * FMath::Clamp(Keep, 0.f, 1.f)); } }
+}
+float UDMInvestigatorComponent::PeekAttention(const FString& SpiritId) const
+{
+    for (const auto& Spirit : Spirits) { if (Spirit.Id == SpiritId) { return Spirit.Value; } }
+    return 0.f;
+}
 void UDMInvestigatorComponent::AddMadness(float Amount, const FString& Reason)
 {
     if (!Authority() || Kind == EDMInvestigator::None || !FMath::IsFinite(Amount) || Amount <= 0) { return; }

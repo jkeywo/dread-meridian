@@ -96,12 +96,22 @@ private:
     int32 Now() const;
     void Emit(EDMKitSlot Slot, const FString& Action, ADMCombatant* Target = nullptr, const TSharedPtr<FJsonObject>& Extra = nullptr);
     void StartCooldown(EDMKitSlot Slot, int32 Ticks);
+    /** Brings a running cooldown forward, never back: an altered state answers now, not when the old wait expires. */
+    void ShortenCooldown(EDMKitSlot Slot, int32 Ticks);
     void RefreshCooldowns();
     /** Per-kind rules after the shared checks. */
     FString ValidateAbility(EDMKitSlot Slot, ADMCombatant* Target, FVector Point) const;
     bool ResolveAbility(EDMKitSlot Slot, ADMCombatant* Target, FVector Point);
     FString ValidateSapper(EDMKitSlot Slot, FVector Point) const;
     bool ResolveSapper(EDMKitSlot Slot, FVector Point);
+    FString ValidatePhotographer(EDMKitSlot Slot, ADMCombatant* Target, FVector Point) const;
+    bool ResolvePhotographer(EDMKitSlot Slot, ADMCombatant* Target, FVector Point);
+    FString ValidateMedium(EDMKitSlot Slot, FVector Point) const;
+    bool ResolveMedium(EDMKitSlot Slot, FVector Point);
+    /** Beckoned spirits travelling to their destination, and the pulse each one makes when it lands. */
+    void StepMedium(int32 Tick);
+    /** Highest-Attention bound spirit, or nullptr. Ties break on the lowest serial so the choice is stable. */
+    ADMAbilityMarker* BestSpirit() const;
     /** Suppression ticks, wire crossings and the Dead Ground batch. */
     void StepSapper(int32 Tick);
     /** Spawns a wire between two validated ground points, evicting the oldest when a third is placed. */

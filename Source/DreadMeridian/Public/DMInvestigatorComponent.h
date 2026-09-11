@@ -50,6 +50,11 @@ public:
     void ThinPlace(FVector Location, float Strength);
     void UpdateSpiritLocation(const FString& TargetId, FVector Location);
     void UpdateSpiritLocationById(const FString& SpiritId, FVector Location);
+    /** A called spirit leaves whatever it was attached to, so Spirit Lash no longer feeds it through that target. */
+    void ClearSpiritTarget(const FString& SpiritId);
+    /** Intercession normally exhausts the spirit it calls on; Keep is the fraction of Attention left behind. */
+    void SpendAttention(const FString& SpiritId, float Keep);
+    float PeekAttention(const FString& SpiritId) const;
     /** Madness stub: a clamped meter the ultimates spike (GDD 4.6). No symptoms, no floor, no decay; emits investigator.madness. */
     void AddMadness(float Amount, const FString& Reason);
     UPROPERTY(Replicated, BlueprintReadOnly) EDMInvestigator Kind = EDMInvestigator::None;

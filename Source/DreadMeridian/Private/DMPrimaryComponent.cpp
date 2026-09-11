@@ -248,15 +248,20 @@ void UDMPrimaryComponent::Step(int32 Tick)
         for (ADMCombatant* Enemy : Mode->GetCombatants())
         { if (SatchelCanHit(Charge, Enemy)) { DetonateSatchel(I); break; } }
     }
+    // Open Seance fully manifests the bound spirits: their passive presence intensifies and a spirit crossing the
+    // field on a Beckon stays active on the way, instead of going quiet until it lands.
+    const bool bManifest = Actor->Kit->IsRActive() && Actor->Investigator->Kind == EDMInvestigator::Medium;
     for (ADMAbilityMarker* Spirit : Bindings)
     {
         if (!IsValid(Spirit)) { continue; }
+        if (Spirit->bTravelling && !bManifest) { continue; }
         auto* Bound = Spirit->BoundTarget.Get();
         if (Bound) { Spirit->SetActorLocation(Bound->GetActorLocation() - FVector(0, 0, 70)); }
+        else { Actor->Investigator->UpdateSpiritLocationById(Spirit->SpiritId, Spirit->GetActorLocation()); }
         if (Bound && Bound->IsDown() && !Bound->bIsEnemy && Tick % 10 == 0) { Actor->Investigator->ThinPlace(Bound->GetActorLocation(), 2); }
         const auto* Resource = Actor->Investigator->Spirits.FindByPredicate([&](const auto& S) { return S.Id == Spirit->SpiritId; });
         Spirit->Attention = Resource ? Resource->Value : 0;
-        const float Strength = .1f + Spirit->Attention * .002f;
+        const float Strength = (.1f + Spirit->Attention * .002f) * (bManifest ? 2.f : 1.f);
         if (Bound && Bound->bIsEnemy && !Bound->IsDown()) { Bound->SpiritSlow = FMath::Max(Bound->SpiritSlow, Strength); }
         else if (!Bound || !Bound->bIsEnemy)
         {

@@ -46,6 +46,12 @@ private:
     UPROPERTY() TObjectPtr<UNiagaraSystem> Shock;
     UPROPERTY() TObjectPtr<UNiagaraSystem> DeferredAura;
     UPROPERTY() TObjectPtr<UNiagaraSystem> TargetMark;
+    UPROPERTY() TObjectPtr<UNiagaraSystem> Flashbulb;
+    UPROPERTY() TObjectPtr<UNiagaraSystem> Developed;
+    UPROPERTY() TObjectPtr<UNiagaraSystem> PhotographAura;
+    UPROPERTY() TObjectPtr<UNiagaraSystem> SpiritArrival;
+    UPROPERTY() TObjectPtr<UNiagaraSystem> Intervention;
+    UPROPERTY() TObjectPtr<UNiagaraSystem> SeanceCircle;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> HeldItem;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> StowedItem;
     UPROPERTY() TObjectPtr<UAnimSequence> Playing;
@@ -60,4 +66,6 @@ private:
     float FacingOffset = 0;
     FVector AimPoint = FVector::ZeroVector;
     float AimUntil = -1;
+    /** Camera raised until this time, for the Photographer's flash and ultimate. */
+    float CameraUntil = -1;
 };

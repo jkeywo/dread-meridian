@@ -56,9 +56,46 @@ trigger that would not otherwise have happened (GDD K.2). Traps are identified b
 a tagged satchel by hand resolves it once and drops its record. Activation spikes Madness. It cannot be cast
 without an armed trap to defer.
 
-## Photographer, Medium, Smuggler
+## Expedition Photographer
 
-Not implemented. Their W/E/R slots report themselves unavailable and the HUD draws them as empty.
+**W - Flashbulb.** A short cone flash, 35 degrees either side, 350 units. Every enemy caught takes 25 Exposure,
+a half-second stagger and a brief slow, and banks a little Break pressure. Perfect Moment still applies, so a
+subject caught mid-telegraph gives up more. The A node deliberately has **no** interrupt: a hard interrupt is
+what Blinding Flash adds. Castable while framing.
+
+**E - Develop.** Consumes the stored Exposure on one enemy within 850 units and deals 0.7 damage per point, so
+the payoff is exactly what was invested in that subject. Refused when the subject has no Exposure. Castable
+while framing, which is when the Exposure is being built.
+
+**R - Impossible Photograph.** Captures the visible battlefield: every living enemy within 1200 units with line
+of sight is brought to 80 Exposure, and for eight seconds stored Exposure stops decaying and Develop no longer
+spends it, so the same readings can be developed repeatedly. Develop's cooldown drops while the window runs, and
+a Develop already cooling down comes back on the shorter wait rather than the one it started: an altered state
+answers now, not once the previous wait runs out. Activation spikes Madness. It cannot be cast with nothing in
+view.
+
+## Stage Medium
+
+**W - Beckon.** Every bound spirit detaches and travels to a chosen point, spreading around it so they do not
+stack. A travelling spirit's passive presence is suspended on the way, except during Open Seance, where the
+spirits are fully manifest and stay active as they cross. Each one arriving makes a single pulse: allies within
+180 units gain shield scaled by that spirit's Attention, enemies are slowed and take Break pressure. Spirits
+arrive as ground presences, so a called spirit leaves whatever it was attached to.
+
+**E - Intercession.** Calls on the highest-Attention spirit, ties broken on the lowest id so the choice is
+stable. What it does depends on where that spirit is bound: an enemy binding takes damage scaled by Attention,
+a strong slow, displacement away from the Medium and heavy Break pressure; an ally binding gains shield and
+damage reduction that is held across the next combat step; a ground binding shields allies and slows enemies
+within 180 units. It normally exhausts the spirit, leaving a quarter of its Attention. Refused below 20
+Attention, so a spirit is kept for a real intervention rather than spent because it was available.
+
+**R - Open Seance.** For eight seconds the bound spirits fully manifest: passive presence doubles, travelling
+spirits stay active, and Intercession no longer exhausts the spirit it calls on. Beckon and Intercession both
+come off cooldown faster while it runs. Activation spikes Madness. It needs at least one bound spirit.
+
+## Bare-Knuckle Smuggler
+
+Not implemented. Its W/E/R slots report themselves unavailable and the HUD draws them as empty.
 
 ## Bots
 

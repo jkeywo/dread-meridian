@@ -49,6 +49,12 @@ UDMCombatPresentation::UDMCombatPresentation()
     ConstructorHelpers::FObjectFinder<UNiagaraSystem> Wave(TEXT("/Game/BigNiagaraBundle/NiagaraEffectMix2/Effects/NS_ShockWave")); Shock = Wave.Object;
     ConstructorHelpers::FObjectFinder<UNiagaraSystem> Aura(TEXT("/Game/BigNiagaraBundle/NiagaraEffectsMix/Effects/NS_EnergyLife")); DeferredAura = Aura.Object;
     ConstructorHelpers::FObjectFinder<UNiagaraSystem> Mark(TEXT("/Game/NiagaraExamples/FX_Markers/NS_Marker_Target")); TargetMark = Mark.Object;
+    ConstructorHelpers::FObjectFinder<UNiagaraSystem> Shimmer(TEXT("/Game/Explosions_W3Vol1/Niagara/NS_FlareShimmer1")); Flashbulb = Shimmer.Object;
+    ConstructorHelpers::FObjectFinder<UNiagaraSystem> Shine(TEXT("/Game/BigNiagaraBundle/NiagaraBlackAndWhite/NiagaraSystems/White/NS_ShiningWhite")); Developed = Shine.Object;
+    ConstructorHelpers::FObjectFinder<UNiagaraSystem> Photons(TEXT("/Game/BigNiagaraBundle/NiagaraAbstractSpace3/Effects/NS_The_Birth_Of_Photons")); PhotographAura = Photons.Object;
+    ConstructorHelpers::FObjectFinder<UNiagaraSystem> Spirits(TEXT("/Game/BigNiagaraBundle/NiagaraEffectMix2/Effects/NS_Spirits_of_Colors")); SpiritArrival = Spirits.Object;
+    ConstructorHelpers::FObjectFinder<UNiagaraSystem> Reverse(TEXT("/Game/BigNiagaraBundle/NiagaraAbstractSpace2/Effects/NS_ReverseBurst")); Intervention = Reverse.Object;
+    ConstructorHelpers::FObjectFinder<UNiagaraSystem> Ring(TEXT("/Game/BigNiagaraBundle/NiagaraAbstractSpace2/Effects/NS_RingOfOmnipotence")); SeanceCircle = Ring.Object;
 }
 void UDMCombatPresentation::Spawn(UNiagaraSystem* System, const FVector& At, float Scale, float Seconds)
 {
@@ -159,12 +165,16 @@ void UDMCombatPresentation::UpdatePresentation()
         bWasDown = true; if (Kind == 3) { HeldItem->SetVisibility(false); } return;
     }
     if (bWasDown) { bWasDown = false; Action(Clips[GetUp], 1.f); }
+    // The camera is raised while framing and for a moment after a Flashbulb or Impossible Photograph. Those are
+    // brief poses rather than gestures: the migrated camera clip runs 21 seconds, and Action() time-scales, so
+    // playing it over half a second would run it at 35x.
     const bool bFrame = Actor->Primary->FrameTarget != nullptr;
-    if (Kind == 2 && bCameraHeld != bFrame) { Equip(bFrame); }
+    const bool bCamera = bFrame || Now < CameraUntil;
+    if (Kind == 2 && bCameraHeld != bCamera) { Equip(bCamera); }
     if (Kind == 3) { HeldItem->SetVisibility(Now < ActionUntil || !Actor->Primary->Bindings.IsEmpty()); }
     if (ActionClip && Now < ActionUntil) { return; }
     ActionClip = nullptr;
-    if (bFrame) { Play(Clips[RifleAim], true); return; }
+    if (bCamera) { Play(Clips[RifleAim], true); return; }
     if (Actor->Primary->HeldTarget || Actor->IsRestrained()) { Play(Clips[Hold], true); return; }
     if (Actor->ReviveProgress > 0) { Play(Clips[Place], true); return; }
     const EDMLocomotion Previous = Locomotion.Phase;
@@ -267,6 +277,24 @@ void UDMCombatPresentation::Cue(uint8 Event, FVector Target)
     else if (Event == 12) { Spawn(WireSnap, Target, .5f, 1.f); Spawn(Shock, Target, .5f, 1.f); Burst(Target, Target, FLinearColor(3, 1.6f, .5f), 9); }
     else if (Event == 13) { Attach(DeferredAura, 6.f); }
     else if (Event == 14) { Spawn(TargetMark, Target + FVector(0, 0, 40), .6f, 1.5f); }
+    // ---- Photographer kit. The camera rises for the flash and the photograph; Develop plays on the subject.
+    else if (Event == 15)
+    {
+        CameraUntil = GetWorld()->GetTimeSeconds() + .6f;
+        const FVector Lens = HeldItem ? HeldItem->GetComponentLocation() : Actor->GetMesh()->GetSocketLocation(TEXT("hand_r"));
+        Spawn(Flashbulb, Lens, .5f, .7f);
+        Burst(Lens, Target, FLinearColor(4, 4, 5), 1);
+    }
+    else if (Event == 16) { Spawn(Developed, Target + FVector(0, 0, 40), .4f, .9f); Burst(Target, Target, FLinearColor(1.4f, 2.6f, 4), 5); }
+    else if (Event == 17) { CameraUntil = GetWorld()->GetTimeSeconds() + 1.f; Attach(PhotographAura, 8.f); }
+    // ---- Medium kit. 18 plays on the caster when spirits are called and again where each one lands.
+    else if (Event == 18)
+    {
+        if (Target.Equals(Actor->GetActorLocation(), 1.f)) { Action(Clips[CastUp], .7f); }
+        Spawn(SpiritArrival, Target, .5f, 1.2f);
+    }
+    else if (Event == 19) { Action(Clips[Cast1], .6f); Spawn(Intervention, Target, .5f, 1.f); Burst(Actor->GetMesh()->GetSocketLocation(TEXT("hand_r")), Target, FLinearColor(.7f, .3f, 2.2f), 3); }
+    else if (Event == 20) { Spawn(SeanceCircle, Target - FVector(0, 0, 80), .6f, 8.f); }
     const FVector Direction = Target - Actor->GetActorLocation();
     if (!Direction.IsNearlyZero())
     {

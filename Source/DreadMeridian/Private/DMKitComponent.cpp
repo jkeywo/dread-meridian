@@ -40,6 +40,43 @@ namespace
     constexpr float WireBreakPressure = 35;
     constexpr float SatchelDamage = 55;          // mirrors UDMPrimaryComponent's satchel blast
     constexpr float DeadGroundMadness = 30;
+
+    // Photographer.
+    constexpr float FlashHalfAngle = 35;
+    constexpr float FlashExposure = 25;
+    constexpr float FlashSlow = .5f;
+    constexpr int32 FlashSlowTicks = 10;
+    constexpr int32 FlashStaggerTicks = 8;
+    constexpr float FlashBreakPressure = 10;
+    constexpr float DevelopDamagePerExposure = .7f;
+    constexpr float DevelopReadyExposure = 40;   // what a bot waits for; a human may spend any Exposure
+    constexpr int32 DevelopCooldownDuringR = 20;
+    constexpr float PhotographExposure = 80;
+    constexpr float UltimateMadness = 30;
+
+    // Medium.
+    constexpr float BeckonSpeed = 90;            // units per tick
+    constexpr float BeckonRingRadius = 60;       // spread around the arrival point so spirits do not stack
+    constexpr float ArrivalShield = 8;
+    constexpr float ArrivalShieldPerAttention = .12f;
+    constexpr float ArrivalSlow = .4f;
+    constexpr int32 ArrivalSlowTicks = 15;
+    constexpr float ArrivalBreakPressure = 10;
+    constexpr float IntercessionMinAttention = 20;
+    constexpr float IntercessionAllyShield = 10;
+    constexpr float IntercessionAllyPerAttention = .4f;
+    constexpr float IntercessionGroundShield = 6;
+    constexpr float IntercessionGroundPerAttention = .2f;
+    constexpr float IntercessionDamage = 20;
+    constexpr float IntercessionDamagePerAttention = .3f;
+    constexpr float IntercessionSlow = .6f;
+    constexpr int32 IntercessionSlowTicks = 20;
+    constexpr float IntercessionPush = 200;
+    constexpr float IntercessionBreakPressure = 30;
+    constexpr float IntercessionSpend = .25f;    // Attention kept after a normal intervention
+    constexpr int32 IntercessionCooldownDuringR = 30;
+    constexpr int32 BeckonCooldownDuringR = 20;
+    constexpr int32 ProtectionTicks = 10;
 }
 
 UDMKitComponent::UDMKitComponent() { SetIsReplicatedByDefault(true); }
@@ -199,6 +236,13 @@ void UDMKitComponent::CancelWire()
 void UDMKitComponent::StartCooldown(EDMKitSlot Slot, int32 Ticks)
 { NextCastTick[Index(Slot)] = Now() + FMath::Max(0, Ticks); RefreshCooldowns(); }
 
+void UDMKitComponent::ShortenCooldown(EDMKitSlot Slot, int32 Ticks)
+{
+    const int32 Target = Now() + FMath::Max(0, Ticks);
+    NextCastTick[Index(Slot)] = FMath::Min(NextCastTick[Index(Slot)], Target);
+    RefreshCooldowns();
+}
+
 void UDMKitComponent::RefreshCooldowns()
 {
     const int32 Tick = Now();
@@ -281,6 +325,7 @@ void UDMKitComponent::Step(int32 Tick)
     }
     else { ProtectionTarget = nullptr; }
     if (Actor->Investigator->Kind == EDMInvestigator::Sapper) { StepSapper(Tick); }
+    else if (Actor->Investigator->Kind == EDMInvestigator::Medium) { StepMedium(Tick); }
     // Ends after StepSapper so the last tick of the window still defers, and any tags left open resolve at once.
     if (RActiveUntilTick > 0 && Tick >= RActiveUntilTick)
     {
@@ -326,15 +371,315 @@ FString UDMKitComponent::ReplicationSummary() const
 
 FString UDMKitComponent::ValidateAbility(EDMKitSlot Slot, ADMCombatant* Target, FVector Point) const
 {
-    if (Self()->Investigator->Kind == EDMInvestigator::Sapper) { return ValidateSapper(Slot, Point); }
-    return Name(Slot) + TEXT(" is not implemented yet");
+    switch (Self()->Investigator->Kind)
+    {
+    case EDMInvestigator::Sapper: return ValidateSapper(Slot, Point);
+    case EDMInvestigator::Photographer: return ValidatePhotographer(Slot, Target, Point);
+    case EDMInvestigator::Medium: return ValidateMedium(Slot, Point);
+    default: return Name(Slot) + TEXT(" is not implemented yet");
+    }
 }
 
 bool UDMKitComponent::ResolveAbility(EDMKitSlot Slot, ADMCombatant* Target, FVector Point)
 {
-    if (Self()->Investigator->Kind == EDMInvestigator::Sapper) { return ResolveSapper(Slot, Point); }
-    LastFailure = Name(Slot) + TEXT(" is not implemented yet");
-    return false;
+    switch (Self()->Investigator->Kind)
+    {
+    case EDMInvestigator::Sapper: return ResolveSapper(Slot, Point);
+    case EDMInvestigator::Photographer: return ResolvePhotographer(Slot, Target, Point);
+    case EDMInvestigator::Medium: return ResolveMedium(Slot, Point);
+    default: LastFailure = Name(Slot) + TEXT(" is not implemented yet"); return false;
+    }
+}
+
+// ------------------------------------------------------------------------------------------- Medium
+
+ADMAbilityMarker* UDMKitComponent::BestSpirit() const
+{
+    ADMAbilityMarker* Best = nullptr;
+    for (ADMAbilityMarker* Spirit : Self()->Primary->Bindings)
+    {
+        if (!IsValid(Spirit) || Spirit->bTravelling) { continue; }
+        if (!Best || Spirit->Attention > Best->Attention
+            || (Spirit->Attention == Best->Attention && Spirit->SpiritId < Best->SpiritId)) { Best = Spirit; }
+    }
+    return Best;
+}
+
+FString UDMKitComponent::ValidateMedium(EDMKitSlot Slot, FVector Point) const
+{
+    const ADMCombatant* Actor = Self();
+    const FDMKitSpec& Kit = Spec(EDMInvestigator::Medium, Slot);
+    switch (Slot)
+    {
+    case EDMKitSlot::W:
+    {
+        if (Actor->Primary->Bindings.IsEmpty()) { return TEXT("No spirits to call"); }
+        if (FVector::DistSquared2D(Actor->GetActorLocation(), Point) > FMath::Square(Kit.Range)) { return TEXT("Out of Beckon range"); }
+        FVector Ground;
+        if (!Actor->Primary->Ground(Point, Ground)) { return TEXT("Choose clear ground in the arena"); }
+        return TEXT("");
+    }
+    case EDMKitSlot::E:
+    {
+        const ADMAbilityMarker* Spirit = BestSpirit();
+        if (!Spirit) { return TEXT("No spirit to call on"); }
+        if (Spirit->Attention < IntercessionMinAttention) { return TEXT("No spirit is listening"); }
+        return TEXT("");
+    }
+    default:
+        return Actor->Primary->Bindings.IsEmpty() ? TEXT("No spirits to manifest") : TEXT("");
+    }
+}
+
+bool UDMKitComponent::ResolveMedium(EDMKitSlot Slot, FVector Point)
+{
+    ADMCombatant* Actor = Self();
+    ADMCombatGameMode* M = Mode();
+    if (!M) { return false; }
+    const int32 Tick = Now();
+    const FDMKitSpec& Kit = Spec(EDMInvestigator::Medium, Slot);
+    switch (Slot)
+    {
+    case EDMKitSlot::W:
+    {
+        FVector Ground;
+        if (!Actor->Primary->Ground(Point, Ground)) { LastFailure = TEXT("Choose clear ground in the arena"); return false; }
+        // Every spirit answers, and arrives as a ground presence: a called spirit leaves whatever it was attached to.
+        int32 Called = 0;
+        const int32 Total = Actor->Primary->Bindings.Num();
+        for (int32 I = 0; I < Total; ++I)
+        {
+            ADMAbilityMarker* Spirit = Actor->Primary->Bindings[I].Get();
+            if (!IsValid(Spirit)) { continue; }
+            const float Angle = Total > 0 ? I * UE_TWO_PI / Total : 0.f;
+            Spirit->BoundTarget = nullptr;
+            Spirit->bTravelling = true;
+            Spirit->TravelGoal = Ground + FVector(FMath::Cos(Angle) * BeckonRingRadius, FMath::Sin(Angle) * BeckonRingRadius, 0);
+            Actor->Investigator->ClearSpiritTarget(Spirit->SpiritId);
+            ++Called;
+        }
+        StartCooldown(Slot, IsRActive() ? BeckonCooldownDuringR : Kit.CooldownTicks);
+        TSharedPtr<FJsonObject> Extra = MakeShared<FJsonObject>();
+        Extra->SetNumberField(TEXT("spirits"), Called);
+        Emit(Slot, TEXT("beckon"), nullptr, Extra);
+        Actor->MulticastPresentation(18, Ground);
+        return true;
+    }
+    case EDMKitSlot::E:
+    {
+        ADMAbilityMarker* Spirit = BestSpirit();
+        if (!Spirit) { LastFailure = TEXT("No spirit to call on"); return false; }
+        const float Attention = Spirit->Attention;
+        ADMCombatant* Bound = Spirit->BoundTarget.Get();
+        const TCHAR* Mode2 = TEXT("ground");
+        if (IsValid(Bound) && Bound->bIsEnemy && !Bound->IsDown())
+        {
+            Mode2 = TEXT("enemy");
+            FDMControl Control;
+            Control.Damage = IntercessionDamage + Attention * IntercessionDamagePerAttention;
+            Control.Slow = IntercessionSlow; Control.SlowTicks = IntercessionSlowTicks;
+            Control.Displacement = (Bound->GetActorLocation() - Actor->GetActorLocation()).GetSafeNormal2D() * IntercessionPush;
+            Control.BreakPressure = IntercessionBreakPressure;
+            Bound->ApplyControl(Control, Actor, TEXT("ability.e.intercession"));
+        }
+        else if (IsValid(Bound) && !Bound->bIsEnemy && !Bound->IsDown())
+        {
+            Mode2 = TEXT("ally");
+            Bound->AddShield(IntercessionAllyShield + Attention * IntercessionAllyPerAttention);
+            // Held for a few ticks by Step, because StepCombat clears SpiritProtection before any attack resolves.
+            ProtectionTarget = Bound; ProtectionUntilTick = Tick + ProtectionTicks;
+        }
+        else
+        {
+            const FVector Centre = Spirit->GetActorLocation();
+            for (ADMCombatant* Unit : M->GetCombatants())
+            {
+                if (!IsValid(Unit) || Unit->IsDown()) { continue; }
+                if (FVector::DistSquared2D(Centre, Unit->GetActorLocation()) > FMath::Square(UDMPrimaryComponent::SpiritRadius)) { continue; }
+                if (Unit->bIsEnemy)
+                {
+                    FDMControl Control;
+                    Control.Slow = ArrivalSlow; Control.SlowTicks = ArrivalSlowTicks; Control.BreakPressure = IntercessionBreakPressure * .5f;
+                    Unit->ApplyControl(Control, Actor, TEXT("ability.e.intercession"));
+                }
+                else { Unit->AddShield(IntercessionGroundShield + Attention * IntercessionGroundPerAttention); }
+            }
+        }
+        // Open Seance is exactly the window where a spirit is not exhausted by being called upon.
+        if (!IsRActive()) { Actor->Investigator->SpendAttention(Spirit->SpiritId, IntercessionSpend); }
+        StartCooldown(Slot, IsRActive() ? IntercessionCooldownDuringR : Kit.CooldownTicks);
+        TSharedPtr<FJsonObject> Extra = MakeShared<FJsonObject>();
+        Extra->SetStringField(TEXT("spirit_id"), Spirit->SpiritId);
+        Extra->SetNumberField(TEXT("attention"), Attention);
+        Extra->SetStringField(TEXT("mode"), Mode2);
+        Emit(Slot, TEXT("intercession"), Bound, Extra);
+        Actor->MulticastPresentation(19, IsValid(Bound) ? Bound->GetActorLocation() : Spirit->GetActorLocation());
+        return true;
+    }
+    default:
+        RActiveUntilTick = Tick + Kit.DurationTicks;
+        StartCooldown(Slot, Kit.CooldownTicks);
+        // Same reasoning as the photograph: the seance answers now, not once the previous wait runs out.
+        ShortenCooldown(EDMKitSlot::E, IntercessionCooldownDuringR);
+        ShortenCooldown(EDMKitSlot::W, BeckonCooldownDuringR);
+        Actor->Investigator->AddMadness(UltimateMadness, TEXT("open_seance"));
+        Emit(Slot, TEXT("open_seance"));
+        Actor->MulticastPresentation(20, Actor->GetActorLocation());
+        return true;
+    }
+}
+
+void UDMKitComponent::StepMedium(int32 Tick)
+{
+    ADMCombatant* Actor = Self();
+    ADMCombatGameMode* M = Mode();
+    if (!M) { return; }
+    for (ADMAbilityMarker* Spirit : Actor->Primary->Bindings)
+    {
+        if (!IsValid(Spirit) || !Spirit->bTravelling) { continue; }
+        const FVector At = Spirit->GetActorLocation();
+        const FVector To = Spirit->TravelGoal;
+        if (FVector::DistSquared2D(At, To) > FMath::Square(BeckonSpeed))
+        {
+            Spirit->SetActorLocation(At + (To - At).GetSafeNormal2D() * BeckonSpeed);
+            continue;
+        }
+        // Arrival: the spirit settles as a ground presence and makes its one pulse.
+        Spirit->SetActorLocation(To);
+        Spirit->bTravelling = false;
+        Actor->Investigator->UpdateSpiritLocationById(Spirit->SpiritId, To);
+        for (ADMCombatant* Unit : M->GetCombatants())
+        {
+            if (!IsValid(Unit) || Unit->IsDown()) { continue; }
+            if (FVector::DistSquared2D(To, Unit->GetActorLocation()) > FMath::Square(UDMPrimaryComponent::SpiritRadius)) { continue; }
+            if (Unit->bIsEnemy)
+            {
+                FDMControl Control;
+                Control.Slow = ArrivalSlow; Control.SlowTicks = ArrivalSlowTicks; Control.BreakPressure = ArrivalBreakPressure;
+                Unit->ApplyControl(Control, Actor, TEXT("ability.w.beckon"));
+            }
+            else { Unit->AddShield(ArrivalShield + Spirit->Attention * ArrivalShieldPerAttention); }
+        }
+        TSharedPtr<FJsonObject> Extra = MakeShared<FJsonObject>();
+        Extra->SetStringField(TEXT("spirit_id"), Spirit->SpiritId);
+        Emit(EDMKitSlot::W, TEXT("spirit_arrived"), nullptr, Extra);
+        Actor->MulticastPresentation(18, To);
+    }
+}
+
+// ------------------------------------------------------------------------------------- Photographer
+
+FString UDMKitComponent::ValidatePhotographer(EDMKitSlot Slot, ADMCombatant* Target, FVector Point) const
+{
+    const ADMCombatant* Actor = Self();
+    const FVector Origin = Actor->GetActorLocation();
+    const FDMKitSpec& Kit = Spec(EDMInvestigator::Photographer, Slot);
+    switch (Slot)
+    {
+    case EDMKitSlot::W:
+        // A direction cast: the flash reaches whatever the cone covers, not a chosen subject.
+        if (FVector::DistSquared2D(Origin, Point) <= 1) { return TEXT("Choose a direction to flash"); }
+        return TEXT("");
+    case EDMKitSlot::E:
+        if (!Target || !Target->bIsEnemy || Target->IsDown()) { return TEXT("Choose a living enemy"); }
+        if (FVector::DistSquared2D(Origin, Target->GetActorLocation()) > FMath::Square(Kit.Range)) { return TEXT("Out of Develop range"); }
+        if (!Sight(Origin, Target->GetActorLocation())) { return TEXT("Line of sight blocked"); }
+        if (Actor->Investigator->PeekExposure(Target->EntityId) <= 0) { return TEXT("No Exposure on that subject"); }
+        return TEXT("");
+    default:
+        // The photograph captures the visible battlefield, so it needs something visible to capture.
+        if (const ADMCombatGameMode* M = Mode())
+        {
+            for (const ADMCombatant* Enemy : M->GetCombatants())
+            {
+                if (!IsValid(Enemy) || !Enemy->bIsEnemy || Enemy->IsDown()) { continue; }
+                if (FVector::DistSquared2D(Origin, Enemy->GetActorLocation()) > FMath::Square(Kit.Range)) { continue; }
+                if (Sight(Origin, Enemy->GetActorLocation())) { return TEXT(""); }
+            }
+        }
+        return TEXT("Nothing in view to photograph");
+    }
+}
+
+bool UDMKitComponent::ResolvePhotographer(EDMKitSlot Slot, ADMCombatant* Target, FVector Point)
+{
+    ADMCombatant* Actor = Self();
+    ADMCombatGameMode* M = Mode();
+    if (!M) { return false; }
+    const int32 Tick = Now();
+    const FDMKitSpec& Kit = Spec(EDMInvestigator::Photographer, Slot);
+    switch (Slot)
+    {
+    case EDMKitSlot::W:
+    {
+        const FVector Origin = Actor->GetActorLocation();
+        const FVector Direction = (Point - Origin).GetSafeNormal2D();
+        int32 Hits = 0;
+        for (ADMCombatant* Enemy : M->GetCombatants())
+        {
+            if (!IsValid(Enemy) || !Enemy->bIsEnemy || Enemy->IsDown()) { continue; }
+            if (!DMKitRules::PointInCone(Origin, Direction, FlashHalfAngle, Kit.Range, Enemy->GetActorLocation())) { continue; }
+            if (!Sight(Origin, Enemy->GetActorLocation())) { continue; }
+            // Perfect Moment still applies: a subject caught mid-telegraph gives up more.
+            Actor->Investigator->AddExposure(Enemy->EntityId, FlashExposure, Enemy->bTelegraphActive, Tick);
+            FDMControl Control;
+            Control.Slow = FlashSlow; Control.SlowTicks = FlashSlowTicks;
+            Control.StaggerTicks = FlashStaggerTicks; Control.BreakPressure = FlashBreakPressure;
+            // No interrupt at the A node: a hard interrupt is what Blinding Flash adds.
+            Enemy->ApplyControl(Control, Actor, TEXT("ability.w.flashbulb"));
+            Enemy->MulticastPresentation(14, Enemy->GetActorLocation());
+            ++Hits;
+        }
+        StartCooldown(Slot, Kit.CooldownTicks);
+        TSharedPtr<FJsonObject> Extra = MakeShared<FJsonObject>();
+        Extra->SetNumberField(TEXT("hits"), Hits);
+        Emit(Slot, TEXT("flashbulb"), nullptr, Extra);
+        Actor->MulticastPresentation(15, Point);
+        return true;
+    }
+    case EDMKitSlot::E:
+    {
+        // Impossible Photograph holds the stored Exposure, so Develop reads the same value again inside the window.
+        const float Exposure = Actor->Investigator->ConsumeExposure(Target->EntityId);
+        const float Damage = Exposure * DevelopDamagePerExposure;
+        Actor->DealCombatDamage(Target, Damage, TEXT("ability.e.develop"));
+        StartCooldown(Slot, IsRActive() ? DevelopCooldownDuringR : Kit.CooldownTicks);
+        TSharedPtr<FJsonObject> Extra = MakeShared<FJsonObject>();
+        Extra->SetNumberField(TEXT("exposure"), Exposure);
+        Extra->SetNumberField(TEXT("damage"), Damage);
+        Emit(Slot, TEXT("develop"), Target, Extra);
+        Actor->MulticastPresentation(16, Target->GetActorLocation());
+        return true;
+    }
+    default:
+    {
+        const FVector Origin = Actor->GetActorLocation();
+        int32 Subjects = 0;
+        for (ADMCombatant* Enemy : M->GetCombatants())
+        {
+            if (!IsValid(Enemy) || !Enemy->bIsEnemy || Enemy->IsDown()) { continue; }
+            if (FVector::DistSquared2D(Origin, Enemy->GetActorLocation()) > FMath::Square(Kit.Range)) { continue; }
+            if (!Sight(Origin, Enemy->GetActorLocation())) { continue; }
+            const float Current = Actor->Investigator->PeekExposure(Enemy->EntityId);
+            if (Current < PhotographExposure)
+            { Actor->Investigator->AddExposure(Enemy->EntityId, PhotographExposure - Current, false, Tick); }
+            Enemy->MulticastPresentation(14, Enemy->GetActorLocation());
+            ++Subjects;
+        }
+        RActiveUntilTick = Tick + Kit.DurationTicks;
+        Actor->Investigator->bExposureFrozen = true;
+        StartCooldown(Slot, Kit.CooldownTicks);
+        // The point of the window is developing the same readings repeatedly, so a Develop already cooling down
+        // comes back on the window's shorter wait rather than the one it started.
+        ShortenCooldown(EDMKitSlot::E, DevelopCooldownDuringR);
+        Actor->Investigator->AddMadness(UltimateMadness, TEXT("impossible_photograph"));
+        TSharedPtr<FJsonObject> Extra = MakeShared<FJsonObject>();
+        Extra->SetNumberField(TEXT("subjects"), Subjects);
+        Emit(Slot, TEXT("impossible_photograph"), nullptr, Extra);
+        Actor->MulticastPresentation(17, Origin);
+        return true;
+    }
+    }
 }
 
 // ------------------------------------------------------------------------------------------- Sapper
