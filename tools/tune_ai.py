@@ -133,7 +133,10 @@ HAND_KNOBS: dict[str, list[Knob]] = {
                Knob("Abilities.Beckon.Base", 1, 40, 8), Knob("Abilities.Intercession.Base", 1, 40, 10),
                Knob("Abilities.OpenSeance.Base", 1, 90, 27),
                Knob("Abilities.OpenSeance.ThresholdCooldownCap", 50, 600, 150, True)],
-    "Smuggler": COMPANION + [Knob("Abilities.Clinch.Base", 1, 40, 10)],
+    "Smuggler": COMPANION + [Knob("Abilities.Clinch.Base", 1, 40, 10),
+                 Knob("Abilities.ShoulderThrough.Base", 1, 40, 6), Knob("Abilities.DigIn.Base", 1, 30, 4),
+                 Knob("Abilities.DrownedMan.Base", 1, 90, 26.4),
+                 Knob("Abilities.DrownedMan.ThresholdCooldownCap", 50, 600, 150, True)],
 }
 KNOBS: dict[str, list[Knob]] = {profile: with_baked_defaults(profile, knobs) for profile, knobs in HAND_KNOBS.items()}
 LATCHES = [("FleeEnter", "FleeExit"), ("KeepDistanceEnter", "KeepDistanceExit")]  # enter must stay below exit

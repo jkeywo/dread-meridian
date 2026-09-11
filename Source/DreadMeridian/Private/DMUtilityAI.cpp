@@ -666,6 +666,53 @@ namespace
                     Ability(EDMAIAction::OpenSeance, nullptr, S.Location, Veto, Value, -1, 0);
                 }
             }
+            if (bCompanion && !S.bProfileRange && S.Kind == EDMInvestigator::Smuggler)
+            {
+                if (const FDMAIAbilityTemplate* T = W.FindAbility(EDMAIAction::ShoulderThrough); T && F)
+                {
+                    // Worth what the run through would reach, so a charge into a line pays more than into one body.
+                    const FVector Dir = (F->Location - S.Location).GetSafeNormal2D();
+                    float Value = 0;
+                    for (const FDMAIActorView& A : C.Actors)
+                    {
+                        if (!Hostile(A)) { continue; }
+                        const FVector End = S.Location + Dir * FMath::Min(F->Distance2D + 100.f, T->Range);
+                        if (DMKitRules::DistanceToSegment2D(S.Location, End, A.Location) <= T->Radius) { Value += T->Magnitude * Worth(A); }
+                    }
+                    const TCHAR* Veto = F->Distance2D < 100 ? VetoRedundant    // already in reach of a fist
+                        : F->Distance2D > T->Range ? VetoOutOfRange
+                        : S.HeldTarget != INDEX_NONE ? VetoRedundant
+                        : !S.bWReady ? VetoCooldown : nullptr;
+                    Ability(EDMAIAction::ShoulderThrough, F, F->Location, Veto, Value, -1, 0);
+                }
+                if (const FDMAIAbilityTemplate* T = W.FindAbility(EDMAIAction::DigIn))
+                {
+                    // Braced against what is actually coming in: damage prevented over the stance, plus the shove.
+                    // Every attacker aimed at the Smuggler counts, near or far, because the stance blunts the blow
+                    // wherever it came from; only the shove cares about who is close enough to reach.
+                    float Prevented = 0; int32 Close = 0;
+                    for (const FDMAIActorView& A : C.Actors)
+                    {
+                        if (!Hostile(A)) { continue; }
+                        if (A.AttackTargetIndex == S.Index) { Prevented += A.AttackDamage * 20.f / FMath::Max(1, A.AttackInterval); }
+                        if (A.Distance2D <= T->Radius) { ++Close; }
+                    }
+                    const float Value = T->Magnitude * Prevented + T->SecondaryMagnitude * Close;
+                    const TCHAR* Veto = Prevented <= 0 ? VetoRedundant
+                        : S.bBraced ? VetoRedundant
+                        : S.HeldTarget != INDEX_NONE ? VetoRedundant
+                        : !S.bEReady ? VetoCooldown : nullptr;
+                    Ability(EDMAIAction::DigIn, nullptr, S.Location, Veto, Value, -1, 0);
+                }
+                if (const FDMAIAbilityTemplate* T = W.FindAbility(EDMAIAction::DrownedMan))
+                {
+                    float Value = 0;
+                    for (const FDMAIActorView& A : C.Actors)
+                    { if (Hostile(A) && A.Distance2D <= T->Radius) { Value += T->Magnitude * Worth(A) * (A.bCommon ? 1.f : 2.f); } }
+                    const TCHAR* Veto = Value <= 0 ? VetoRedundant : !S.bRReady ? VetoCooldown : nullptr;
+                    Ability(EDMAIAction::DrownedMan, nullptr, S.Location, Veto, Value, -1, 0);
+                }
+            }
 
             // Pickups (Sapper).
             if (bCompanion && S.Kind == EDMInvestigator::Sapper && S.Charges < S.ChargeCapacity)
@@ -1023,6 +1070,19 @@ namespace DMUtilityAI
         case EDMInvestigator::Smuggler:
             D.Template(EDMAIAction::Clinch, 180, 0, 10, 0, 10, 40, 0, false);
             D.Add(EDMAIAction::Clinch, EDMAIRank::Tactical, 1, ChMove | ChCast, QCons());
+            // Radius is the half-width the run through sweeps. Routine, like the other kits' support abilities:
+            // closing distance should not pre-empt a grab that is already worth making. Base 6 -> threshold 10.6,
+            // so one common in the path (15) is worth charging.
+            D.Template(EDMAIAction::ShoulderThrough, 400, 70, 15, 0, 6, 90, 0, false);
+            D.Add(EDMAIAction::ShoulderThrough, EDMAIRank::Routine, 1, ChMove | ChCast, QCons());
+            // Magnitude scales damage prevented over the stance; Secondary rewards a crowd close enough to shove.
+            // Base 4 -> threshold 8.2: two Gunmen on the Smuggler with one in shoving reach (17) brace, a single
+            // one shooting from across the arena (3.5) does not.
+            D.Template(EDMAIAction::DigIn, 0, 200, .4f, 10, 4, 120, 0, false);
+            D.Add(EDMAIAction::DigIn, EDMAIRank::Tactical, 1, ChCast, QCons());
+            // Base 26.4 with the cap -> threshold 57.7: two commons in reach (80) or one elite (80) is worth it.
+            D.Template(EDMAIAction::DrownedMan, 0, 300, 40, 0, 26.4f, 600, 0, false, 150);
+            D.Add(EDMAIAction::DrownedMan, EDMAIRank::Tactical, 1, ChCast, QCons());
             break;
         default: break;
         }

@@ -458,6 +458,47 @@ bool FDMUtilityAIConservationTest::RunTest(const FString& Parameters)
         D = R.Step();
         TestTrue(TEXT("Spirits standing in a crowd are worth manifesting"), D.Chose(EDMAIAction::OpenSeance));
     }
+    // ---- Smuggler named kit.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        R.C.Self.AttackRange = 160;
+        FDMAIActorView& F = R.Add(FVector(300, 0, 0), true);
+        FDMAIDecision D = R.Step();
+        const FDMAIOption* Charge = FRig::Find(D, EDMAIAction::ShoulderThrough);
+        TestTrue(TEXT("A charge is worth closing one body"), Charge && Charge->Veto == nullptr && Charge->Score > 0);
+        const float Alone = Charge->Value;
+        // A second enemy standing on the same line is run through as well.
+        R.Add(FVector(200, 0, 0), true); D = R.Step();
+        Charge = FRig::Find(D, EDMAIAction::ShoulderThrough);
+        TestTrue(TEXT("A charge through a line is worth more"), Charge && Charge->Value > Alone);
+        F.Location = FVector(80, 0, 0); D = R.Step();
+        TestTrue(TEXT("No charge at a body already in reach"), VetoIs(FRig::Find(D, EDMAIAction::ShoulderThrough), TEXT("redundant")));
+    }
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        FDMAIActorView& Shooter = R.Add(FVector(400, 0, 0), true);
+        // Real Gunman numbers: damage 7 on a 1.6s cadence. One at range is not worth bracing for.
+        Shooter.AttackDamage = 7; Shooter.AttackInterval = 16; Shooter.AttackTargetIndex = R.C.Self.Index;
+        FDMAIDecision D = R.Step();
+        const FDMAIOption* Brace = FRig::Find(D, EDMAIAction::DigIn);
+        TestTrue(TEXT("One distant shooter is not worth bracing"), Brace && Brace->Veto == nullptr && Brace->Score == 0);
+        FDMAIActorView& Second = R.Add(FVector(150, 0, 0), true);
+        Second.AttackDamage = 7; Second.AttackInterval = 16; Second.AttackTargetIndex = R.C.Self.Index;
+        D = R.Step();
+        TestTrue(TEXT("Two shooters on the Smuggler are"), D.Chose(EDMAIAction::DigIn));
+        R.C.Self.bBraced = true; D = R.Step();
+        TestTrue(TEXT("No second brace while already braced"), VetoIs(FRig::Find(D, EDMAIAction::DigIn), TEXT("redundant")));
+    }
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        R.Add(FVector(200, 0, 0), true);
+        FDMAIDecision D = R.Step();
+        const FDMAIOption* Drowned = FRig::Find(D, EDMAIAction::DrownedMan);
+        TestTrue(TEXT("One common is not worth the ultimate"), Drowned && Drowned->Veto == nullptr && Drowned->Score == 0);
+        // An elite counts double: exactly the fight the altered state is for.
+        R.C.Actors[1].bCommon = false; D = R.Step();
+        TestTrue(TEXT("An elite is"), D.Chose(EDMAIAction::DrownedMan));
+    }
     {
         FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
         R.C.Self.AttackRange = 600;

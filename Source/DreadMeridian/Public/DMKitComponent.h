@@ -112,6 +112,10 @@ private:
     void StepMedium(int32 Tick);
     /** Highest-Attention bound spirit, or nullptr. Ties break on the lowest serial so the choice is stable. */
     ADMAbilityMarker* BestSpirit() const;
+    FString ValidateSmuggler(EDMKitSlot Slot, FVector Point) const;
+    bool ResolveSmuggler(EDMKitSlot Slot, FVector Point);
+    /** Advances a Shoulder Through: one step per tick, hitting whatever it reaches once each. */
+    void StepSmuggler(int32 Tick);
     /** Suppression ticks, wire crossings and the Dead Ground batch. */
     void StepSapper(int32 Tick);
     /** Spawns a wire between two validated ground points, evicting the oldest when a third is placed. */

@@ -300,12 +300,13 @@ FString ADMSquadController::Execute(ADMCombatGameMode& Mode, const FDMAIContext&
             if (!Self->Kit->RequestWire(O.Point, O.Point2)) { Reject(Self->Kit->LastFailure, O.Action); }
             break;
         case EDMAIAction::DeadGround: case EDMAIAction::ImpossiblePhotograph: case EDMAIAction::OpenSeance:
+        case EDMAIAction::DrownedMan:
             if (!Self->Kit->Request(EDMKitSlot::R, nullptr, Self->GetActorLocation())) { Reject(Self->Kit->LastFailure, O.Action); }
             break;
-        case EDMAIAction::Flashbulb: case EDMAIAction::Beckon:
+        case EDMAIAction::Flashbulb: case EDMAIAction::Beckon: case EDMAIAction::ShoulderThrough:
             if (!Self->Kit->Request(EDMKitSlot::W, nullptr, Point)) { Reject(Self->Kit->LastFailure, O.Action); }
             break;
-        case EDMAIAction::Intercession:
+        case EDMAIAction::Intercession: case EDMAIAction::DigIn:
             if (!Self->Kit->Request(EDMKitSlot::E, nullptr, Self->GetActorLocation())) { Reject(Self->Kit->LastFailure, O.Action); }
             break;
         case EDMAIAction::Develop:

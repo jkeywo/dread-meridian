@@ -52,6 +52,9 @@ private:
     UPROPERTY() TObjectPtr<UNiagaraSystem> SpiritArrival;
     UPROPERTY() TObjectPtr<UNiagaraSystem> Intervention;
     UPROPERTY() TObjectPtr<UNiagaraSystem> SeanceCircle;
+    UPROPERTY() TObjectPtr<UNiagaraSystem> BraceAura;
+    UPROPERTY() TObjectPtr<UNiagaraSystem> Shockwave;
+    UPROPERTY() TObjectPtr<UNiagaraSystem> DrownedAura;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> HeldItem;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> StowedItem;
     UPROPERTY() TObjectPtr<UAnimSequence> Playing;

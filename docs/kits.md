@@ -95,7 +95,22 @@ come off cooldown faster while it runs. Activation spikes Madness. It needs at l
 
 ## Bare-Knuckle Smuggler
 
-Not implemented. Its W/E/R slots report themselves unavailable and the HUD draws them as empty.
+**W - Shoulder Through.** A half-second charge along the aimed direction. Each enemy the run reaches is hit once
+for damage, displacement along the charge and a stagger, and each contact builds Momentum. World geometry stops
+the charge; bodies do not, so the Smuggler barges through a crowd rather than stalling on the first shoulder.
+The charge owns the Smuggler while it runs: no basic attack lands out of a shoulder barge, and the owning client
+stops feeding movement so it does not predict against the server.
+
+**E - Dig In.** A two-second brace: incoming damage is reduced, control and displacement resistance rises, and
+absorbed pressure converts into extra Momentum. Recasting E while braced ends it with a counter-shove that
+damages, displaces and staggers everything within 200 units and carries Break pressure. Letting it run out ends
+it quietly. Either way the cooldown starts from the end of the stance, not its beginning.
+
+**R - Drowned Man Walking.** For eight seconds Momentum cannot fall below a high floor, basic attacks gain
+unnatural reach, Shoulder Through displaces half again as far, and braced Momentum generation doubles. Clinch
+becomes more effective without waiving the Break layer: on a common or already Broken target the hold lasts
+longer and the throw goes farther, and a grab on an unbroken elite lands as pure Break pressure instead of a
+hold. Activation spikes Madness.
 
 ## Bots
 
@@ -107,8 +122,14 @@ on the same profile.
 
 A Sapper bot suppresses where enemies cluster, worth half again as much where it has already prepared ground;
 lays wire across an approach but never behind a retreating enemy or in front of one already past it; and holds
-Dead Ground until two enemies or an elite stand near an armed trap. `DREAD_AI_RESULT` counts casts per slot, so a
-slot that never fires is visible in the tuning harness rather than silently absent.
+Dead Ground until two enemies or an elite stand near an armed trap. A Photographer flashes what its cone would
+catch, worth more against a subject mid-telegraph, and treats Exposure as an investment: it develops a subject
+once the stored reading is worth more than another frame, and lowers that bar inside the photograph. A Medium
+calls its spirits to a threatened ally before the focus, never when they are already gathered there, and keeps a
+barely attended spirit rather than spending it because it was available. A Smuggler charges a line rather than a
+body already in reach, braces against pressure actually aimed at it, and saves the altered state for a pair or
+an elite. `DREAD_AI_RESULT` counts casts per slot, so a slot that never fires is visible in the tuning harness
+rather than silently absent.
 
 Only one cast is chosen per tick, so a named ability competes with Q for the same channel. Suppressing Fire is
 ranked below the traps deliberately: at equal rank it won while Prepared Charges were still worth spending and
@@ -122,6 +143,10 @@ charge count.
 `DreadMeridian.Foundation.Kits.Rules` covers the pure geometry, control conversion, Break meter, slow stacking and
 the deferred-trap ledger. `Kits.Components` covers the resource and combatant state the abilities build on.
 `UtilityAI.Kits` asserts each option fires and holds where intended, with the baked tuning values.
-`DreadMeridian.Editor.Kits.Sapper` drives the three abilities in a live PIE world: cone damage and suppression,
-a wire that ignores an enemy standing clear and triggers on a crossing, and Dead Ground deferring a blast and
-resolving it after the delay. See [combat presentation](combat-presentation.md) for the clips and effects.
+`DreadMeridian.Editor.Kits.<Investigator>` drives each kit in a live PIE world: cone damage and suppression, a
+wire that ignores an enemy standing clear and triggers on a crossing, Dead Ground deferring a blast and
+resolving it after the delay; a flash that exposes and staggers, Develop spending that reading, and the
+photograph holding readings while it runs; spirits called across the field and pulsing where they land, an
+intervention that exhausts its spirit except inside the seance; a charge that carries and displaces, a brace
+that blunts a blow and ends in a shove, and an altered state that lands a grab on an unbroken elite as Break
+pressure rather than a hold. See [combat presentation](combat-presentation.md) for the clips and effects.

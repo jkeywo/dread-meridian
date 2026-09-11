@@ -74,7 +74,11 @@ FString UDMPrimaryComponent::Validate(ADMCombatant* Target, FVector Point, bool 
     if (Kind == EDMInvestigator::Photographer || Kind == EDMInvestigator::Smuggler)
     {
         if (!Target || !Target->bIsEnemy || Target->IsDown()) { return TEXT("Choose a living enemy"); }
-        if (Kind == EDMInvestigator::Smuggler && (Target->IsRestrained() || (!Target->bCommonEnemy && !Target->bBreakVulnerable))) { return TEXT("Target must be common or Break-vulnerable"); }
+        // Drowned Man Walking does not waive the Break layer (GDD 4.4 is LOCKED); it lets the grab land on an
+        // unbroken elite as pure Break pressure instead, so the R still has an elite use without stun-locking one.
+        if (Kind == EDMInvestigator::Smuggler && Target->IsRestrained()) { return TEXT("Target must be common or Break-vulnerable"); }
+        if (Kind == EDMInvestigator::Smuggler && !Target->bCommonEnemy && !Target->bBreakVulnerable && !Actor->Kit->IsRActive())
+        { return TEXT("Target must be common or Break-vulnerable"); }
     }
     if (Target && Target->IsDown() && Kind != EDMInvestigator::Medium) { return TEXT("Target is down"); }
     const FVector Aim = Target ? Target->GetActorLocation() : Point;
@@ -140,20 +144,29 @@ bool UDMPrimaryComponent::Resolve()
     }
     else if (R->Kind == EDMInvestigator::Smuggler)
     {
+        const bool bDrowned = Actor->Kit->IsRActive();
         if (HeldTarget)
         {
             auto* Victim = HeldTarget.Get();
             const FVector Direction = (RequestedPoint - Actor->GetActorLocation()).GetSafeNormal2D();
-            ReleaseClinch(); Victim->ApplyDisplacement(Direction * 300);
+            ReleaseClinch(); Victim->ApplyDisplacement(Direction * (bDrowned ? 450 : 300));
             Victim->NextAttackTick = FMath::Max(Victim->NextAttackTick, Now() + 5);
             R->Pressure(Now(), 10); Emit(TEXT("throw"), Victim);
             Actor->MulticastAttackFX(Actor->GetActorLocation(), Victim->GetActorLocation(), R->Color(), 4);
+        }
+        else if (bDrowned && !Target->bCommonEnemy && !Target->bBreakVulnerable)
+        {
+            // An unbroken elite cannot be held, but the grab still counts against its Resolve.
+            FDMControl Control;
+            Control.StaggerTicks = 5; Control.BreakPressure = 40;
+            Target->ApplyControl(Control, Actor, TEXT("ability.q.clinch"));
+            NextCastTick = Now() + 20; R->Pressure(Now(), 10); Emit(TEXT("clinch_break"), Target);
         }
         else
         {
             HeldTarget = Target; Target->HeldBy = Actor; Target->StopGoal();
             Target->GetCharacterMovement()->StopMovementImmediately(); Actor->StopGoal();
-            HoldEndTick = Now() + 15; R->Pressure(Now(), 10); Emit(TEXT("clinch"), Target);
+            HoldEndTick = Now() + (bDrowned ? 25 : 15); R->Pressure(Now(), 10); Emit(TEXT("clinch"), Target);
         }
     }
     if (!bRequestedDetonate) { ActiveMode->NoteQCast(); Actor->MulticastPresentation(R->Kind == EDMInvestigator::Smuggler && !HeldTarget ? 3 : 1, Target ? Target->GetActorLocation() : RequestedPoint); }

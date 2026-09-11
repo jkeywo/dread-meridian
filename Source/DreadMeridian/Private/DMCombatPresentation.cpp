@@ -55,6 +55,10 @@ UDMCombatPresentation::UDMCombatPresentation()
     ConstructorHelpers::FObjectFinder<UNiagaraSystem> Spirits(TEXT("/Game/BigNiagaraBundle/NiagaraEffectMix2/Effects/NS_Spirits_of_Colors")); SpiritArrival = Spirits.Object;
     ConstructorHelpers::FObjectFinder<UNiagaraSystem> Reverse(TEXT("/Game/BigNiagaraBundle/NiagaraAbstractSpace2/Effects/NS_ReverseBurst")); Intervention = Reverse.Object;
     ConstructorHelpers::FObjectFinder<UNiagaraSystem> Ring(TEXT("/Game/BigNiagaraBundle/NiagaraAbstractSpace2/Effects/NS_RingOfOmnipotence")); SeanceCircle = Ring.Object;
+    ConstructorHelpers::FObjectFinder<UNiagaraSystem> Noisy(TEXT("/Game/BigNiagaraBundle/NiagaraAbstractSpace2/Effects/NS_NoisyBurst")); Impact = Noisy.Object;
+    ConstructorHelpers::FObjectFinder<UNiagaraSystem> Rings(TEXT("/Game/BigNiagaraBundle/NiagaraEffectMix4/Effects/NS_Rings")); BraceAura = Rings.Object;
+    ConstructorHelpers::FObjectFinder<UNiagaraSystem> Wave2(TEXT("/Game/Explosions_W3Vol1/Niagara/NS_shockwave2")); Shockwave = Wave2.Object;
+    ConstructorHelpers::FObjectFinder<UNiagaraSystem> Mirror(TEXT("/Game/BigNiagaraBundle/NiagaraAbstractSpace3/Effects/NS_Otherworldly_Mirror")); DrownedAura = Mirror.Object;
 }
 void UDMCombatPresentation::Spawn(UNiagaraSystem* System, const FVector& At, float Scale, float Seconds)
 {
@@ -295,6 +299,12 @@ void UDMCombatPresentation::Cue(uint8 Event, FVector Target)
     }
     else if (Event == 19) { Action(Clips[Cast1], .6f); Spawn(Intervention, Target, .5f, 1.f); Burst(Actor->GetMesh()->GetSocketLocation(TEXT("hand_r")), Target, FLinearColor(.7f, .3f, 2.2f), 3); }
     else if (Event == 20) { Spawn(SeanceCircle, Target - FVector(0, 0, 80), .6f, 8.f); }
+    // ---- Smuggler kit. 21/23/24/25 play on the Smuggler; 22 marks each contact and the end of the charge.
+    else if (Event == 21) { Action(Clips[Superpunch], .5f); }
+    else if (Event == 22) { Spawn(Impact, Target, .45f, .8f); Burst(Target, Target, FLinearColor(2.2f, 1.6f, .8f), 9); }
+    else if (Event == 23) { Action(Clips[BlockStart], .35f); Attach(BraceAura, 2.f); }
+    else if (Event == 24) { Action(Clips[Backelbow], .5f); Spawn(Shockwave, Target - FVector(0, 0, 60), .5f, 1.f); }
+    else if (Event == 25) { Attach(DrownedAura, 8.f); }
     const FVector Direction = Target - Actor->GetActorLocation();
     if (!Direction.IsNearlyZero())
     {

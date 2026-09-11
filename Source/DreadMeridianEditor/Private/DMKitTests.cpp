@@ -526,4 +526,175 @@ bool FDMMediumKitTest::RunTest(const FString& Parameters)
     return true;
 }
 
+/**
+ * The Smuggler's kit: a charge that runs through what it reaches, a brace that blunts incoming damage and can
+ * end in a shove, and an altered state that strengthens the grab without waiving the Break layer.
+ */
+class FDMVerifySmugglerKit : public IAutomationLatentCommand
+{
+public:
+    explicit FDMVerifySmugglerKit(FAutomationTestBase* InTest) : Test(InTest)
+    {
+        bHadPreference = GConfig->GetString(TEXT("DreadMeridian.EditorPlay"), TEXT("Investigator"), Original, GEditorPerProjectIni);
+    }
+    virtual ~FDMVerifySmugglerKit() override
+    {
+        if (bHadPreference) { GConfig->SetString(TEXT("DreadMeridian.EditorPlay"), TEXT("Investigator"), *Original, GEditorPerProjectIni); }
+        else { GConfig->RemoveKey(TEXT("DreadMeridian.EditorPlay"), TEXT("Investigator"), GEditorPerProjectIni); }
+        GConfig->Flush(false, GEditorPerProjectIni);
+        if (Settings) { Settings->RemoveFromRoot(); }
+    }
+
+    virtual bool Update() override
+    {
+        if (Stage == 0)
+        {
+            DMEditorPlaySelection::Save(TEXT("Smuggler"));
+            Settings = DuplicateObject<ULevelEditorPlaySettings>(GetDefault<ULevelEditorPlaySettings>(), GetTransientPackage());
+            Settings->AddToRoot(); Settings->SetPlayNetMode(PIE_Standalone);
+            Settings->SetPlayNumberOfClients(1); Settings->SetRunUnderOneProcess(true);
+            Window = SNew(SWindow).Title(FText::FromString(TEXT("Smuggler kit verification"))).ClientSize(FVector2D(640, 480));
+            FSlateApplication::Get().AddWindow(Window.ToSharedRef(), false);
+            FRequestPlaySessionParams Params;
+            Params.EditorPlaySettings = Settings;
+            Params.GlobalMapOverride = TEXT("/Game/DreadMeridian/Maps/L_CombatSandbox");
+            Params.CustomPIEWindow = Window;
+            Params.bAllowOnlineSubsystem = false;
+            GEditor->RequestPlaySession(Params);
+            GEditor->StartQueuedPlaySessionRequest();
+            Deadline = FPlatformTime::Seconds() + 90; Stage = 1;
+            return false;
+        }
+        if (Stage == 1 && GEditor->PlayWorld)
+        {
+            APlayerController* Player = GEditor->PlayWorld->GetFirstPlayerController();
+            ADMCombatant* Hero = Player ? Cast<ADMCombatant>(Player->GetPawn()) : nullptr;
+            if (!Hero) { return Timeout(); }
+            Test->TestEqual(TEXT("PIE possesses the Smuggler"), static_cast<int32>(Hero->Investigator->Kind), static_cast<int32>(EDMInvestigator::Smuggler));
+            Subject = Hero;
+            auto* Mode = GEditor->PlayWorld->GetAuthGameMode<ADMCombatGameMode>();
+            int32 N = 0;
+            for (ADMCombatant* A : Mode->GetCombatants())
+            {
+                A->bProfileRange = true; A->NextAttackTick = 100000;
+                A->GetCharacterMovement()->DisableMovement(); A->SetActorLocation(FVector(1400, -700 + N++ * 160, 95));
+                if (A->bIsEnemy && !Enemy.IsValid()) { Enemy = A; }
+            }
+            Hero->SetActorLocation(FVector(-1200, 0, 95));
+            Test->TestFalse(TEXT("A charge needs a direction"), Hero->Kit->Request(EDMKitSlot::W, nullptr, Hero->GetActorLocation()));
+            Test->TestTrue(TEXT("A refused charge spends no cooldown"), Hero->Kit->IsReady(EDMKitSlot::W));
+
+            // W: an enemy on the path is run through and displaced along it.
+            Enemy->SetActorLocation(Hero->GetActorLocation() + FVector(220, 0, 0));
+            EnemyHealth = Enemy->Health(); EnemyX = Enemy->GetActorLocation().X;
+            HeroX = Hero->GetActorLocation().X;
+            Test->TestTrue(TEXT("Shoulder Through accepted"), Hero->Kit->Request(EDMKitSlot::W, nullptr, Hero->GetActorLocation() + FVector(500, 0, 0)));
+            Test->TestTrue(TEXT("The charge is running"), Hero->Kit->IsCharging());
+            TestTick = Mode->GetCombatTick() + 8; Stage = 2;
+            return false;
+        }
+        if (Stage >= 2 && GEditor->PlayWorld && Subject.IsValid() && Enemy.IsValid())
+        {
+            auto* Mode = GEditor->PlayWorld->GetAuthGameMode<ADMCombatGameMode>();
+            auto* Hero = Subject.Get();
+            auto* Kit = Hero->Kit.Get();
+            if (Mode->GetCombatTick() < TestTick) { return false; }
+            switch (Stage)
+            {
+            case 2:
+                Test->TestFalse(TEXT("The charge ends on its own"), Kit->IsCharging());
+                Test->TestTrue(TEXT("The charge carried the Smuggler forward"), Hero->GetActorLocation().X > HeroX + 100);
+                Test->TestTrue(TEXT("What it reached was struck"), Enemy->Health() < EnemyHealth);
+                Test->TestTrue(TEXT("and displaced along the charge"), Enemy->GetActorLocation().X > EnemyX + 50);
+                Test->TestTrue(TEXT("Contact builds Momentum"), Hero->Investigator->Momentum >= 15);
+                // E: brace, then end it with a shove.
+                Enemy->SetActorLocation(Hero->GetActorLocation() + FVector(120, 0, 0));
+                Test->TestTrue(TEXT("Dig In accepted"), Kit->Request(EDMKitSlot::E, nullptr, Hero->GetActorLocation()));
+                Test->TestTrue(TEXT("The stance is up"), Kit->IsBraced());
+                HeroHealth = Hero->Health();
+                Hero->Investigator->Pressure(Mode->GetCombatTick(), 0);
+                Momentum = Hero->Investigator->Momentum;
+                Enemy->DealCombatDamage(Hero, 20, TEXT("ability.basic_attack"), true);
+                Test->TestTrue(TEXT("Bracing blunts the blow"), Hero->Health() > HeroHealth - 20);
+                Test->TestTrue(TEXT("Absorbed pressure feeds Momentum"), Hero->Investigator->Momentum > Momentum);
+                EnemyHealth = Enemy->Health(); EnemyX = Enemy->GetActorLocation().X;
+                TestTick = Mode->GetCombatTick() + 2; Stage = 3;
+                return false;
+            case 3:
+                Test->TestTrue(TEXT("Recasting ends the stance with a shove"), Kit->Request(EDMKitSlot::E, nullptr, Hero->GetActorLocation()));
+                Test->TestFalse(TEXT("The stance is down"), Kit->IsBraced());
+                Test->TestTrue(TEXT("The shove lands"), Enemy->Health() < EnemyHealth);
+                Test->TestTrue(TEXT("and pushes clear"), Enemy->GetActorLocation().X > EnemyX + 50);
+                Test->TestFalse(TEXT("The stance cooldown starts from its end"), Kit->IsReady(EDMKitSlot::E));
+                TestTick = Mode->GetCombatTick() + 2; Stage = 4;
+                return false;
+            case 4:
+            {
+                // R: the altered state strengthens the grab without waiving the Break layer.
+                Enemy->bCommonEnemy = false; Enemy->bBreakVulnerable = false;
+                Test->TestFalse(TEXT("An unbroken elite cannot be grabbed normally"), Hero->Primary->Request(Enemy.Get(), Enemy->GetActorLocation()));
+                const float Reach = Hero->GetAttackRange();
+                Test->TestTrue(TEXT("Drowned Man Walking accepted"), Kit->Request(EDMKitSlot::R, nullptr, Hero->GetActorLocation()));
+                Test->TestTrue(TEXT("The ultimate spikes Madness"), Hero->Investigator->Madness >= 30);
+                Test->TestTrue(TEXT("It lends unnatural reach"), Hero->GetAttackRange() > Reach);
+                Test->TestTrue(TEXT("and holds Momentum at a floor"), Hero->Investigator->Momentum >= 75 || Kit->IsRActive());
+                Enemy->SetActorLocation(Hero->GetActorLocation() + FVector(120, 0, 0));
+                BreakBefore = Enemy->Break;
+                Test->TestTrue(TEXT("The grab now lands on an unbroken elite"), Hero->Primary->Request(Enemy.Get(), Enemy->GetActorLocation()));
+                Test->TestFalse(TEXT("but does not hold it"), Enemy->IsRestrained());
+                Test->TestTrue(TEXT("it counts against its Resolve instead"), Enemy->Break > BreakBefore);
+                TestTick = Mode->GetCombatTick() + 2; Stage = 5;
+                return false;
+            }
+            case 5:
+                Test->TestTrue(TEXT("Momentum holds at the floor"), Hero->Investigator->Momentum >= 75);
+                TestTick = Mode->GetCombatTick() + 85; Stage = 6;
+                return false;
+            case 6:
+                Test->TestFalse(TEXT("The altered state ends"), Kit->IsRActive());
+                Test->TestEqual(TEXT("and the reach goes with it"), Hero->ReachBonus, 0.f);
+                GEditor->RequestEndPlayMap(); Stage = 7;
+                return false;
+            default: break;
+            }
+        }
+        if (Stage == 7 && !GEditor->PlayWorld)
+        {
+            if (Window) { Window->RequestDestroyWindow(); Window.Reset(); }
+            return true;
+        }
+        if (FPlatformTime::Seconds() > Deadline) { return Timeout(); }
+        return false;
+    }
+
+private:
+    bool Timeout()
+    {
+        Test->AddError(FString::Printf(TEXT("Smuggler kit PIE verification timed out at stage %d."), Stage));
+        GEditor->RequestEndPlayMap();
+        if (Window) { Window->RequestDestroyWindow(); }
+        return true;
+    }
+    FAutomationTestBase* Test;
+    ULevelEditorPlaySettings* Settings = nullptr;
+    TSharedPtr<SWindow> Window;
+    FString Original;
+    bool bHadPreference = false;
+    TWeakObjectPtr<ADMCombatant> Subject, Enemy;
+    float EnemyHealth = 0, HeroHealth = 0, Momentum = 0, BreakBefore = 0;
+    double EnemyX = 0, HeroX = 0;
+    int32 TestTick = 0;
+    int32 Stage = 0;
+    double Deadline = 0;
+};
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FDMSmugglerKitTest, "DreadMeridian.Editor.Kits.Smuggler",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FDMSmugglerKitTest::RunTest(const FString& Parameters)
+{
+    if (!GEditor || GEditor->PlayWorld) { AddError(TEXT("Run the kit check in an idle editor.")); return false; }
+    FAutomationTestFramework::Get().EnqueueLatentCommand(MakeShared<FDMVerifySmugglerKit>(this));
+    return true;
+}
+
 #endif

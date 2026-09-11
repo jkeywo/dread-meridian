@@ -77,6 +77,27 @@ namespace
     constexpr int32 IntercessionCooldownDuringR = 30;
     constexpr int32 BeckonCooldownDuringR = 20;
     constexpr int32 ProtectionTicks = 10;
+
+    // Smuggler.
+    constexpr float ChargeStep = 70;             // units per tick
+    constexpr float ChargeWidth = 70;
+    constexpr float ChargeDamage = 15;
+    constexpr float ChargePush = 180;
+    constexpr int32 ChargeStaggerTicks = 8;
+    constexpr float ChargeBreakPressure = 25;
+    constexpr float ChargeMomentum = 15;
+    constexpr float DrownedChargeMultiplier = 1.5f;
+    constexpr float BraceIncoming = .6f;
+    constexpr float BraceResistanceValue = .5f;
+    constexpr float ShoveRadius = 200;
+    constexpr float ShoveDamage = 10;
+    constexpr float ShovePush = 200;
+    constexpr int32 ShoveStaggerTicks = 10;
+    constexpr float ShoveBreakPressure = 20;
+    constexpr float DrownedMomentumFloor = 75;
+    constexpr float DrownedReach = 60;
+    /** A Clinch on an unbroken elite during the R banks this instead of holding: the Break layer still stands. */
+    constexpr float DrownedGrabBreakPressure = 40;
 }
 
 UDMKitComponent::UDMKitComponent() { SetIsReplicatedByDefault(true); }
@@ -271,6 +292,7 @@ void UDMKitComponent::EndR()
     Actor->Investigator->MomentumFloor = 0;
     Actor->Investigator->bExposureFrozen = false;
     Actor->ReachBonus = 0;
+    ChargeHits.Reset();
     Emit(EDMKitSlot::R, TEXT("ended"));
     Actor->ForceNetUpdate();
 }
@@ -279,8 +301,29 @@ void UDMKitComponent::EndBrace(bool bShove)
 {
     if (BracedUntilTick <= 0) { return; }
     ADMCombatant* Actor = Self();
+    ADMCombatGameMode* M = Mode();
     BracedUntilTick = 0;
     Actor->IncomingMultiplier = 1; Actor->IncomingUntilTick = 0; Actor->BraceResistance = 0;
+    if (bShove && M)
+    {
+        int32 Hits = 0;
+        for (ADMCombatant* Enemy : M->GetCombatants())
+        {
+            if (!IsValid(Enemy) || !Enemy->bIsEnemy || Enemy->IsDown()) { continue; }
+            if (FVector::DistSquared2D(Actor->GetActorLocation(), Enemy->GetActorLocation()) > FMath::Square(ShoveRadius)) { continue; }
+            FDMControl Control;
+            Control.Damage = ShoveDamage;
+            Control.Displacement = (Enemy->GetActorLocation() - Actor->GetActorLocation()).GetSafeNormal2D() * ShovePush;
+            Control.StaggerTicks = ShoveStaggerTicks; Control.BreakPressure = ShoveBreakPressure;
+            Enemy->ApplyControl(Control, Actor, TEXT("ability.e.counter_shove"));
+            ++Hits;
+        }
+        Actor->Investigator->Pressure(Now(), 10);
+        TSharedPtr<FJsonObject> Extra = MakeShared<FJsonObject>();
+        Extra->SetNumberField(TEXT("hits"), Hits);
+        Emit(EDMKitSlot::E, TEXT("counter_shove"), nullptr, Extra);
+        Actor->MulticastPresentation(24, Actor->GetActorLocation());
+    }
     StartCooldown(EDMKitSlot::E, Spec(Actor->Investigator->Kind, EDMKitSlot::E).CooldownTicks);
     Emit(EDMKitSlot::E, TEXT("dig_in_ended"));
     Actor->ForceNetUpdate();
@@ -326,6 +369,7 @@ void UDMKitComponent::Step(int32 Tick)
     else { ProtectionTarget = nullptr; }
     if (Actor->Investigator->Kind == EDMInvestigator::Sapper) { StepSapper(Tick); }
     else if (Actor->Investigator->Kind == EDMInvestigator::Medium) { StepMedium(Tick); }
+    else if (Actor->Investigator->Kind == EDMInvestigator::Smuggler) { StepSmuggler(Tick); }
     // Ends after StepSapper so the last tick of the window still defers, and any tags left open resolve at once.
     if (RActiveUntilTick > 0 && Tick >= RActiveUntilTick)
     {
@@ -376,6 +420,7 @@ FString UDMKitComponent::ValidateAbility(EDMKitSlot Slot, ADMCombatant* Target, 
     case EDMInvestigator::Sapper: return ValidateSapper(Slot, Point);
     case EDMInvestigator::Photographer: return ValidatePhotographer(Slot, Target, Point);
     case EDMInvestigator::Medium: return ValidateMedium(Slot, Point);
+    case EDMInvestigator::Smuggler: return ValidateSmuggler(Slot, Point);
     default: return Name(Slot) + TEXT(" is not implemented yet");
     }
 }
@@ -387,7 +432,110 @@ bool UDMKitComponent::ResolveAbility(EDMKitSlot Slot, ADMCombatant* Target, FVec
     case EDMInvestigator::Sapper: return ResolveSapper(Slot, Point);
     case EDMInvestigator::Photographer: return ResolvePhotographer(Slot, Target, Point);
     case EDMInvestigator::Medium: return ResolveMedium(Slot, Point);
+    case EDMInvestigator::Smuggler: return ResolveSmuggler(Slot, Point);
     default: LastFailure = Name(Slot) + TEXT(" is not implemented yet"); return false;
+    }
+}
+
+// ----------------------------------------------------------------------------------------- Smuggler
+
+FString UDMKitComponent::ValidateSmuggler(EDMKitSlot Slot, FVector Point) const
+{
+    const ADMCombatant* Actor = Self();
+    switch (Slot)
+    {
+    case EDMKitSlot::W:
+        if (Actor->Primary->HeldTarget) { return TEXT("Cannot charge while holding"); }
+        if (FVector::DistSquared2D(Actor->GetActorLocation(), Point) <= FMath::Square(50.f)) { return TEXT("Choose a direction to charge"); }
+        return TEXT("");
+    case EDMKitSlot::E:
+        // Recasting while braced is the counter-shove, so a running stance is not a reason to refuse.
+        if (Actor->Primary->HeldTarget) { return TEXT("Cannot brace while holding"); }
+        return TEXT("");
+    default:
+        return TEXT("");
+    }
+}
+
+bool UDMKitComponent::ResolveSmuggler(EDMKitSlot Slot, FVector Point)
+{
+    ADMCombatant* Actor = Self();
+    ADMCombatGameMode* M = Mode();
+    if (!M) { return false; }
+    const int32 Tick = Now();
+    const FDMKitSpec& Kit = Spec(EDMInvestigator::Smuggler, Slot);
+    switch (Slot)
+    {
+    case EDMKitSlot::W:
+        ChargeDirection = (Point - Actor->GetActorLocation()).GetSafeNormal2D();
+        ChargeUntilTick = Tick + Kit.DurationTicks;
+        ChargeHits.Reset();
+        Actor->StopGoal();
+        // The charge owns the Smuggler for its duration: no basic attack lands out of a shoulder barge.
+        Actor->NextAttackTick = FMath::Max(Actor->NextAttackTick, ChargeUntilTick);
+        StartCooldown(Slot, Kit.CooldownTicks);
+        Emit(Slot, TEXT("shoulder_through"));
+        Actor->MulticastPresentation(21, Point);
+        return true;
+    case EDMKitSlot::E:
+        if (IsBraced()) { EndBrace(true); return true; }
+        BracedUntilTick = Tick + Kit.DurationTicks;
+        Actor->IncomingMultiplier = BraceIncoming; Actor->IncomingUntilTick = BracedUntilTick;
+        Actor->BraceResistance = BraceResistanceValue;
+        Emit(Slot, TEXT("dig_in_started"));
+        Actor->MulticastPresentation(23, Actor->GetActorLocation());
+        return true;
+    default:
+        RActiveUntilTick = Tick + Kit.DurationTicks;
+        Actor->Investigator->MomentumFloor = DrownedMomentumFloor;
+        Actor->ReachBonus = DrownedReach;
+        StartCooldown(Slot, Kit.CooldownTicks);
+        Actor->Investigator->AddMadness(UltimateMadness, TEXT("drowned_man_walking"));
+        Emit(Slot, TEXT("drowned_man_walking"));
+        Actor->MulticastPresentation(25, Actor->GetActorLocation());
+        return true;
+    }
+}
+
+void UDMKitComponent::StepSmuggler(int32 Tick)
+{
+    ADMCombatant* Actor = Self();
+    ADMCombatGameMode* M = Mode();
+    if (!M || ChargeUntilTick <= 0) { return; }
+    if (Tick >= ChargeUntilTick)
+    {
+        TSharedPtr<FJsonObject> Extra = MakeShared<FJsonObject>();
+        Extra->SetNumberField(TEXT("hits"), ChargeHits.Num());
+        Emit(EDMKitSlot::W, TEXT("shoulder_through_ended"), nullptr, Extra);
+        Actor->MulticastPresentation(22, Actor->GetActorLocation());
+        ChargeUntilTick = 0; ChargeHits.Reset();
+        Actor->ForceNetUpdate();
+        return;
+    }
+    // World geometry stops the charge; bodies do not, so the Smuggler barges through a crowd rather than
+    // stalling on the first shoulder.
+    const FVector From = Actor->GetActorLocation();
+    FVector To = From + ChargeDirection * ChargeStep;
+    FCollisionQueryParams Query(SCENE_QUERY_STAT(ShoulderThrough), false, Actor);
+    for (ADMCombatant* Other : M->GetCombatants()) { Query.AddIgnoredActor(Other); }
+    FHitResult Hit;
+    if (GetWorld()->LineTraceSingleByChannel(Hit, From, To, ECC_Visibility, Query)) { To = Hit.ImpactPoint; ChargeUntilTick = Tick + 1; }
+    Actor->SetActorLocation(To);
+    const float Push = ChargePush * (IsRActive() ? DrownedChargeMultiplier : 1.f);
+    for (ADMCombatant* Enemy : M->GetCombatants())
+    {
+        if (!IsValid(Enemy) || !Enemy->bIsEnemy || Enemy->IsDown()) { continue; }
+        if (ChargeHits.Contains(Enemy)) { continue; }
+        if (FVector::DistSquared2D(To, Enemy->GetActorLocation()) > FMath::Square(ChargeWidth)) { continue; }
+        FDMControl Control;
+        Control.Damage = ChargeDamage; Control.Displacement = ChargeDirection * Push;
+        Control.StaggerTicks = ChargeStaggerTicks; Control.BreakPressure = ChargeBreakPressure;
+        Enemy->ApplyControl(Control, Actor, TEXT("ability.w.shoulder_through"));
+        ChargeHits.Add(Enemy);
+        // Pressure caps a single call, so the contact's Momentum arrives as two.
+        Actor->Investigator->Pressure(Tick, 10);
+        Actor->Investigator->Pressure(Tick, ChargeMomentum - 10);
+        Enemy->MulticastPresentation(22, Enemy->GetActorLocation());
     }
 }
 
