@@ -73,3 +73,11 @@ Plugins/**/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+
+# Local Play Trace, Python and test state
+.playtrace/
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.vscode/

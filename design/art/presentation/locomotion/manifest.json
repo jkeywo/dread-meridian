@@ -1,0 +1,68 @@
+{
+  "source_project": "GameAnimationSample",
+  "method": "FBX animation export; reference skeleton recovered from FBX with a temporary triangle mesh; IK retarget to Manny, cropped transition windows, rifle upper-body pose baked from Idle_Rifle_Hip",
+  "files": [
+    {
+      "file": "M_Neutral_Run_Start_F_Rfoot.fbx",
+      "sha256": "d71de0bb4ae34048054b335df79284976cdc825bb7f6fb9783fec15742a576f8"
+    },
+    {
+      "file": "M_Neutral_Run_Stop_F_Rfoot.fbx",
+      "sha256": "e9eea98dafa10586c6ee5420371f31af375dd6c1f9806fd89513bf86313b253d"
+    },
+    {
+      "file": "M_Neutral_Stand_Turn_090_L.fbx",
+      "sha256": "883e0455dc41a4e97eb7c7ab5cf21a4c4388d0f22de5cf9854982bdcdf7cc548"
+    },
+    {
+      "file": "M_Neutral_Stand_Turn_090_R.fbx",
+      "sha256": "e22efa9b0633ab1b9630d81bda8c9e42d5634bd5a50ef99aa16932b92566833b"
+    },
+    {
+      "file": "SKM_UEFN_Mannequin.fbx",
+      "sha256": "b47394fec112af007404733648c40eb037a0871edf32ab4cebbb74e2e9f63116"
+    }
+  ],
+  "clips": [
+    {
+      "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_Locomotion_M_Neutral_Run_Start_F_Rfoot.A_DM_Locomotion_M_Neutral_Run_Start_F_Rfoot",
+      "length": 0.5333333611488342,
+      "root_locked": true
+    },
+    {
+      "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_Locomotion_M_Neutral_Run_Start_F_Rfoot_Rifle.A_DM_Locomotion_M_Neutral_Run_Start_F_Rfoot_Rifle",
+      "length": 0.5333333611488342,
+      "root_locked": true
+    },
+    {
+      "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_Locomotion_M_Neutral_Run_Stop_F_Rfoot.A_DM_Locomotion_M_Neutral_Run_Stop_F_Rfoot",
+      "length": 1.1333333253860474,
+      "root_locked": true
+    },
+    {
+      "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_Locomotion_M_Neutral_Run_Stop_F_Rfoot_Rifle.A_DM_Locomotion_M_Neutral_Run_Stop_F_Rfoot_Rifle",
+      "length": 1.1333333253860474,
+      "root_locked": true
+    },
+    {
+      "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_Locomotion_M_Neutral_Stand_Turn_090_L.A_DM_Locomotion_M_Neutral_Stand_Turn_090_L",
+      "length": 0.699999988079071,
+      "root_locked": true
+    },
+    {
+      "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_Locomotion_M_Neutral_Stand_Turn_090_L_Rifle.A_DM_Locomotion_M_Neutral_Stand_Turn_090_L_Rifle",
+      "length": 0.699999988079071,
+      "root_locked": true
+    },
+    {
+      "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_Locomotion_M_Neutral_Stand_Turn_090_R.A_DM_Locomotion_M_Neutral_Stand_Turn_090_R",
+      "length": 1.0,
+      "root_locked": true
+    },
+    {
+      "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_Locomotion_M_Neutral_Stand_Turn_090_R_Rifle.A_DM_Locomotion_M_Neutral_Stand_Turn_090_R_Rifle",
+      "length": 1.0,
+      "root_locked": true
+    }
+  ]
+}

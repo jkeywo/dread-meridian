@@ -1,0 +1,167 @@
+[
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_KB_Gun.A_DM_KB_Gun",
+    "source_pack": "FightingAnimsetPro",
+    "length": 2.0999999046325684
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_KB_p_Hook_R.A_DM_KB_p_Hook_R",
+    "source_pack": "FightingAnimsetPro",
+    "length": 1.0166666507720947
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_MG_gestures1.A_DM_MG_gestures1",
+    "source_pack": "OpenWorldAnimset",
+    "length": 4.599999904632568
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Gunman_Idle",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_GunmanRifleEquipped.A_GunmanRifleEquipped",
+    "length": 7.566666603088379
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Gunman_Jog",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_GunmanRifleEquipped.A_GunmanRifleEquipped",
+    "length": 1.7666666507720947
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Gunman_Start",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_GunmanRifleEquipped.A_GunmanRifleEquipped",
+    "length": 0.5333333611488342
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Gunman_Stop",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_GunmanRifleEquipped.A_GunmanRifleEquipped",
+    "length": 1.1333333253860474
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Gunman_TurnL",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_GunmanRifleEquipped.A_GunmanRifleEquipped",
+    "length": 0.699999988079071
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Gunman_TurnR",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_GunmanRifleEquipped.A_GunmanRifleEquipped",
+    "length": 1.0
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Bruiser_Idle",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_BruiserTruncheonEquipped.A_BruiserTruncheonEquipped",
+    "length": 7.566666603088379
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Bruiser_Jog",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_BruiserTruncheonEquipped.A_BruiserTruncheonEquipped",
+    "length": 1.7666666507720947
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Bruiser_Start",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_BruiserTruncheonEquipped.A_BruiserTruncheonEquipped",
+    "length": 0.5333333611488342
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Bruiser_Stop",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_BruiserTruncheonEquipped.A_BruiserTruncheonEquipped",
+    "length": 1.1333333253860474
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Bruiser_TurnL",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_BruiserTruncheonEquipped.A_BruiserTruncheonEquipped",
+    "length": 0.699999988079071
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Bruiser_TurnR",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_BruiserTruncheonEquipped.A_BruiserTruncheonEquipped",
+    "length": 1.0
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Lookout_Idle",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_LookoutPistolEquipped.A_LookoutPistolEquipped",
+    "length": 7.566666603088379
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Lookout_Jog",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_LookoutPistolEquipped.A_LookoutPistolEquipped",
+    "length": 1.7666666507720947
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Lookout_Start",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_LookoutPistolEquipped.A_LookoutPistolEquipped",
+    "length": 0.5333333611488342
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Lookout_Stop",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_LookoutPistolEquipped.A_LookoutPistolEquipped",
+    "length": 1.1333333253860474
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Lookout_TurnL",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_LookoutPistolEquipped.A_LookoutPistolEquipped",
+    "length": 0.699999988079071
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Lookout_TurnR",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_LookoutPistolEquipped.A_LookoutPistolEquipped",
+    "length": 1.0
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Bomber_Idle",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_BomberGrenadeEquipped.A_BomberGrenadeEquipped",
+    "length": 7.566666603088379
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Bomber_Jog",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_BomberGrenadeEquipped.A_BomberGrenadeEquipped",
+    "length": 1.7666666507720947
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Bomber_Start",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_BomberGrenadeEquipped.A_BomberGrenadeEquipped",
+    "length": 0.5333333611488342
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Bomber_Stop",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_BomberGrenadeEquipped.A_BomberGrenadeEquipped",
+    "length": 1.1333333253860474
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Bomber_TurnL",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_BomberGrenadeEquipped.A_BomberGrenadeEquipped",
+    "length": 0.699999988079071
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_Bomber_TurnR",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_BomberGrenadeEquipped.A_BomberGrenadeEquipped",
+    "length": 1.0
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_GangBoss_Idle",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_GangBossSmgEquipped.A_GangBossSmgEquipped",
+    "length": 7.566666603088379
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_GangBoss_Jog",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_GangBossSmgEquipped.A_GangBossSmgEquipped",
+    "length": 1.7666666507720947
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_GangBoss_Start",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_GangBossSmgEquipped.A_GangBossSmgEquipped",
+    "length": 0.5333333611488342
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_GangBoss_Stop",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_GangBossSmgEquipped.A_GangBossSmgEquipped",
+    "length": 1.1333333253860474
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_GangBoss_TurnL",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_GangBossSmgEquipped.A_GangBossSmgEquipped",
+    "length": 0.699999988079071
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/Animations/Smugglers/A_DM_GangBoss_TurnR",
+    "equipped_pose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_GangBossSmgEquipped.A_GangBossSmgEquipped",
+    "length": 1.0
+  }
+]

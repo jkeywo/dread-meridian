@@ -1,0 +1,52 @@
+{
+  "gunman": {
+    "skins": 1,
+    "joints": 88,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ],
+    "second_weight_set": true
+  },
+  "bruiser": {
+    "skins": 1,
+    "joints": 88,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ],
+    "second_weight_set": true
+  },
+  "lookout": {
+    "skins": 1,
+    "joints": 88,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ],
+    "second_weight_set": true
+  },
+  "bomber": {
+    "skins": 1,
+    "joints": 88,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ],
+    "second_weight_set": true
+  },
+  "gang-boss": {
+    "skins": 1,
+    "joints": 88,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ],
+    "second_weight_set": true
+  }
+}

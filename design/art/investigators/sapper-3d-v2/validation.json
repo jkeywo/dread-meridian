@@ -1,0 +1,40 @@
+[
+  {
+    "asset": "sapper-tpose",
+    "glb_import_verified": true,
+    "triangles": 107465,
+    "meshes": 1,
+    "materials": 20,
+    "bounds_min_m": [
+      -0.9824588298797607,
+      -0.23699995875358582,
+      0.008000001311302185
+    ],
+    "bounds_max_m": [
+      0.9824588298797607,
+      0.2990286350250244,
+      1.9150696992874146
+    ],
+    "separate_root_verified": true,
+    "rigged": false
+  },
+  {
+    "asset": "sapper-carbine",
+    "glb_import_verified": true,
+    "triangles": 2126,
+    "meshes": 1,
+    "materials": 5,
+    "bounds_min_m": [
+      -0.27966222167015076,
+      -0.059159550815820694,
+      -0.16909699141979218
+    ],
+    "bounds_max_m": [
+      0.42789825797080994,
+      0.037921831011772156,
+      0.0396263487637043
+    ],
+    "separate_root_verified": true,
+    "rigged": false
+  }
+]

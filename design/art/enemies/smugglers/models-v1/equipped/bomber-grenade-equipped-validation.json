@@ -1,0 +1,27 @@
+{
+  "role": "bomber",
+  "item": "bomber-grenade",
+  "action": "Equip_bomber_grenade",
+  "wrist_error_m": {
+    "r": 4.2146848510894035e-08
+  },
+  "unreal_hand_world": {
+    "r": {
+      "t": [
+        -29.285970330238342,
+        26.999974250793457,
+        114.20001983642578
+      ],
+      "q": [
+        -0.6815778613090515,
+        -0.04239971935749054,
+        -0.03238711133599281,
+        0.7297978401184082
+      ]
+    }
+  },
+  "maximum_skin_radius_m": 1.0657198814063038,
+  "pose_clip_only": true,
+  "finger_pose": "provisional flexion; visual contact review required",
+  "passed": true
+}

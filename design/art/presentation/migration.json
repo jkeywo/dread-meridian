@@ -1,0 +1,755 @@
+{
+  "source_project": "HoldingProject",
+  "selected": [
+    {
+      "path": "/Game/AnimStarterPack/Idle_Rifle_Hip",
+      "class": "AnimSequence",
+      "skeleton": "/Game/AnimStarterPack/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.UE4_Mannequin_Skeleton",
+      "length": 6.300000190734863,
+      "meshes": [
+        "/Game/AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/Deaths/Character/Mesh/SK_Mannequin",
+        "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/PoseAnimations/UE4Defult/Mannequin/Character/Mesh/SK_Mannequin"
+      ]
+    },
+    {
+      "path": "/Game/AnimStarterPack/Idle_Rifle_Ironsights",
+      "class": "AnimSequence",
+      "skeleton": "/Game/AnimStarterPack/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.UE4_Mannequin_Skeleton",
+      "length": 6.300000190734863,
+      "meshes": [
+        "/Game/AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/Deaths/Character/Mesh/SK_Mannequin",
+        "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/PoseAnimations/UE4Defult/Mannequin/Character/Mesh/SK_Mannequin"
+      ]
+    },
+    {
+      "path": "/Game/AnimStarterPack/Jog_Fwd_Rifle",
+      "class": "AnimSequence",
+      "skeleton": "/Game/AnimStarterPack/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.UE4_Mannequin_Skeleton",
+      "length": 1.4666666984558105,
+      "meshes": [
+        "/Game/AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/Deaths/Character/Mesh/SK_Mannequin",
+        "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/PoseAnimations/UE4Defult/Mannequin/Character/Mesh/SK_Mannequin"
+      ]
+    },
+    {
+      "path": "/Game/AnimStarterPack/Fire_Rifle_Hip",
+      "class": "AnimSequence",
+      "skeleton": "/Game/AnimStarterPack/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.UE4_Mannequin_Skeleton",
+      "length": 0.23333333432674408,
+      "meshes": [
+        "/Game/AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/Deaths/Character/Mesh/SK_Mannequin",
+        "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/PoseAnimations/UE4Defult/Mannequin/Character/Mesh/SK_Mannequin"
+      ]
+    },
+    {
+      "path": "/Game/AnimStarterPack/Fire_Rifle_Ironsights",
+      "class": "AnimSequence",
+      "skeleton": "/Game/AnimStarterPack/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.UE4_Mannequin_Skeleton",
+      "length": 0.23333333432674408,
+      "meshes": [
+        "/Game/AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/Deaths/Character/Mesh/SK_Mannequin",
+        "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/PoseAnimations/UE4Defult/Mannequin/Character/Mesh/SK_Mannequin"
+      ]
+    },
+    {
+      "path": "/Game/AnimStarterPack/Death_1",
+      "class": "AnimSequence",
+      "skeleton": "/Game/AnimStarterPack/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.UE4_Mannequin_Skeleton",
+      "length": 2.066666603088379,
+      "meshes": [
+        "/Game/AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/Deaths/Character/Mesh/SK_Mannequin",
+        "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/PoseAnimations/UE4Defult/Mannequin/Character/Mesh/SK_Mannequin"
+      ]
+    },
+    {
+      "path": "/Game/AnimStarterPack/Hit_React_1",
+      "class": "AnimSequence",
+      "skeleton": "/Game/AnimStarterPack/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.UE4_Mannequin_Skeleton",
+      "length": 0.9666666388511658,
+      "meshes": [
+        "/Game/AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/Deaths/Character/Mesh/SK_Mannequin",
+        "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/PoseAnimations/UE4Defult/Mannequin/Character/Mesh/SK_Mannequin"
+      ]
+    },
+    {
+      "path": "/Game/AnimStarterPack/Prone_To_Stand",
+      "class": "AnimSequence",
+      "skeleton": "/Game/AnimStarterPack/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.UE4_Mannequin_Skeleton",
+      "length": 1.4333332777023315,
+      "meshes": [
+        "/Game/AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/Deaths/Character/Mesh/SK_Mannequin",
+        "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/PoseAnimations/UE4Defult/Mannequin/Character/Mesh/SK_Mannequin"
+      ]
+    },
+    {
+      "path": "/Game/FightingAnimsetPro/Animations/InPlace/KB_p_Jab_R_1",
+      "class": "AnimSequence",
+      "skeleton": "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.UE4_Mannequin_Skeleton",
+      "length": 0.7666666507720947,
+      "meshes": [
+        "/Game/AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/Deaths/Character/Mesh/SK_Mannequin",
+        "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/PoseAnimations/UE4Defult/Mannequin/Character/Mesh/SK_Mannequin"
+      ]
+    },
+    {
+      "path": "/Game/FightingAnimsetPro/Animations/InPlace/KB_p_Jab_L_1",
+      "class": "AnimSequence",
+      "skeleton": "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.UE4_Mannequin_Skeleton",
+      "length": 0.949999988079071,
+      "meshes": [
+        "/Game/AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/Deaths/Character/Mesh/SK_Mannequin",
+        "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/PoseAnimations/UE4Defult/Mannequin/Character/Mesh/SK_Mannequin"
+      ]
+    },
+    {
+      "path": "/Game/FightingAnimsetPro/Animations/InPlace/KB_Idle_1",
+      "class": "AnimSequence",
+      "skeleton": "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.UE4_Mannequin_Skeleton",
+      "length": 2.5,
+      "meshes": [
+        "/Game/AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/Deaths/Character/Mesh/SK_Mannequin",
+        "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/PoseAnimations/UE4Defult/Mannequin/Character/Mesh/SK_Mannequin"
+      ]
+    },
+    {
+      "path": "/Game/FightingAnimsetPro/Animations/InPlace/KB_Grenade",
+      "class": "AnimSequence",
+      "skeleton": "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.UE4_Mannequin_Skeleton",
+      "length": 2.2666666507720947,
+      "meshes": [
+        "/Game/AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/Deaths/Character/Mesh/SK_Mannequin",
+        "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/PoseAnimations/UE4Defult/Mannequin/Character/Mesh/SK_Mannequin"
+      ]
+    },
+    {
+      "path": "/Game/FightingAnimsetPro/Animations/InPlace/KB_Block_Loop",
+      "class": "AnimSequence",
+      "skeleton": "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.UE4_Mannequin_Skeleton",
+      "length": 0.9333333373069763,
+      "meshes": [
+        "/Game/AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/Deaths/Character/Mesh/SK_Mannequin",
+        "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/PoseAnimations/UE4Defult/Mannequin/Character/Mesh/SK_Mannequin"
+      ]
+    },
+    {
+      "path": "/Game/FightingAnimsetPro/Animations/InPlace/KB_KnifeThrow",
+      "class": "AnimSequence",
+      "skeleton": "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.UE4_Mannequin_Skeleton",
+      "length": 1.7166666984558105,
+      "meshes": [
+        "/Game/AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/Deaths/Character/Mesh/SK_Mannequin",
+        "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/PoseAnimations/UE4Defult/Mannequin/Character/Mesh/SK_Mannequin"
+      ]
+    },
+    {
+      "path": "/Game/OpenWorldAnimset/Animations/NPC/Anim_IN_SA_pick_up_ground",
+      "class": "AnimSequence",
+      "skeleton": "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.UE4_Mannequin_Skeleton",
+      "length": 5.0,
+      "meshes": [
+        "/Game/AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/Deaths/Character/Mesh/SK_Mannequin",
+        "/Game/FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin",
+        "/Game/PoseAnimations/UE4Defult/Mannequin/Character/Mesh/SK_Mannequin"
+      ]
+    },
+    {
+      "path": "/Game/Explosions_W3Vol1/Niagara/NS_ImpactExplosion",
+      "class": "NiagaraSystem"
+    },
+    {
+      "path": "/Game/Explosions_W3Vol1/Niagara/NS_Burst1",
+      "class": "NiagaraSystem"
+    }
+  ],
+  "files": [
+    {
+      "relative": "AnimStarterPack/Death_1.uasset",
+      "bytes": 181646,
+      "sha256": "0a409188568d20a3f97ad3ee1d72b55f9a32e21de0b39d08e13261e891bf1f2c"
+    },
+    {
+      "relative": "AnimStarterPack/Fire_Rifle_Hip.uasset",
+      "bytes": 112330,
+      "sha256": "fecee6bc8acfcb9504d8263e76205e08cda10811e0061d2510c5ca690eaaaac8"
+    },
+    {
+      "relative": "AnimStarterPack/Fire_Rifle_Ironsights.uasset",
+      "bytes": 111380,
+      "sha256": "9dc6e9aaf143d9899babd94f15b2fe8844f7b9263691991fc4041ba2141de3e5"
+    },
+    {
+      "relative": "AnimStarterPack/Hit_React_1.uasset",
+      "bytes": 132820,
+      "sha256": "a067fa97220ca3a7f56199f6b58ddf888f66e5359694ffcc64eef7fb7e321148"
+    },
+    {
+      "relative": "AnimStarterPack/Idle_Rifle_Hip.uasset",
+      "bytes": 277628,
+      "sha256": "c10957e249c797e2c392394fb6d8b506859e8dd0f52e41e871a5a46fa2c3757b"
+    },
+    {
+      "relative": "AnimStarterPack/Idle_Rifle_Ironsights.uasset",
+      "bytes": 276375,
+      "sha256": "bf32e388be17f181b63f9a716498250554399e397ee674b7067b4944ef1b97d1"
+    },
+    {
+      "relative": "AnimStarterPack/Jog_Fwd_Rifle.uasset",
+      "bytes": 147577,
+      "sha256": "e5da5653211aea7a780411b8708cba355f7b53e8238605fd1d2236ddae7282e4"
+    },
+    {
+      "relative": "AnimStarterPack/Prone_To_Stand.uasset",
+      "bytes": 161933,
+      "sha256": "3c6d1837237e2cdf2681bcaa4455990c0cde1eac0ac817eae1a5560a6f2eb069"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Materials/M_UE4Man_Body.uasset",
+      "bytes": 136551,
+      "sha256": "0e7dc2aac13bc396d864d48966ced83f016de6252ac57b8459897a35ecd25edc"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Materials/M_UE4Man_ChestLogo.uasset",
+      "bytes": 93350,
+      "sha256": "8801d51f97a4dfc56658c363eb0ed5e130477ee4ac557747cfa05296266c222b"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Materials/MaterialLayers/ML_GlossyBlack_Latex_UE4.uasset",
+      "bytes": 102542,
+      "sha256": "95f2c723b40140562c0444e4d2f70733a258456b2a0262a7336d0e5e3791aa45"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Materials/MaterialLayers/ML_Plastic_Shiny_Beige.uasset",
+      "bytes": 98451,
+      "sha256": "72bda1590e3bfcad57591bf50b8d8ae097c4f850fb52e0c23a4c2b6840b90760"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Materials/MaterialLayers/ML_Plastic_Shiny_Beige_LOGO.uasset",
+      "bytes": 99691,
+      "sha256": "8d10cd7b5142d353af6bd24570012579f3f1beb308963bc98e0fcdc3f901c77e"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Materials/MaterialLayers/ML_SoftMetal_UE4.uasset",
+      "bytes": 102371,
+      "sha256": "5cb52705080f12d988a392e714b28dc70ec8b822fa5f8e46fa8eef9165f9f9c5"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Materials/MaterialLayers/T_ML_Aluminum01.uasset",
+      "bytes": 434410,
+      "sha256": "45e7b43dea85d3711ef6808fad9bb858e8f3f9a0d9826a8bf09021e1fb3ea815"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Materials/MaterialLayers/T_ML_Aluminum01_N.uasset",
+      "bytes": 405256,
+      "sha256": "a262e93cfdd3be852153233ee2c2aedb77d43c3e0b50829ebb6bf0f68a6651d5"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Materials/MaterialLayers/T_ML_Rubber_Blue_01_D.uasset",
+      "bytes": 470771,
+      "sha256": "ac61a9228475e0cf244927c3d34de1fa13a7f780484f6f2b5e7d5bd1ff4dba68"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Materials/MaterialLayers/T_ML_Rubber_Blue_01_N.uasset",
+      "bytes": 362117,
+      "sha256": "133271aa7e759618764af75f8ceec83f9bf54796bf7039cce6973e6998b2f9e6"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin.uasset",
+      "bytes": 3774704,
+      "sha256": "6e559f8b1e8cb28d67209da38221aaeab6c11b84f923adca0c7ed7d35f194c46"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin_PhysicsAsset.uasset",
+      "bytes": 26064,
+      "sha256": "04d2c0af2f6704b68837b3b319446ed434ee46883c1b941f830fdebb88b3ab9b"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.uasset",
+      "bytes": 11140,
+      "sha256": "761f089534b0ab816720025e598c7bd5b157a41ae7b95b70f14b7c8b1d915a2f"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Textures/UE4Man_Logo_N.uasset",
+      "bytes": 161770,
+      "sha256": "b43184512611058b0346db0fbfe0a462a6907fa633fdda1c5347e357fc6ab806"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Textures/UE4_LOGO_CARD.uasset",
+      "bytes": 95173,
+      "sha256": "f80139b3e5b3ca64233cfc172a67cf81fc664f8d1a992328ea30dee940cc1cb2"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Textures/UE4_Mannequin_MAT_MASKA.uasset",
+      "bytes": 274906,
+      "sha256": "f8c7a994e8f33fad29cc5b487b443fd63e0d7fdccba4e25ec767bd37e61062ff"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Textures/UE4_Mannequin__normals.uasset",
+      "bytes": 5481078,
+      "sha256": "2d438f828c2bbc041ba3a24c6dc74ce2cd64c2c86fabae1865dde87750c3872a"
+    },
+    {
+      "relative": "AnimStarterPack/UE4_Mannequin/Textures/UE4_Mannequin_occlusion_Mobile.uasset",
+      "bytes": 362358,
+      "sha256": "34f645adb6574f4959b783854c7e5ab4058b481150886637cd2a93de355a4d9e"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Mats/Burst1.uasset",
+      "bytes": 19297,
+      "sha256": "6069f37bad3df98720b94a206181770727e0d7fea2633f86002528203fe080c5"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Mats/Distortion2.uasset",
+      "bytes": 15764,
+      "sha256": "a722258ebd5b54dcf3071169f564903db7854ddfa8fc834521a6f9c3b5dab9e9"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Mats/Explosive4_M.uasset",
+      "bytes": 15984,
+      "sha256": "fd11919cfb706fb1af9feb0494578f606763f7a060c6efda51f3ba1bcff49646"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Mats/RadialRamp_Mat.uasset",
+      "bytes": 11249,
+      "sha256": "31e6a269e5d871e21ed8aa1726715ab3a8719cbab98eb602d5a5cdd8af80a8a2"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Mats/RibbonSmoke1_M.uasset",
+      "bytes": 47889,
+      "sha256": "3402193133bc7f96c3c099721cbf2f0eaf4f83bf8ddeb33a824e915a43d9ec9a"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Mats/Shocktorus.uasset",
+      "bytes": 22424,
+      "sha256": "edc8128c802303f88f0772f7fd91045fb18075a6039653f0922e9d2dff9861cd"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Mats/Smoke6_M.uasset",
+      "bytes": 10285,
+      "sha256": "b0661de71619d351a755f02355aaabc86e34615bd4c7b9e7b18bc1208686bf3c"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Mats/ThickSpark_M.uasset",
+      "bytes": 8437,
+      "sha256": "090ee5f81ead5c3b37a3c790ccde681e58745e4ed5d1745283136193655a5c6f"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Mesh/shockball3.uasset",
+      "bytes": 107149,
+      "sha256": "85be024eaf8302a8d39c861c13176297cf820ab1ff9acfbc2e0a098c15e272a8"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Niagara/NS_Burst1.uasset",
+      "bytes": 550226,
+      "sha256": "37efc7bb797299ffbc99125d800efc91240560463be5749696c3583c269792a1"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Niagara/NS_ImpactExplosion.uasset",
+      "bytes": 4365310,
+      "sha256": "488beadc0f6850f202421b836da167f7708fca812e85a0586c013072c2ae8081"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Textures/Burst1.uasset",
+      "bytes": 616632,
+      "sha256": "27f1e064d66c1a996baecde71b1e18b3b43b2c3acf3e7b344b6da8103e3610bb"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Textures/ExplosionPreset_Side_2K.uasset",
+      "bytes": 3802295,
+      "sha256": "d203ffa065dc4c0904716a82f249d80074c50b269891f1598cd13771a41cea88"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Textures/Noise_cloudsmed.uasset",
+      "bytes": 4174954,
+      "sha256": "2c6f7308320c99ab1544c8358c919a47441eeb6d21c7a96b8cf6e47cdb398260"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Textures/Smoke2c_2K.uasset",
+      "bytes": 3035814,
+      "sha256": "88a84470687439fec17a5affc70b6aa8f26fe829d418f73dc1087efdb6779da3"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Textures/SmokeTiled3.uasset",
+      "bytes": 753534,
+      "sha256": "69a55b24161285dbfb79d3310c54786b99c856a18dc06500f6c3d1bb86fd0506"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Textures/SmokeTiled3_Normal.uasset",
+      "bytes": 1983392,
+      "sha256": "94ff0acb6a805baa48b9ddf341429b4bf51150670d56b29f30af52374568df2f"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Textures/SquareSpark2.uasset",
+      "bytes": 13099,
+      "sha256": "78f2a77944f0fa9984a61e96301ea29c40c6fa69901a8bb55ce86ef16cda7812"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Textures/smoothNormalSphere.uasset",
+      "bytes": 311249,
+      "sha256": "f71411cfd1060da68b65a7a647e48901bc1e3ccbb4fd788a2339b768cb144130"
+    },
+    {
+      "relative": "Explosions_W3Vol1/Textures/water_n.uasset",
+      "bytes": 477312,
+      "sha256": "fee64f38eada2f7a1fdab7ee3032e704db7a48da5035838f50de22caa2735642"
+    },
+    {
+      "relative": "FightingAnimsetPro/Animations/InPlace/KB_Block_Loop.uasset",
+      "bytes": 128148,
+      "sha256": "faae6c343cdb975303623f92cb0e3de672b91f5555c5ee4004044813486bf76e"
+    },
+    {
+      "relative": "FightingAnimsetPro/Animations/InPlace/KB_Grenade.uasset",
+      "bytes": 430703,
+      "sha256": "1123aec36d3c8ebcfbbe6a7ac0e322b719517b069ef678d02d8cf1af52bcbb92"
+    },
+    {
+      "relative": "FightingAnimsetPro/Animations/InPlace/KB_Idle_1.uasset",
+      "bytes": 244430,
+      "sha256": "59c9d32095b2d27e1ad8835d264302dc28d608c1766fba2f07e7e03d503de634"
+    },
+    {
+      "relative": "FightingAnimsetPro/Animations/InPlace/KB_KnifeThrow.uasset",
+      "bytes": 354323,
+      "sha256": "6bc6a09cf47b73a1c58c3a61f6fa6d0bc344cb473249d55c975bb862dcd75b35"
+    },
+    {
+      "relative": "FightingAnimsetPro/Animations/InPlace/KB_p_Jab_L_1.uasset",
+      "bytes": 180574,
+      "sha256": "5fd07dd1d95c5a6186d9cb50ffde5f5c75873e0144c40277960b5830d3402b31"
+    },
+    {
+      "relative": "FightingAnimsetPro/Animations/InPlace/KB_p_Jab_R_1.uasset",
+      "bytes": 205778,
+      "sha256": "90fd18d78fa1f2f1ed6254866623abc27289960c3e16172795677b91b131895f"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Materials/M_UE4Man_Body.uasset",
+      "bytes": 138803,
+      "sha256": "e822eea4a6c4955269ea0c5dbf94f4e7a5953ff5d51c98db5143967205465abb"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Materials/M_UE4Man_ChestLogo.uasset",
+      "bytes": 91055,
+      "sha256": "88e67c98e84be1d6041d1deb51116e38aabeb8ced4c2b7cf65418274f0ea4b18"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Materials/MaterialLayers/ML_GlossyBlack_Latex_UE4.uasset",
+      "bytes": 106731,
+      "sha256": "31ced63de2b1b5a8329c56b14d26b08a571ca236c3762d2eebd09d9f4dd482eb"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Materials/MaterialLayers/ML_Plastic_Shiny_Beige.uasset",
+      "bytes": 101108,
+      "sha256": "0cc020a05a46c928462bde69d77553ff42abeac29705098b65c5e4bcc70e6e49"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Materials/MaterialLayers/ML_Plastic_Shiny_Beige_LOGO.uasset",
+      "bytes": 102228,
+      "sha256": "12821a2bbd5a26aa0f32669e03452180db004330318a07f7420fd2c6291e73dd"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Materials/MaterialLayers/ML_SoftMetal_UE4.uasset",
+      "bytes": 106318,
+      "sha256": "afb748b0e80cf2ee14bf77ae190e4c6aaf8330b732de49b3e5bb35af6e79cbc3"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Materials/MaterialLayers/T_ML_Aluminum01.uasset",
+      "bytes": 434829,
+      "sha256": "80bed7bcfb583fbe2117189438f81d1ba16beb4df032099cdedb60a3c367c9ef"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Materials/MaterialLayers/T_ML_Aluminum01_N.uasset",
+      "bytes": 405698,
+      "sha256": "4c58c4cd7d78186002ab48e0a7d753c94c6f6b95b72bdff2474a2acc28620b16"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Materials/MaterialLayers/T_ML_Rubber_Blue_01_D.uasset",
+      "bytes": 471190,
+      "sha256": "abd6b0efce53f88073bd74c2fdf3082d453d956c2f21765ef20bb357c0b5203d"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Materials/MaterialLayers/T_ML_Rubber_Blue_01_N.uasset",
+      "bytes": 362559,
+      "sha256": "93b49762f10692102aa7eca57b672166dc1f62babcd9b4a77bc025e8c4ef2831"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin.uasset",
+      "bytes": 3772551,
+      "sha256": "58d74596f602c55f29ac648962ccdcca9f437b36797083163390ec178b6c5e4e"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Mesh/SK_Mannequin_PhysicsAsset.uasset",
+      "bytes": 28013,
+      "sha256": "775a4e03b12c3d85b2bfcb3e7fab04983ae36004db4a041b58781188b317a984"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.uasset",
+      "bytes": 17925,
+      "sha256": "84c25f20bdeb261190319a1658b86eaeed802d97ee57c0eafd85b4fc0b08bc21"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Textures/UE4Man_Logo_N.uasset",
+      "bytes": 162207,
+      "sha256": "c48eccb338e4d1f2dfa79f68a01d2596158cb61e08535f6e665ee4f5b61f2bbd"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Textures/UE4_LOGO_CARD.uasset",
+      "bytes": 95592,
+      "sha256": "d3c69e3b6c0a3cfceb2f318ddb4ece3dcab9336594f4f599d4708bdc28b0182f"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Textures/UE4_Mannequin_MAT_MASKA.uasset",
+      "bytes": 275325,
+      "sha256": "eda8b3e995093647a26083b3a3cb25157bb4d8e5fb1ca8b08a7cf86be3f060b5"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Textures/UE4_Mannequin__normals.uasset",
+      "bytes": 5481515,
+      "sha256": "eee61f7ea395803af614c7194ac6ce20c6556947794eb9e95d9f83597e0c8d4b"
+    },
+    {
+      "relative": "FightingAnimsetPro/UE4_Mannequin/Textures/UE4_Mannequin_occlusion_Mobile.uasset",
+      "bytes": 362777,
+      "sha256": "8e506fe62f26d7c331c40ba5f97709668c05e71e0f8f3f3b41ec029102d33c6e"
+    },
+    {
+      "relative": "OpenWorldAnimset/Animations/NPC/Anim_IN_SA_pick_up_ground.uasset",
+      "bytes": 542403,
+      "sha256": "9185012659e975bb591e41c8409f94ded2ec844c3b136ddac4cb790dc3490736"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Materials/M_UE4Man_Body.uasset",
+      "bytes": 137655,
+      "sha256": "389faabf356326044168c549ded0130728e3254bf465beb8bde9d94a7d285e23"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Materials/M_UE4Man_ChestLogo.uasset",
+      "bytes": 94381,
+      "sha256": "a47a37c0835bc4b2a479ece595b62e73dfd85f662219d6d668521116fffbe7e7"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Materials/MaterialLayers/ML_GlossyBlack_Latex_UE4.uasset",
+      "bytes": 106466,
+      "sha256": "a0f7ceb11a1d8f9e792ca0126fd2f21c21010decf3bda3aeed47d874faf73ed7"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Materials/MaterialLayers/ML_Plastic_Shiny_Beige.uasset",
+      "bytes": 84766,
+      "sha256": "489f3341383d61d7fdbfc62b969e574c2d5f7b9edd5e7f50f7829724c83efc7d"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Materials/MaterialLayers/ML_Plastic_Shiny_Beige_LOGO.uasset",
+      "bytes": 85644,
+      "sha256": "767eac8468252476db6fdcffbd0f54bd4188023d1e6e948ecbbc071acf6d3955"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Materials/MaterialLayers/ML_SoftMetal_UE4.uasset",
+      "bytes": 98565,
+      "sha256": "fe2a9fb388795dcd5e4efb4b0b8aa414ac33febabc16adf4f3ba8b19134784c4"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Materials/MaterialLayers/T_ML_Aluminum01.uasset",
+      "bytes": 434411,
+      "sha256": "c762a060e8e4088dd6c84095fb9c0790e4afcb002dee34c88880812ec33d9edc"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Materials/MaterialLayers/T_ML_Aluminum01_N.uasset",
+      "bytes": 405257,
+      "sha256": "dbf5401fe7015f011ef0e77ae5853909f95b802873b6d972c3d76aaca16b76ae"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Materials/MaterialLayers/T_ML_Rubber_Blue_01_D.uasset",
+      "bytes": 470772,
+      "sha256": "83346b22b0767390f96efc2f053890c54c6c648f917df8644a86a4b2436ff6ab"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Materials/MaterialLayers/T_ML_Rubber_Blue_01_N.uasset",
+      "bytes": 362118,
+      "sha256": "5552fcebf9ef271973acca2b1f4eb8e7f3b1f24b1e8db7a8a8603cf936ad67f9"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin.uasset",
+      "bytes": 3774800,
+      "sha256": "29b4c8f3bcb1915bf3cc6620b0eafde24141f323a1e5a76d1d9457da076ff5ac"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Mesh/SK_Mannequin_PhysicsAsset.uasset",
+      "bytes": 26067,
+      "sha256": "6de5669427441dfdacda9c1c88f12f7e660ae3f81ce6d8cce2294bfc753685a9"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Mesh/UE4_Mannequin_Skeleton.uasset",
+      "bytes": 11183,
+      "sha256": "bbe67a494fe732d5831b99cb05fec34bd1e6879a4afaae7aa5dc422c47eb814a"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Textures/UE4Man_Logo_N.uasset",
+      "bytes": 161771,
+      "sha256": "9840a05491b91c84d01e1d496511042c4b6a31d23567f0d13171b5c3eeef06b3"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Textures/UE4_LOGO_CARD.uasset",
+      "bytes": 95174,
+      "sha256": "182a7a62a0439f6d58c5dab2a8893f3cdecd426942e406d84eaaedf96a5ea8ab"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Textures/UE4_Mannequin_MAT_MASKA.uasset",
+      "bytes": 274907,
+      "sha256": "91b6aa3bb7fc88d1815c811585cb8246fbb8ac12808180ffa0f279c7a53ad251"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Textures/UE4_Mannequin__normals.uasset",
+      "bytes": 5481079,
+      "sha256": "a12f2768befeb95a7a651fbd7a85433c08a38cd2bb68612a963c2f5f49193840"
+    },
+    {
+      "relative": "OpenWorldAnimset/UE4_Mannequin/Textures/UE4_Mannequin_occlusion_Mobile.uasset",
+      "bytes": 362359,
+      "sha256": "1c8b6fe12db6a0e31b23b09e4453ed616ff33353a0c672f964549a070be401c1"
+    }
+  ],
+  "external": [
+    "/Engine/EngineMeshes/Humanoid",
+    "/Engine/Functions/Engine_MaterialFunctions01/ImageAdjustment/CheapContrast",
+    "/Engine/Functions/Engine_MaterialFunctions01/ImageAdjustment/DeriveHDRfromLDR",
+    "/Engine/Functions/Engine_MaterialFunctions02/Math/MultiplyAdd",
+    "/Engine/Functions/Engine_MaterialFunctions02/Utility/BlendAngleCorrectedNormals",
+    "/Engine/Functions/MaterialLayerFunctions/MatLayerBlend_AO",
+    "/Engine/Functions/MaterialLayerFunctions/MatLayerBlend_NormalBlend",
+    "/Engine/Functions/MaterialLayerFunctions/MatLayerBlend_Simple",
+    "/Niagara/DefaultAssets/Templates/CascadeConversion/CompletelyEmpty",
+    "/Niagara/DynamicInputs/Angles/AngleConversion",
+    "/Niagara/DynamicInputs/Clamp/ClampFloat",
+    "/Niagara/DynamicInputs/Divide/Divide_Float",
+    "/Niagara/DynamicInputs/LinearColor/MakeLinearColorFromVectorAndFloat",
+    "/Niagara/DynamicInputs/Multiply/Multiply_Float",
+    "/Niagara/DynamicInputs/Multiply/Multiply_Vector",
+    "/Niagara/DynamicInputs/Multiply/Multiply_VectorByFloat",
+    "/Niagara/DynamicInputs/Transforms/ConvertVectorToPosition",
+    "/Niagara/DynamicInputs/TypeConversions/Vector2DFromFloat",
+    "/Niagara/DynamicInputs/TypeConversions/VectorFromFloat",
+    "/Niagara/DynamicInputs/UniformRange/V2/RandomRangeFloat",
+    "/Niagara/DynamicInputs/UniformRange/V2/RandomRangeInt",
+    "/Niagara/DynamicInputs/UniformRange/V2/RandomRangeVector",
+    "/Niagara/DynamicInputs/UniformRange/V2/RandomRangeVector2D",
+    "/Niagara/DynamicInputs/ValueFromCurve/FloatFromCurve",
+    "/Niagara/DynamicInputs/ValueFromCurve/VectorFromCurve",
+    "/Niagara/Enums/Angles/ENiagara_AngleInput",
+    "/Niagara/Enums/ENiagaraChannelCorrelation",
+    "/Niagara/Enums/ENiagaraCurlNoiseQuality",
+    "/Niagara/Enums/ENiagaraEmitterLifeCycleMode",
+    "/Niagara/Enums/ENiagaraEmitterScalabilityMode_Limited",
+    "/Niagara/Enums/ENiagaraInactiveMode",
+    "/Niagara/Enums/ENiagaraRandomnessEvaluation",
+    "/Niagara/Enums/ENiagaraRandomnessMode",
+    "/Niagara/Enums/ENiagaraScaleColorMode",
+    "/Niagara/Enums/ENiagaraShapeTorusMode",
+    "/Niagara/Enums/ENiagaraSphereDistributionMode",
+    "/Niagara/Enums/ENiagaraSystemInactiveMode",
+    "/Niagara/Enums/ENiagaraTorusDistributionMode",
+    "/Niagara/Enums/ENiagara_AttributeSamplingApplyOutput",
+    "/Niagara/Enums/ENiagara_ColorInitializationMode",
+    "/Niagara/Enums/ENiagara_EmitterStateOptions",
+    "/Niagara/Enums/ENiagara_InfiniteLoopDuration",
+    "/Niagara/Enums/ENiagara_LifetimeMode",
+    "/Niagara/Enums/ENiagara_MassInitializationMode",
+    "/Niagara/Enums/ENiagara_PositionInitializationMode",
+    "/Niagara/Enums/ENiagara_SizeScaleMode",
+    "/Niagara/Enums/ENiagara_SpriteRotationMode",
+    "/Niagara/Enums/ENiagara_SubUVLookupMode",
+    "/Niagara/Enums/ENiagara_UVFlippingMode",
+    "/Niagara/Enums/Events/ENiagara_LocEventType",
+    "/Niagara/Enums/Location/ENiagaraRingDiscMode",
+    "/Niagara/Enums/Location/ENiagara_BoxPlaneMode",
+    "/Niagara/Enums/Location/ENiagara_ConeMode",
+    "/Niagara/Enums/Location/ENiagara_CylinderMode",
+    "/Niagara/Enums/Location/ENiagara_LocationShapes",
+    "/Niagara/Enums/Ribbons/ENiagara_UnsetDirectSet",
+    "/Niagara/Enums/Ribbons/ENiagara_UnsetDirectSetRandom",
+    "/Niagara/Enums/SpriteRenderer/ENiagara_ScaleSpriteSize",
+    "/Niagara/Enums/Transforms/ENiagara_LWCConvertVecToPos",
+    "/Niagara/Enums/Transforms/ENiagara_OffsetMode",
+    "/Niagara/Enums/Transforms/ENiagara_RotationMode",
+    "/Niagara/Enums/Transforms/ENiagara_ScaleMode",
+    "/Niagara/Enums/Transforms/ENiagara_TransformOrder",
+    "/Niagara/Enums/Transforms/ENiagara_TransformType",
+    "/Niagara/Enums/Utility/ENiagara_VelocityMode",
+    "/Niagara/Modules/Emitter/EmitterState",
+    "/Niagara/Modules/Emitter/SpawnBurst_Instantaneous",
+    "/Niagara/Modules/Emitter/SpawnPerUnit",
+    "/Niagara/Modules/Events/GenerateLocationEvent",
+    "/Niagara/Modules/Events/ReceiveLocationEvent",
+    "/Niagara/Modules/Solvers/SolveForcesAndVelocity",
+    "/Niagara/Modules/Spawn/Initialization/InitializeRibbon",
+    "/Niagara/Modules/Spawn/Initialization/V2/InitializeParticle",
+    "/Niagara/Modules/Spawn/Location/V2/ShapeLocation",
+    "/Niagara/Modules/Spawn/Velocity/AddVelocity",
+    "/Niagara/Modules/System/SystemState",
+    "/Niagara/Modules/Update/Camera/CameraOffset",
+    "/Niagara/Modules/Update/Color/Color",
+    "/Niagara/Modules/Update/Color/ScaleColor",
+    "/Niagara/Modules/Update/Forces/Drag",
+    "/Niagara/Modules/Update/Forces/V2/CurlNoiseForce",
+    "/Niagara/Modules/Update/Lifetime/ParticleState",
+    "/Niagara/Modules/Update/Material/DynamicMaterialParameters",
+    "/Niagara/Modules/Update/Orientation/SpriteRotationRate",
+    "/Niagara/Modules/Update/Size/ScaleMeshSize",
+    "/Niagara/Modules/Update/Size/ScaleSpriteSize",
+    "/Niagara/Modules/Update/Size/ScaleSpriteSizeBySpeed",
+    "/Niagara/Modules/Update/SubUV/V2/SubUVAnimation",
+    "/Niagara/Modules/Update/Velocity/ScaleVelocity",
+    "/Niagara/ParameterDefinitions/CoreParameters",
+    "/Niagara/ParameterDefinitions/MeshRenderer",
+    "/Niagara/ParameterDefinitions/RibbonRenderer",
+    "/Niagara/ParameterDefinitions/SpriteRenderer",
+    "/Niagara/VectorFields/Assets/TilingCurl32",
+    "/Script/NavigationSystem",
+    "/Script/Niagara",
+    "/Script/NiagaraEditor"
+  ],
+  "bytes": 61306845
+}

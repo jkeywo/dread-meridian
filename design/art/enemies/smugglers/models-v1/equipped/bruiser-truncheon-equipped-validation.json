@@ -1,0 +1,27 @@
+{
+  "role": "bruiser",
+  "item": "bruiser-truncheon",
+  "action": "Equip_bruiser_truncheon",
+  "wrist_error_m": {
+    "r": 1.2377834115800373e-07
+  },
+  "unreal_hand_world": {
+    "r": {
+      "t": [
+        -35.35065054893494,
+        12.878330051898956,
+        107.03839063644409
+      ],
+      "q": [
+        -0.9405441284179688,
+        0.24552173912525177,
+        -0.07517778873443604,
+        0.22236022353172302
+      ]
+    }
+  },
+  "maximum_skin_radius_m": 1.0820819502014267,
+  "pose_clip_only": true,
+  "finger_pose": "provisional flexion; visual contact review required",
+  "passed": true
+}

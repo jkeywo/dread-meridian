@@ -1,0 +1,87 @@
+{
+  "gunman": {
+    "saved_mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/SKM_Gunman",
+    "bone_count": 89,
+    "persisted_sockets": 8,
+    "persisted_materials": 14,
+    "stock_clip_evaluation": {
+      "idle": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+        "evaluated": true
+      },
+      "walk": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+        "evaluated": true
+      }
+    },
+    "passed": true
+  },
+  "bruiser": {
+    "saved_mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/SKM_Bruiser",
+    "bone_count": 89,
+    "persisted_sockets": 8,
+    "persisted_materials": 14,
+    "stock_clip_evaluation": {
+      "idle": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+        "evaluated": true
+      },
+      "walk": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+        "evaluated": true
+      }
+    },
+    "passed": true
+  },
+  "lookout": {
+    "saved_mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/SKM_Lookout",
+    "bone_count": 89,
+    "persisted_sockets": 8,
+    "persisted_materials": 18,
+    "stock_clip_evaluation": {
+      "idle": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+        "evaluated": true
+      },
+      "walk": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+        "evaluated": true
+      }
+    },
+    "passed": true
+  },
+  "bomber": {
+    "saved_mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/SKM_Bomber",
+    "bone_count": 89,
+    "persisted_sockets": 9,
+    "persisted_materials": 17,
+    "stock_clip_evaluation": {
+      "idle": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+        "evaluated": true
+      },
+      "walk": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+        "evaluated": true
+      }
+    },
+    "passed": true
+  },
+  "gang-boss": {
+    "saved_mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/SKM_GangBoss",
+    "bone_count": 89,
+    "persisted_sockets": 8,
+    "persisted_materials": 15,
+    "stock_clip_evaluation": {
+      "idle": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+        "evaluated": true
+      },
+      "walk": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+        "evaluated": true
+      }
+    },
+    "passed": true
+  }
+}

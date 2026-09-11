@@ -1,0 +1,14 @@
+{
+  "animation": "/Game/DreadMeridian/Characters/Enemies/Smugglers/A_Smugglers_TPose.A_Smugglers_TPose",
+  "arms": {
+    "l": {
+      "height_delta_cm": -2.444295944314945e-06,
+      "span_cm": 55.02219745209413
+    },
+    "r": {
+      "height_delta_cm": -0.0001375982903368822,
+      "span_cm": 55.021324694993496
+    }
+  },
+  "passed": true
+}

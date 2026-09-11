@@ -1,0 +1,77 @@
+[
+  {
+    "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_Idle_Rifle_Hip.A_DM_Idle_Rifle_Hip",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "length": 6.300000190734863
+  },
+  {
+    "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_Idle_Rifle_Ironsights.A_DM_Idle_Rifle_Ironsights",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "length": 6.300000190734863
+  },
+  {
+    "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_Jog_Fwd_Rifle.A_DM_Jog_Fwd_Rifle",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "length": 1.4666666984558105
+  },
+  {
+    "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_Fire_Rifle_Hip.A_DM_Fire_Rifle_Hip",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "length": 0.23333333432674408
+  },
+  {
+    "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_Fire_Rifle_Ironsights.A_DM_Fire_Rifle_Ironsights",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "length": 0.23333333432674408
+  },
+  {
+    "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_Death_1.A_DM_Death_1",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "length": 2.066666603088379
+  },
+  {
+    "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_Hit_React_1.A_DM_Hit_React_1",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "length": 0.9666666388511658
+  },
+  {
+    "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_Prone_To_Stand.A_DM_Prone_To_Stand",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "length": 1.4333332777023315
+  },
+  {
+    "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_KB_p_Jab_R_1.A_DM_KB_p_Jab_R_1",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "length": 0.7666666507720947
+  },
+  {
+    "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_KB_p_Jab_L_1.A_DM_KB_p_Jab_L_1",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "length": 0.949999988079071
+  },
+  {
+    "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_KB_Idle_1.A_DM_KB_Idle_1",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "length": 2.5
+  },
+  {
+    "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_KB_Grenade.A_DM_KB_Grenade",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "length": 2.2666666507720947
+  },
+  {
+    "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_KB_Block_Loop.A_DM_KB_Block_Loop",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "length": 0.9333333373069763
+  },
+  {
+    "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_KB_KnifeThrow.A_DM_KB_KnifeThrow",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "length": 1.7166666984558105
+  },
+  {
+    "path": "/Game/DreadMeridian/Presentation/Animations/A_DM_Anim_IN_SA_pick_up_ground.A_DM_Anim_IN_SA_pick_up_ground",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "length": 5.0
+  }
+]

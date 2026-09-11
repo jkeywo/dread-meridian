@@ -1,0 +1,146 @@
+{
+  "gunman-rigged.blend": {
+    "bytes": 5935420,
+    "sha256": "f36f0e6a8dfa82b0dd66e21c1e605325095dec43d15c2739f4d5480ecabdbda7"
+  },
+  "gunman-rigged.fbx": {
+    "bytes": 3372988,
+    "sha256": "f0373340849a18846f6fcdb93789ecbc3b7f591cf295c2939ade2abcd38f47fd"
+  },
+  "gunman-rigged.glb": {
+    "bytes": 4901264,
+    "sha256": "fd4c43b48d8a246a9b9ef6e880f57630290713c3caefb03a7695c902a13854b8"
+  },
+  "bruiser-rigged.blend": {
+    "bytes": 7145707,
+    "sha256": "f0018087ac4ffe2ac56e55126d9f65ca6898ca639b74797ee40813aa9356efec"
+  },
+  "bruiser-rigged.fbx": {
+    "bytes": 4521708,
+    "sha256": "2515deebb18818304f546e31e39657a351144dc43916b9ceef918a9aeef2f12b"
+  },
+  "bruiser-rigged.glb": {
+    "bytes": 6254592,
+    "sha256": "a4ac2331a467b64a685ca5e78e4cf1ad87798b78b6ef47176761687790faeb95"
+  },
+  "lookout-rigged.blend": {
+    "bytes": 6121775,
+    "sha256": "5156fdd66636e6092d2e122c14f0cabe16d04520460a23c2100a42376b5bbd37"
+  },
+  "lookout-rigged.fbx": {
+    "bytes": 3535516,
+    "sha256": "aa66e001ea532ca060d2f870a0b4938b87dbd5862990e456b466adc6b8d4fcf5"
+  },
+  "lookout-rigged.glb": {
+    "bytes": 5194420,
+    "sha256": "0fb7c1dd68c1c67d1faf5de2af75dbd801697b14021216df1b0a9c0a2e1435b1"
+  },
+  "bomber-rigged.blend": {
+    "bytes": 6981764,
+    "sha256": "0f7f006ae97af18bb31d2b6b5daf7d6686ee6ddf19c47922e26f44e1ae8ed0d1"
+  },
+  "bomber-rigged.fbx": {
+    "bytes": 4347612,
+    "sha256": "994fbec86702a4fb54c3ad6841bd3522f9eecac0e7ca489e32a6f93dade556c4"
+  },
+  "bomber-rigged.glb": {
+    "bytes": 6264112,
+    "sha256": "ade42b42e8f7fc5a1139ee0c276c53397f9b13669707f02b42dbe6ed05f470f3"
+  },
+  "gang-boss-rigged.blend": {
+    "bytes": 6163746,
+    "sha256": "f601475d4796fc43959533e4acd55fc66c935022c48fc94bdc0dc60cb62dcdc0"
+  },
+  "gang-boss-rigged.fbx": {
+    "bytes": 3617180,
+    "sha256": "4676120e892c3e554d73ef903d1ba085a7e23421320f1bb9f493a551ef231bfc"
+  },
+  "gang-boss-rigged.glb": {
+    "bytes": 5252148,
+    "sha256": "479d350a4d06956517e135e02086b0ce2fe01c78a9060e798e8da8a3d630eb2b"
+  },
+  "gunman-rifle.blend": {
+    "bytes": 104155,
+    "sha256": "c4bba83da7a182884b55587e99b4e6e87fb1a0ce969054675fee65d699fa2fff"
+  },
+  "gunman-rifle.fbx": {
+    "bytes": 80780,
+    "sha256": "383b0ecfc26058d2ad6a86effa185c732743865fefc8bfed59f9f3fb5052e309"
+  },
+  "gunman-rifle.glb": {
+    "bytes": 80156,
+    "sha256": "6e94302f8238b3576d3c934e0e09045e008ddc4264aa81c9c9113dd5926aa378"
+  },
+  "bruiser-truncheon.blend": {
+    "bytes": 105981,
+    "sha256": "6f9fd0a7d242ce230504e5e2a7af6aec16fc0e675997eb97ab17bdc52d692105"
+  },
+  "bruiser-truncheon.fbx": {
+    "bytes": 987724,
+    "sha256": "66507718a83e0a76212a8186d43c086da5f2504df2808d24662f06312e937dcc"
+  },
+  "bruiser-truncheon.glb": {
+    "bytes": 934288,
+    "sha256": "43e0af0685c451a0606864fe86a0bbc3d93299ebc88b7d0897904ac3fcfa02af"
+  },
+  "lookout-binoculars.blend": {
+    "bytes": 105499,
+    "sha256": "fd69f3050d27836ce9173162945ea6bffa395b606fb92297ffc8a0d497ed19a1"
+  },
+  "lookout-binoculars.fbx": {
+    "bytes": 299100,
+    "sha256": "aa53574f39ad9f5cc7bc8141d3b960c42b31748d652824e66f32d04c15e839a7"
+  },
+  "lookout-binoculars.glb": {
+    "bytes": 250724,
+    "sha256": "184688f81a2a15622324bcf1d9cd10121908ca7dc8d14a302cbad121d0a71302"
+  },
+  "lookout-pistol.blend": {
+    "bytes": 101573,
+    "sha256": "73dc544f7104e2ac4b61f7438216ce5af77f9f5233f3ecfb7140dcf3c2144894"
+  },
+  "lookout-pistol.fbx": {
+    "bytes": 54780,
+    "sha256": "5f45bde4bf56f3e3586bfc8bdc83f80b0ef381b27b24f99a102b9f5c2b68eaf5"
+  },
+  "lookout-pistol.glb": {
+    "bytes": 43844,
+    "sha256": "72b6ae5c9a11ba380ce2805de207dcc35913fca107401d632a64667d8ad9168c"
+  },
+  "bomber-grenade.blend": {
+    "bytes": 130913,
+    "sha256": "6256b9e9343ae549cc3911c303fd83ec3c4b72b96098bef954cd5324885cedb2"
+  },
+  "bomber-grenade.fbx": {
+    "bytes": 764748,
+    "sha256": "c85fb741cda5a1cb1dbe8262f43aeb0d33dca8c727bf5aed61fbd5f88a48f9a5"
+  },
+  "bomber-grenade.glb": {
+    "bytes": 633728,
+    "sha256": "26b75b06166163675dec4df1e984ceabbe2757b3cca8597802e0e30f43c89ad6"
+  },
+  "bomber-satchel.blend": {
+    "bytes": 102271,
+    "sha256": "58e7c6dfb1d90420174e57e101b48cc40b980334e04280e171a897cdc6fd389b"
+  },
+  "bomber-satchel.fbx": {
+    "bytes": 75084,
+    "sha256": "b3aaeb38bec9bb9bf0cc8eb352ff2cb5e59e026116c1dcc8dc9195c87c281b63"
+  },
+  "bomber-satchel.glb": {
+    "bytes": 72060,
+    "sha256": "5c703cec8c3338a1320b28444a0ec1ebc067037d85e0bf46fac9f512577dc5ae"
+  },
+  "gang-boss-smg.blend": {
+    "bytes": 109389,
+    "sha256": "c18b32b74891b77ad96135f7cdd8f3379c4a7770bcea7985d4e5f88e54d51660"
+  },
+  "gang-boss-smg.fbx": {
+    "bytes": 1253004,
+    "sha256": "841bc1ab5e21998d16497f406ae76c4c1ee99549004bdc2e0431e8e514b4bf06"
+  },
+  "gang-boss-smg.glb": {
+    "bytes": 1097164,
+    "sha256": "86cfe06b5507521a2b965b0a041e43aafe5b3c1bcb2f903a841f6a9f31b153fe"
+  }
+}

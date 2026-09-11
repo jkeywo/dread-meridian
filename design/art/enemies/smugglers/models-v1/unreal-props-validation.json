@@ -1,0 +1,73 @@
+{
+  "gunman-rifle": {
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Equipment/SM_GunmanRifle.SM_GunmanRifle",
+    "anchors": [
+      "ANCHOR_grip_r",
+      "ANCHOR_stow",
+      "ANCHOR_muzzle",
+      "ANCHOR_support_l"
+    ],
+    "materials": 2,
+    "passed": true
+  },
+  "bruiser-truncheon": {
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Equipment/SM_BruiserTruncheon.SM_BruiserTruncheon",
+    "anchors": [
+      "ANCHOR_grip_r",
+      "ANCHOR_stow"
+    ],
+    "materials": 3,
+    "passed": true
+  },
+  "lookout-binoculars": {
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Equipment/SM_LookoutBinoculars.SM_LookoutBinoculars",
+    "anchors": [
+      "ANCHOR_grip_r",
+      "ANCHOR_support_l",
+      "ANCHOR_stow",
+      "ANCHOR_optical_axis"
+    ],
+    "materials": 4,
+    "passed": true
+  },
+  "lookout-pistol": {
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Equipment/SM_LookoutPistol.SM_LookoutPistol",
+    "anchors": [
+      "ANCHOR_grip_r",
+      "ANCHOR_stow",
+      "ANCHOR_muzzle"
+    ],
+    "materials": 2,
+    "passed": true
+  },
+  "bomber-grenade": {
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Equipment/SM_BomberGrenade.SM_BomberGrenade",
+    "anchors": [
+      "ANCHOR_grip_r",
+      "ANCHOR_stow"
+    ],
+    "materials": 3,
+    "passed": true
+  },
+  "bomber-satchel": {
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Equipment/SM_BomberSatchel.SM_BomberSatchel",
+    "anchors": [
+      "ANCHOR_grip_r",
+      "ANCHOR_stow",
+      "ANCHOR_grenade_pocket"
+    ],
+    "materials": 3,
+    "passed": true
+  },
+  "gang-boss-smg": {
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Equipment/SM_GangBossSmg.SM_GangBossSmg",
+    "anchors": [
+      "ANCHOR_grip_r",
+      "ANCHOR_stow",
+      "ANCHOR_muzzle",
+      "ANCHOR_support_l"
+    ],
+    "materials": 2,
+    "passed": true
+  }
+}

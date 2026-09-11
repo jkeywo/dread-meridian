@@ -1,0 +1,15 @@
+{
+  "asset": "lookout",
+  "blender_bones": 88,
+  "unreal_root_node": "root",
+  "vertices": 55959,
+  "weighted_vertices": 55959,
+  "max_influences": 6,
+  "weight_sum_max_error": 1.1920928955078125e-07,
+  "sockets": 8,
+  "actions": [
+    "Manny_Idle",
+    "Manny_Walk",
+    "T_Pose"
+  ]
+}

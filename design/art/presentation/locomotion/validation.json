@@ -1,0 +1,42 @@
+[
+  {
+    "clip": "A_DM_Locomotion_M_Neutral_Run_Start_F_Rfoot",
+    "loaded": true,
+    "window_pose_matches": true
+  },
+  {
+    "clip": "A_DM_Locomotion_M_Neutral_Run_Start_F_Rfoot_Rifle",
+    "loaded": true,
+    "window_pose_matches": true
+  },
+  {
+    "clip": "A_DM_Locomotion_M_Neutral_Run_Stop_F_Rfoot",
+    "loaded": true,
+    "window_pose_matches": true
+  },
+  {
+    "clip": "A_DM_Locomotion_M_Neutral_Run_Stop_F_Rfoot_Rifle",
+    "loaded": true,
+    "window_pose_matches": true
+  },
+  {
+    "clip": "A_DM_Locomotion_M_Neutral_Stand_Turn_090_L",
+    "loaded": true,
+    "window_pose_matches": true
+  },
+  {
+    "clip": "A_DM_Locomotion_M_Neutral_Stand_Turn_090_L_Rifle",
+    "loaded": true,
+    "window_pose_matches": true
+  },
+  {
+    "clip": "A_DM_Locomotion_M_Neutral_Stand_Turn_090_R",
+    "loaded": true,
+    "window_pose_matches": true
+  },
+  {
+    "clip": "A_DM_Locomotion_M_Neutral_Stand_Turn_090_R_Rifle",
+    "loaded": true,
+    "window_pose_matches": true
+  }
+]

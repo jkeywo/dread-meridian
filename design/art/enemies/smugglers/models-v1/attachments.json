@@ -1,0 +1,237 @@
+{
+  "schema_version": 2,
+  "status": "PROVISIONAL skinned Manny-compatible concept rigs",
+  "units": "metres",
+  "blender_axes": {
+    "up": "+Z",
+    "character_forward": "-Y",
+    "character_right": "-X",
+    "item_forward": "+X"
+  },
+  "transforms": {
+    "formula": "item_root_world = character_socket_world @ inverse(item_anchor_in_root)",
+    "unreal": "Use native mesh sockets and native prop anchors, in centimetres. Match anchor world transform to character socket world transform.",
+    "hand_pose": "Finger bones are skinned. Item-specific finger poses and two-hand IK are separate animation work.",
+    "animation_note": "Character sockets are bone-parented. Native Unreal mesh sockets use the same stable names."
+  },
+  "characters": {
+    "gunman": {
+      "asset": "gunman-rigged.glb",
+      "items": [
+        "gunman-rifle"
+      ],
+      "states": {
+        "stowed": [
+          {
+            "item": "gunman-rifle",
+            "socket": "SOCKET_stow_back",
+            "anchor": "ANCHOR_stow"
+          }
+        ],
+        "gunman-rifle_held": [
+          {
+            "item": "gunman-rifle",
+            "socket": "SOCKET_hand_r",
+            "anchor": "ANCHOR_grip_r",
+            "support_anchor": "ANCHOR_support_l"
+          }
+        ]
+      }
+    },
+    "bruiser": {
+      "asset": "bruiser-rigged.glb",
+      "items": [
+        "bruiser-truncheon"
+      ],
+      "states": {
+        "stowed": [
+          {
+            "item": "bruiser-truncheon",
+            "socket": "SOCKET_holster_hip_r",
+            "anchor": "ANCHOR_stow"
+          }
+        ],
+        "bruiser-truncheon_held": [
+          {
+            "item": "bruiser-truncheon",
+            "socket": "SOCKET_hand_r",
+            "anchor": "ANCHOR_grip_r"
+          }
+        ]
+      }
+    },
+    "lookout": {
+      "asset": "lookout-rigged.glb",
+      "items": [
+        "lookout-binoculars",
+        "lookout-pistol"
+      ],
+      "states": {
+        "stowed": [
+          {
+            "item": "lookout-binoculars",
+            "socket": "SOCKET_stow_chest",
+            "anchor": "ANCHOR_stow"
+          },
+          {
+            "item": "lookout-pistol",
+            "socket": "SOCKET_holster_hip_r",
+            "anchor": "ANCHOR_stow"
+          }
+        ],
+        "lookout-binoculars_held": [
+          {
+            "item": "lookout-binoculars",
+            "socket": "SOCKET_hand_r",
+            "anchor": "ANCHOR_grip_r",
+            "support_anchor": "ANCHOR_support_l"
+          },
+          {
+            "item": "lookout-pistol",
+            "socket": "SOCKET_holster_hip_r",
+            "anchor": "ANCHOR_stow"
+          }
+        ],
+        "lookout-pistol_held": [
+          {
+            "item": "lookout-binoculars",
+            "socket": "SOCKET_stow_chest",
+            "anchor": "ANCHOR_stow"
+          },
+          {
+            "item": "lookout-pistol",
+            "socket": "SOCKET_hand_r",
+            "anchor": "ANCHOR_grip_r"
+          }
+        ]
+      }
+    },
+    "bomber": {
+      "asset": "bomber-rigged.glb",
+      "items": [
+        "bomber-grenade",
+        "bomber-satchel"
+      ],
+      "states": {
+        "stowed": [
+          {
+            "item": "bomber-grenade",
+            "socket": "SOCKET_grenade_pouch",
+            "anchor": "ANCHOR_stow"
+          },
+          {
+            "item": "bomber-satchel",
+            "socket": "SOCKET_holster_hip_r",
+            "anchor": "ANCHOR_stow"
+          }
+        ],
+        "bomber-grenade_held": [
+          {
+            "item": "bomber-grenade",
+            "socket": "SOCKET_hand_r",
+            "anchor": "ANCHOR_grip_r"
+          },
+          {
+            "item": "bomber-satchel",
+            "socket": "SOCKET_holster_hip_r",
+            "anchor": "ANCHOR_stow"
+          }
+        ],
+        "bomber-satchel_held": [
+          {
+            "item": "bomber-grenade",
+            "socket": "SOCKET_grenade_pouch",
+            "anchor": "ANCHOR_stow"
+          },
+          {
+            "item": "bomber-satchel",
+            "socket": "SOCKET_hand_r",
+            "anchor": "ANCHOR_grip_r"
+          }
+        ]
+      }
+    },
+    "gang-boss": {
+      "asset": "gang-boss-rigged.glb",
+      "items": [
+        "gang-boss-smg"
+      ],
+      "states": {
+        "stowed": [
+          {
+            "item": "gang-boss-smg",
+            "socket": "SOCKET_stow_back",
+            "anchor": "ANCHOR_stow"
+          }
+        ],
+        "gang-boss-smg_held": [
+          {
+            "item": "gang-boss-smg",
+            "socket": "SOCKET_hand_r",
+            "anchor": "ANCHOR_grip_r",
+            "support_anchor": "ANCHOR_support_l"
+          }
+        ]
+      }
+    }
+  },
+  "items": {
+    "gunman-rifle": {
+      "asset": "gunman-rifle.glb",
+      "anchors": [
+        "ANCHOR_grip_r",
+        "ANCHOR_stow",
+        "ANCHOR_muzzle",
+        "ANCHOR_support_l"
+      ]
+    },
+    "bruiser-truncheon": {
+      "asset": "bruiser-truncheon.glb",
+      "anchors": [
+        "ANCHOR_grip_r",
+        "ANCHOR_stow"
+      ]
+    },
+    "lookout-binoculars": {
+      "asset": "lookout-binoculars.glb",
+      "anchors": [
+        "ANCHOR_grip_r",
+        "ANCHOR_support_l",
+        "ANCHOR_stow",
+        "ANCHOR_optical_axis"
+      ]
+    },
+    "lookout-pistol": {
+      "asset": "lookout-pistol.glb",
+      "anchors": [
+        "ANCHOR_grip_r",
+        "ANCHOR_stow",
+        "ANCHOR_muzzle"
+      ]
+    },
+    "bomber-grenade": {
+      "asset": "bomber-grenade.glb",
+      "anchors": [
+        "ANCHOR_grip_r",
+        "ANCHOR_stow"
+      ]
+    },
+    "bomber-satchel": {
+      "asset": "bomber-satchel.glb",
+      "anchors": [
+        "ANCHOR_grip_r",
+        "ANCHOR_stow",
+        "ANCHOR_grenade_pocket"
+      ]
+    },
+    "gang-boss-smg": {
+      "asset": "gang-boss-smg.glb",
+      "anchors": [
+        "ANCHOR_grip_r",
+        "ANCHOR_stow",
+        "ANCHOR_muzzle",
+        "ANCHOR_support_l"
+      ]
+    }
+  }
+}

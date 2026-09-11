@@ -1,0 +1,54 @@
+{
+  "bomber-grenade-equipped": {
+    "animation": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_BomberGrenadeEquipped.A_BomberGrenadeEquipped",
+    "hand_error_cm": {
+      "r": 0.00013482318520372297
+    },
+    "passed": true
+  },
+  "bomber-satchel-equipped": {
+    "animation": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_BomberSatchelEquipped.A_BomberSatchelEquipped",
+    "hand_error_cm": {
+      "r": 0.00010927037662617655
+    },
+    "passed": true
+  },
+  "bruiser-truncheon-equipped": {
+    "animation": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_BruiserTruncheonEquipped.A_BruiserTruncheonEquipped",
+    "hand_error_cm": {
+      "r": 0.00015215311392544775
+    },
+    "passed": true
+  },
+  "gang-boss-smg-equipped": {
+    "animation": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_GangBossSmgEquipped.A_GangBossSmgEquipped",
+    "hand_error_cm": {
+      "r": 0.00010215514846539124,
+      "l": 0.000142367796609461
+    },
+    "passed": true
+  },
+  "gunman-rifle-equipped": {
+    "animation": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_GunmanRifleEquipped.A_GunmanRifleEquipped",
+    "hand_error_cm": {
+      "r": 9.236619584438357e-05,
+      "l": 0.00015758171367738984
+    },
+    "passed": true
+  },
+  "lookout-binoculars-equipped": {
+    "animation": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_LookoutBinocularsEquipped.A_LookoutBinocularsEquipped",
+    "hand_error_cm": {
+      "r": 5.966853691121581e-05,
+      "l": 0.0001004776293787897
+    },
+    "passed": true
+  },
+  "lookout-pistol-equipped": {
+    "animation": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Poses/A_LookoutPistolEquipped.A_LookoutPistolEquipped",
+    "hand_error_cm": {
+      "r": 0.0001268077486844513
+    },
+    "passed": true
+  }
+}

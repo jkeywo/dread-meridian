@@ -1,0 +1,54 @@
+{
+  "bomber-grenade-equipped": {
+    "moved_target_errors_m": {
+      "r": 1.0745380149674383e-07
+    },
+    "skin_radius_m": 1.0657198814063038,
+    "passed": true
+  },
+  "bomber-satchel-equipped": {
+    "moved_target_errors_m": {
+      "r": 5.960464477539063e-08
+    },
+    "skin_radius_m": 1.0657198814063038,
+    "passed": true
+  },
+  "bruiser-truncheon-equipped": {
+    "moved_target_errors_m": {
+      "r": 3.332000937312528e-08
+    },
+    "skin_radius_m": 1.0820819502014267,
+    "passed": true
+  },
+  "gang-boss-smg-equipped": {
+    "moved_target_errors_m": {
+      "r": 0.0,
+      "l": 1.1926748300777466e-07
+    },
+    "skin_radius_m": 1.0561126405234524,
+    "passed": true
+  },
+  "gunman-rifle-equipped": {
+    "moved_target_errors_m": {
+      "r": 1.221986075256521e-07,
+      "l": 6.664001874625056e-08
+    },
+    "skin_radius_m": 1.050327722532195,
+    "passed": true
+  },
+  "lookout-binoculars-equipped": {
+    "moved_target_errors_m": {
+      "r": 2.3863857532072346e-07,
+      "l": 1.210576058124894e-07
+    },
+    "skin_radius_m": 1.0496115395935703,
+    "passed": true
+  },
+  "lookout-pistol-equipped": {
+    "moved_target_errors_m": {
+      "r": 2.9802322387695312e-08
+    },
+    "skin_radius_m": 1.0496115395935703,
+    "passed": true
+  }
+}

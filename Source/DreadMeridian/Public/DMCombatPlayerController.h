@@ -1,0 +1,95 @@
+#pragma once
+#include "CoreMinimal.h"
+#include "GameFramework/PlayerController.h"
+#include "DMPing.h"
+
+#include "DMCombatPlayerController.generated.h"
+
+struct FInputActionValue;
+class ADMCombatant;
+class ADMScroungePickup;
+class UInputAction;
+UCLASS()
+class DREADMERIDIAN_API ADMCombatPlayerController : public APlayerController
+{
+    GENERATED_BODY()
+public:
+    ADMCombatPlayerController();
+    virtual void SetupInputComponent() override;
+    virtual void PlayerTick(float DeltaTime) override;
+    virtual void PawnLeavingGame() override;
+    void StartAutoAttack(ADMCombatant* Target = nullptr);
+    bool IsQAiming() const { return bQAiming; }
+    void GetQAim(ADMCombatant*& Target, FVector& Point) const;
+    FString QFeedback() const;
+    UFUNCTION(Server, Reliable) void ServerCastQ(ADMCombatant* Target, FVector Point, bool bDetonate);
+    UFUNCTION(Server, Reliable) void ServerCancelFrame();
+    UFUNCTION(Client, Reliable) void ClientQFeedback(const FString& Message);
+    ADMCombatant* GetSelectedTarget() const { return SelectedTarget.Get(); }
+    UFUNCTION(Server, Reliable) void ServerSelectTarget(ADMCombatant* Target);
+    UFUNCTION(Server, Reliable) void ServerRevive(ADMCombatant* Ally);
+    UFUNCTION(Client, Reliable) void ClientVerifyCombatState(const FString& ExpectedJson);
+
+    // ---- Pings (GDD 9.3: tap = contextual, hold = compact radial)
+    /**
+     * Server entry for every ping gesture. Kind is an EDMPingKind. ExistingPingId >= 1 means the gesture landed on a
+     * live ping: the author's own ping is cancelled, anyone else's is acknowledged, and Kind/Location/Target are
+     * ignored. Otherwise the server validates and creates the ping through ADMCombatGameMode::CreatePing and replies
+     * with ClientQFeedback on rejection. Downed players may still ping Help and Perceive.
+     */
+    UFUNCTION(Server, Reliable) void ServerPing(uint8 Kind, FVector Location, ADMCombatant* Target, int32 ExistingPingId);
+    /** True while the ping key is held past HoldSeconds and the radial is showing. */
+    bool IsPingRadialOpen() const { return bPingRadialOpen; }
+    /** Screen position where the hold began (radial centre). */
+    FVector2D GetPingRadialOrigin() const { return PingRadialOrigin; }
+    /** Radial entry under the cursor (index into RadialKinds), or INDEX_NONE inside the dead zone. */
+    int32 GetPingRadialHover() const;
+    /** Radial entries in clockwise order from the top: GoHere, Defend, Retreat, Help, Focus, Ignore, Perceive. */
+    static const TArray<EDMPingKind>& RadialKinds();
+    static constexpr float PingHoldSeconds = .3f;
+    static constexpr float PingRadialDeadZone = 28.f;
+private:
+    UPROPERTY() TObjectPtr<class UInputMappingContext> Mapping;
+    UPROPERTY() TObjectPtr<UInputAction> MoveAction;
+    UPROPERTY() TObjectPtr<UInputAction> ClickAction;
+    UPROPERTY() TObjectPtr<UInputAction> AttackAction;
+    UPROPERTY() TObjectPtr<UInputAction> CycleAction;
+    UPROPERTY() TObjectPtr<UInputAction> ReviveAction;
+    UPROPERTY() TObjectPtr<UInputAction> QAction;
+    UPROPERTY() TObjectPtr<UInputAction> QPadAction;
+    UPROPERTY() TObjectPtr<UInputAction> ConfirmQAction;
+    UPROPERTY() TObjectPtr<UInputAction> CancelQAction;
+    UPROPERTY() TObjectPtr<UInputAction> DetonateAction;
+    UPROPERTY() TObjectPtr<UInputAction> PingAction;
+    bool bQAiming = false;
+    bool bQGamepad = false;
+    FVector PadAimOffset = FVector::ZeroVector;
+    FString LastQFeedback;
+    float FeedbackUntil = 0;
+    float NextProbeQTime = 0;
+    // Ping gesture state (client side)
+    bool bPingHeld = false;
+    bool bPingRadialOpen = false;
+    float PingPressedAt = 0;
+    FVector2D PingRadialOrigin = FVector2D::ZeroVector;
+    void PingPressed();
+    void PingReleased();
+    /** Cursor context -> (kind, location, target, existing ping id). Returns false when nothing pingable is under the cursor. */
+    bool ResolveContextPing(EDMPingKind& OutKind, FVector& OutLocation, ADMCombatant*& OutTarget, int32& OutExistingPingId) const;
+    /** Nearest live ping whose projected marker is within PingRadialDeadZone of the cursor, or INDEX_NONE. */
+    int32 PingUnderCursor() const;
+    void BeginQ();
+    void BeginQPad();
+    void ConfirmQ();
+    void CancelQ();
+    void Detonate();
+    TWeakObjectPtr<ADMCombatant> SelectedTarget;
+    bool bAutoAttack = false;
+    bool bDisconnectScheduled = false;
+    bool bVisualScheduled = false;
+    void Move(const FInputActionValue& Value);
+    void Click();
+    void Attack();
+    void Cycle();
+    void StartRevive();
+};

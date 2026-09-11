@@ -1,0 +1,25 @@
+{
+  "format": "glTF 2.0 binary",
+  "import_verified": true,
+  "triangles": 102297,
+  "meshes": 1,
+  "materials": 20,
+  "bounds_min_m": [
+    -0.4185676574707031,
+    -0.31109124422073364,
+    0.008000001311302185
+  ],
+  "bounds_max_m": [
+    0.4766145646572113,
+    0.29903078079223633,
+    1.9150325059890747
+  ],
+  "rigged": false,
+  "animated": false,
+  "stage_in_export": false,
+  "notes": [
+    "Static stylized concept interpretation, not a reconstructed scan.",
+    "Procedural micro-bump in Blender is not baked into GLB. GLB uses base PBR materials.",
+    "No Unreal integration, production retopology, LODs, or game runtime validation."
+  ]
+}

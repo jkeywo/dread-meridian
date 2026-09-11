@@ -1,0 +1,70 @@
+{
+  "sapper": {
+    "saved_mesh": "/Game/DreadMeridian/Characters/Investigators/Sapper/SKM_Sapper",
+    "bone_count": 89,
+    "persisted_sockets": 8,
+    "persisted_materials": 20,
+    "stock_clip_evaluation": {
+      "idle": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+        "evaluated": true
+      },
+      "walk": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+        "evaluated": true
+      }
+    },
+    "passed": true
+  },
+  "photographer": {
+    "saved_mesh": "/Game/DreadMeridian/Characters/Investigators/Photographer/SKM_Photographer_Refined",
+    "bone_count": 89,
+    "persisted_sockets": 8,
+    "persisted_materials": 17,
+    "stock_clip_evaluation": {
+      "idle": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+        "evaluated": true
+      },
+      "walk": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+        "evaluated": true
+      }
+    },
+    "passed": true
+  },
+  "medium": {
+    "saved_mesh": "/Game/DreadMeridian/Characters/Investigators/Medium/SKM_Medium_Refined",
+    "bone_count": 89,
+    "persisted_sockets": 8,
+    "persisted_materials": 18,
+    "stock_clip_evaluation": {
+      "idle": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+        "evaluated": true
+      },
+      "walk": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+        "evaluated": true
+      }
+    },
+    "passed": true
+  },
+  "smuggler": {
+    "saved_mesh": "/Game/DreadMeridian/Characters/Investigators/Smuggler/SKM_Smuggler",
+    "bone_count": 89,
+    "persisted_sockets": 8,
+    "persisted_materials": 14,
+    "stock_clip_evaluation": {
+      "idle": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+        "evaluated": true
+      },
+      "walk": {
+        "asset": "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+        "evaluated": true
+      }
+    },
+    "passed": true
+  }
+}

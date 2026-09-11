@@ -1,0 +1,168 @@
+{
+  "schema_version": 2,
+  "status": "PROVISIONAL skinned Manny-compatible concept rigs",
+  "units": "metres",
+  "blender_axes": {
+    "up": "+Z",
+    "character_forward": "-Y",
+    "character_right": "-X",
+    "item_forward": "+X"
+  },
+  "transforms": {
+    "formula": "item_root_world = character_socket_world @ inverse(item_anchor_in_root)",
+    "blender_quaternion_order": "w,x,y,z",
+    "gltf_quaternion_order": "x,y,z,w",
+    "gltf_note": "Use the node matrices in the loaded GLB. Blender to glTF basis conversion is already baked by the exporter; do not reapply it.",
+    "hand_pose": "Finger bones are skinned. Item-specific finger poses and two-hand IK are separate animation work.",
+    "animation_note": "Character sockets are bone-parented. Native Unreal mesh sockets use the same stable names."
+  },
+  "characters": {
+    "sapper": {
+      "asset": "sapper-rigged.glb",
+      "items": [
+        "sapper-carbine"
+      ],
+      "states": {
+        "held": [
+          {
+            "item": "sapper-carbine",
+            "socket": "SOCKET_hand_r",
+            "anchor": "ANCHOR_grip_r",
+            "support_anchor": "ANCHOR_support_l"
+          }
+        ],
+        "stowed": [
+          {
+            "item": "sapper-carbine",
+            "socket": "SOCKET_stow_back",
+            "anchor": "ANCHOR_stow"
+          }
+        ]
+      }
+    },
+    "photographer": {
+      "asset": "photographer-rigged.glb",
+      "items": [
+        "photographer-camera",
+        "photographer-rifle"
+      ],
+      "states": {
+        "camera_held": [
+          {
+            "item": "photographer-camera",
+            "socket": "SOCKET_hand_r",
+            "anchor": "ANCHOR_grip_r",
+            "support_anchor": "ANCHOR_support_l"
+          },
+          {
+            "item": "photographer-rifle",
+            "socket": "SOCKET_stow_back",
+            "anchor": "ANCHOR_stow"
+          }
+        ],
+        "rifle_held": [
+          {
+            "item": "photographer-rifle",
+            "socket": "SOCKET_hand_r",
+            "anchor": "ANCHOR_grip_r",
+            "support_anchor": "ANCHOR_support_l"
+          },
+          {
+            "item": "photographer-camera",
+            "socket": "SOCKET_stow_chest",
+            "anchor": "ANCHOR_stow"
+          }
+        ],
+        "stowed": [
+          {
+            "item": "photographer-camera",
+            "socket": "SOCKET_stow_chest",
+            "anchor": "ANCHOR_stow"
+          },
+          {
+            "item": "photographer-rifle",
+            "socket": "SOCKET_stow_back",
+            "anchor": "ANCHOR_stow"
+          }
+        ]
+      }
+    },
+    "medium": {
+      "asset": "medium-rigged.glb",
+      "items": [
+        "medium-spirit-wisp"
+      ],
+      "states": {
+        "active": [
+          {
+            "item": "medium-spirit-wisp",
+            "socket": "SOCKET_fx_palm_r",
+            "anchor": "ANCHOR_emit"
+          }
+        ],
+        "inactive": [
+          {
+            "item": "medium-spirit-wisp",
+            "visibility": "hidden",
+            "reason": "Supernatural effect; no physical holster."
+          }
+        ]
+      }
+    },
+    "smuggler": {
+      "asset": "smuggler-rigged.glb",
+      "items": [],
+      "states": {
+        "unarmed": []
+      },
+      "note": "Bare-knuckle reference has no held item. Hand, effect and holster nodes reserve attachment locations for future shared props."
+    }
+  },
+  "items": {
+    "sapper-carbine": {
+      "asset": "sapper-carbine.glb",
+      "anchors": [
+        "ANCHOR_grip_r",
+        "ANCHOR_support_l",
+        "ANCHOR_stow",
+        "ANCHOR_muzzle"
+      ]
+    },
+    "photographer-camera": {
+      "asset": "photographer-camera.glb",
+      "anchors": [
+        "ANCHOR_grip_r",
+        "ANCHOR_support_l",
+        "ANCHOR_stow",
+        "ANCHOR_optical_axis"
+      ],
+      "assembly": "Camera and flash reflector are one held assembly."
+    },
+    "photographer-rifle": {
+      "asset": "photographer-rifle.glb",
+      "anchors": [
+        "ANCHOR_grip_r",
+        "ANCHOR_support_l",
+        "ANCHOR_stow",
+        "ANCHOR_muzzle"
+      ]
+    },
+    "medium-spirit-wisp": {
+      "asset": "medium-spirit-wisp.glb",
+      "anchors": [
+        "ANCHOR_emit"
+      ],
+      "type": "effect concept mesh"
+    }
+  },
+  "required_character_nodes": [
+    "SOCKET_hand_r",
+    "SOCKET_hand_l",
+    "SOCKET_fx_palm_r",
+    "SOCKET_fx_palm_l",
+    "SOCKET_holster_hip_r",
+    "SOCKET_holster_hip_l",
+    "SOCKET_stow_back",
+    "SOCKET_stow_chest"
+  ]
+}

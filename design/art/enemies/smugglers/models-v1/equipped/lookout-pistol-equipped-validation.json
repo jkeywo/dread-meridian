@@ -1,0 +1,27 @@
+{
+  "role": "lookout",
+  "item": "lookout-pistol",
+  "action": "Equip_lookout_pistol",
+  "wrist_error_m": {
+    "r": 2.682209014892578e-07
+  },
+  "unreal_hand_world": {
+    "r": {
+      "t": [
+        -12.285982072353363,
+        43.64904165267944,
+        134.74498987197876
+      ],
+      "q": [
+        -0.6668546199798584,
+        -0.0417441725730896,
+        -0.03322874382138252,
+        0.7432752847671509
+      ]
+    }
+  },
+  "maximum_skin_radius_m": 1.0496115395935703,
+  "pose_clip_only": true,
+  "finger_pose": "provisional flexion; visual contact review required",
+  "passed": true
+}

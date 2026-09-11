@@ -1,0 +1,72 @@
+{
+  "gunman": {
+    "hip": 1.02,
+    "knee": 0.61,
+    "leg": 0.113,
+    "shoulder": 1.43,
+    "sx": 0.205,
+    "elbow": 0.475,
+    "wrist": 0.73,
+    "head": 1.68,
+    "neck": 1.55,
+    "size": 0.96,
+    "palm": 0.7732,
+    "girth": 0.178
+  },
+  "bruiser": {
+    "hip": 1.08,
+    "knee": 0.63,
+    "leg": 0.165,
+    "shoulder": 1.56,
+    "sx": 0.29,
+    "elbow": 0.57,
+    "wrist": 0.86,
+    "head": 1.82,
+    "neck": 1.69,
+    "size": 1.38,
+    "palm": 0.9221,
+    "girth": 0.264
+  },
+  "lookout": {
+    "hip": 1.06,
+    "knee": 0.64,
+    "leg": 0.116,
+    "shoulder": 1.43,
+    "sx": 0.202,
+    "elbow": 0.472,
+    "wrist": 0.72,
+    "head": 1.67,
+    "neck": 1.55,
+    "size": 0.86,
+    "palm": 0.7587,
+    "girth": 0.177
+  },
+  "bomber": {
+    "hip": 0.98,
+    "knee": 0.59,
+    "leg": 0.139,
+    "shoulder": 1.36,
+    "sx": 0.23,
+    "elbow": 0.493,
+    "wrist": 0.733,
+    "head": 1.6,
+    "neck": 1.48,
+    "size": 1.02,
+    "palm": 0.7789,
+    "girth": 0.215
+  },
+  "gang-boss": {
+    "hip": 1.04,
+    "knee": 0.62,
+    "leg": 0.124,
+    "shoulder": 1.47,
+    "sx": 0.226,
+    "elbow": 0.5,
+    "wrist": 0.76,
+    "head": 1.72,
+    "neck": 1.59,
+    "size": 1.02,
+    "palm": 0.8059,
+    "girth": 0.196
+  }
+}

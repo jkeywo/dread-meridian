@@ -1,0 +1,56 @@
+{
+  "status": "PROVISIONAL concept art; appearances are proposals, not GDD changes",
+  "generator": "built-in image_gen",
+  "assets": [
+    {
+      "file": "sapper-full.png",
+      "source": "C:\\Users\\jkeyw\\.codex\\generated_images\\01a08c70-d4d2-7630-bba6-b8e3c68760af\\exec-20c0e942-21cf-42dd-8a6c-dce1373f8bae.png",
+      "prompt": "Use case: stylized-concept. Original Dread Meridian 1920s/30s pulp cosmic-horror investigator art. Use the attached character cards ONLY as painterly style references: tactile brushwork, sculptural shapes, worn cloth, expressive faces, slightly caricatured heroic anatomy, with more exaggerated silhouettes and features than those references. Serious adventurous horror, not comedy, not photorealism, not anime. No text, labels, logos, borders, card layouts, text boxes, ground plane or backdrop. Genuine transparent alpha background, never a checkerboard painted into image. Clear isolated edges. Muted period colors, warm directional light and restrained cool teal rim light. Create ONE full-body character illustration, portrait 2:3 canvas, entire figure and all equipment visible with generous transparent padding above head and below boots. Subject: A stocky, weathered middle-aged male Great War sapper with a long angular face, broken nose, heavy brows, close-cropped graying hair, haunted watchful expression. Exaggerated broad coat shoulders, sturdy boots, olive-drab battered military coat, brown leather webbing, demolition satchel and wire spool. Holds a period semi-automatic carbine safely angled down; other hand lifted toward his ear as though hearing orders from dead soldiers. No visible ghosts."
+    },
+    {
+      "file": "sapper-head.png",
+      "source": "C:\\Users\\jkeyw\\.codex\\generated_images\\01a08c70-d4d2-7630-bba6-b8e3c68760af\\exec-7c1ae681-977d-48fd-bd78-9c27139f1b74.png",
+      "prompt": "Create one square head-and-shoulders portrait of this exact investigator, preserving facial identity, hair, age, clothing, expression and painterly style. Head occupies most of the frame, show complete hair and both shoulders with padding. Exaggerated expressive pulp character portrait. No hands or weapons in this portrait. Isolate on a genuine transparent background, PNG with alpha channel. No backdrop, no text, no borders."
+    },
+    {
+      "file": "photographer-full.png",
+      "source": "C:\\Users\\jkeyw\\.codex\\generated_images\\01a08c70-d4d2-7630-bba6-b8e3c68760af\\exec-0d952ca7-6f3b-4c18-b9e5-290d63b5be73.png",
+      "prompt": "Use case: stylized-concept. Original Dread Meridian 1920s/30s pulp cosmic-horror investigator art. Use the attached character cards ONLY as painterly style references: tactile brushwork, sculptural shapes, worn cloth, expressive faces, slightly caricatured heroic anatomy, with more exaggerated silhouettes and features than those references. Serious adventurous horror, not comedy, not photorealism, not anime. No text, labels, logos, borders, card layouts, text boxes, ground plane or backdrop. Genuine transparent alpha background, never a checkerboard painted into image. Clear isolated edges. Muted period colors, warm directional light and restrained cool teal rim light. Create ONE full-body character illustration, portrait 2:3 canvas, all boots and hair visible. Match the previously shown Expedition Photographer's design: warm brown skin, short black curls, brass round spectacles resting atop her head, ochre field jacket with rolled sleeves, cream shirt and rust neckerchief, dark high-waisted trousers, brown tall lace-up boots, leather pouches, holding a large period bellows camera and circular flash reflector at her chest. Her long rifle is slung diagonally across her back: straight barrel points UPPER LEFT above left shoulder; stock extends LOWER RIGHT behind opposite hip. Rifle must have one straight rigid axis from muzzle through receiver to butt, even where her torso occludes it. No rifle pieces on lower left. Alert apprehensive expression looking upper left. Genuine transparent PNG cutout."
+    },
+    {
+      "file": "photographer-head.png",
+      "source": "C:\\Users\\jkeyw\\.codex\\generated_images\\01a08c70-d4d2-7630-bba6-b8e3c68760af\\exec-3f039fa5-ba16-404d-a8e0-2f3118f6bc89.png",
+      "prompt": "Create one square head-and-shoulders portrait of this exact investigator, preserving facial identity, hair, age, clothing, expression and painterly style. Head occupies most of the frame, show complete hair and both shoulders with padding. Exaggerated expressive pulp character portrait. No hands or weapons in this portrait. Isolate on a genuine transparent background, PNG with alpha channel. No backdrop, no text, no borders."
+    },
+    {
+      "file": "medium-full.png",
+      "source": "C:\\Users\\jkeyw\\.codex\\generated_images\\01a08c70-d4d2-7630-bba6-b8e3c68760af\\exec-fa7539bd-685b-43be-910f-907f78370154.png",
+      "prompt": "Use case: stylized-concept. Original Dread Meridian 1920s/30s pulp cosmic-horror investigator art. Use the attached character cards ONLY as painterly style references: tactile brushwork, sculptural shapes, worn cloth, expressive faces, slightly caricatured heroic anatomy, with more exaggerated silhouettes and features than those references. Serious adventurous horror, not comedy, not photorealism, not anime. No text, labels, logos, borders, card layouts, text boxes, ground plane or backdrop. Genuine transparent alpha background, never a checkerboard painted into image. Clear isolated edges. Muted period colors, warm directional light and restrained cool teal rim light. Create ONE full-body character illustration, portrait 2:3 canvas, entire figure and all equipment visible with generous transparent padding above head and below boots. Subject: An elegant older woman stage medium with pale skin, striking cheekbones, arched brows, silver-streaked black bob, commanding theatrical expression masking alarm. Long plum velvet stage coat with exaggerated sweeping tails over an ivory blouse and dark tailored trousers, pointed period boots, antique rings and pendant. One hand beckons, the other gathers a small curling pale teal spirit wisp; restrained spectral effect localized around fingers, no backdrop."
+    },
+    {
+      "file": "medium-head.png",
+      "source": "C:\\Users\\jkeyw\\.codex\\generated_images\\01a08c70-d4d2-7630-bba6-b8e3c68760af\\exec-699cfbec-88ac-4fe9-b674-2500a031000a.png",
+      "prompt": "Create one square head-and-shoulders portrait of this exact investigator, preserving facial identity, hair, age, clothing, expression and painterly style. Head occupies most of the frame, show complete hair and both shoulders with padding. Exaggerated expressive pulp character portrait. No hands or weapons in this portrait. Isolate on a genuine transparent background, PNG with alpha channel. No backdrop, no text, no borders."
+    },
+    {
+      "file": "smuggler-full.png",
+      "source": "C:\\Users\\jkeyw\\.codex\\generated_images\\01a08c70-d4d2-7630-bba6-b8e3c68760af\\exec-5ab33c76-7a0d-479a-ac67-5a8e9cf4a00b.png",
+      "prompt": "Use case: stylized-concept. Original Dread Meridian 1920s/30s pulp cosmic-horror investigator art. Use the attached character cards ONLY as painterly style references: tactile brushwork, sculptural shapes, worn cloth, expressive faces, slightly caricatured heroic anatomy, with more exaggerated silhouettes and features than those references. Serious adventurous horror, not comedy, not photorealism, not anime. No text, labels, logos, borders, card layouts, text boxes, ground plane or backdrop. Genuine transparent alpha background, never a checkerboard painted into image. Clear isolated edges. Muted period colors, warm directional light and restrained cool teal rim light. Create ONE full-body character illustration, portrait 2:3 canvas, entire figure and all equipment visible with generous transparent padding above head and below boots. Subject: A towering, massively broad adult male bare-knuckle dockside smuggler with dark brown skin, shaved head, flattened nose, strong jaw, short beard, heavy tired eyes, defiant grin. Huge exaggerated ungloved scarred fists raised in a boxing stance, rolled-up faded blue work shirt, burgundy sash, dark high-waisted sailor trousers, suspenders and heavy work boots. Damp collar and subtle seawater droplets suggest his impossible survival of drowning. No weapon."
+    },
+    {
+      "file": "smuggler-head.png",
+      "source": "C:\\Users\\jkeyw\\.codex\\generated_images\\01a08c70-d4d2-7630-bba6-b8e3c68760af\\exec-64d80d57-51e3-4fda-8371-eaa12991129d.png",
+      "prompt": "Create one square head-and-shoulders portrait of this exact investigator, preserving facial identity, hair, age, clothing, expression and painterly style. Head occupies most of the frame, show complete hair and both shoulders with padding. Exaggerated expressive pulp character portrait. No hands or weapons in this portrait. Isolate on a genuine transparent background, PNG with alpha channel. No backdrop, no text, no borders."
+    },
+    {
+      "file": "background-full.png",
+      "source": "C:\\Users\\jkeyw\\.codex\\generated_images\\01a08c70-d4d2-7630-bba6-b8e3c68760af\\exec-ff40f159-120e-4260-878d-8e46ab7ae1ae.png",
+      "prompt": "Create one background-only raster illustration based on the green runic background in the user's third attached reference. Blackened forest green, emerald and desaturated sea-glass teal atmospheric smoke and mottled painterly grunge, delicate luminous hand-etched occult circles, intersecting arcs, radial star geometry and invented nonalphabetic ritual marks. Original arrangement. Tall portrait 2:3 composition for a full-body character overlay. Distribute large cropped occult circles at upper left and lower right, finer radial geometry along the side margins; subdued dark center for the figure. Full-bleed opaque background. No people, monsters, faces, objects, text, letters, words, logos, borders or text boxes. Refined eerie 1920s pulp cosmic horror atmosphere; green lines remain crisp but not overpowering."
+    },
+    {
+      "file": "background-head.png",
+      "source": "C:\\Users\\jkeyw\\.codex\\generated_images\\01a08c70-d4d2-7630-bba6-b8e3c68760af\\exec-40b9f362-6b81-4c8d-9f65-365c11067847.png",
+      "prompt": "Create one background-only raster illustration based on the green runic background in the user's third attached reference. Blackened forest green, emerald and desaturated sea-glass teal atmospheric smoke and mottled painterly grunge, delicate luminous hand-etched occult circles, intersecting arcs, radial star geometry and invented nonalphabetic ritual marks. Original arrangement. Square 1:1 composition for a head-and-shoulders portrait overlay. Large partial occult circular halo centered behind the future head position, finer geometric lines near corners; quiet dark middle so a face will remain legible. Full-bleed opaque background. No people, monsters, faces, objects, text, letters, words, logos, borders or text boxes. Refined eerie 1920s pulp cosmic horror atmosphere; green lines remain crisp but not overpowering."
+    }
+  ]
+}

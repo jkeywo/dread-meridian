@@ -1,0 +1,92 @@
+[
+  {
+    "file": "bomber-full.png",
+    "width": 1024,
+    "height": 1536,
+    "sampled_pixels": 24576,
+    "fully_transparent_samples": 14788,
+    "solid_subject_samples": 9231,
+    "passed": true
+  },
+  {
+    "file": "bomber-head.png",
+    "width": 1254,
+    "height": 1254,
+    "sampled_pixels": 24649,
+    "fully_transparent_samples": 10247,
+    "solid_subject_samples": 13046,
+    "passed": true
+  },
+  {
+    "file": "bruiser-full.png",
+    "width": 1024,
+    "height": 1536,
+    "sampled_pixels": 24576,
+    "fully_transparent_samples": 13983,
+    "solid_subject_samples": 10171,
+    "passed": true
+  },
+  {
+    "file": "bruiser-head.png",
+    "width": 1254,
+    "height": 1254,
+    "sampled_pixels": 24649,
+    "fully_transparent_samples": 10401,
+    "solid_subject_samples": 13849,
+    "passed": true
+  },
+  {
+    "file": "gang-boss-full.png",
+    "width": 1024,
+    "height": 1536,
+    "sampled_pixels": 24576,
+    "fully_transparent_samples": 14270,
+    "solid_subject_samples": 9890,
+    "passed": true
+  },
+  {
+    "file": "gang-boss-head.png",
+    "width": 1254,
+    "height": 1254,
+    "sampled_pixels": 24649,
+    "fully_transparent_samples": 9985,
+    "solid_subject_samples": 14301,
+    "passed": true
+  },
+  {
+    "file": "gunman-full.png",
+    "width": 1024,
+    "height": 1536,
+    "sampled_pixels": 24576,
+    "fully_transparent_samples": 16642,
+    "solid_subject_samples": 7412,
+    "passed": true
+  },
+  {
+    "file": "gunman-head.png",
+    "width": 1254,
+    "height": 1254,
+    "sampled_pixels": 24649,
+    "fully_transparent_samples": 9232,
+    "solid_subject_samples": 15083,
+    "passed": true
+  },
+  {
+    "file": "lookout-full.png",
+    "width": 1024,
+    "height": 1536,
+    "sampled_pixels": 24576,
+    "fully_transparent_samples": 17328,
+    "solid_subject_samples": 6706,
+    "passed": true
+  },
+  {
+    "file": "lookout-head.png",
+    "width": 1254,
+    "height": 1254,
+    "sampled_pixels": 24649,
+    "fully_transparent_samples": 11428,
+    "solid_subject_samples": 12587,
+    "passed": true
+  }
+]

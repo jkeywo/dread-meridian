@@ -1,0 +1,10 @@
+{
+  "id": "hypothesis:combat-capture",
+  "statement": "The combat sandbox can produce coherent server evidence from the same ability and companion policy used during interactive play.",
+  "scope": ["combat-sandbox"],
+  "test_method": "Run four-bot victory and defeat profiles, validate captures, and compare final authoritative health against two clients after a disconnect handoff.",
+  "supporting_outcomes": ["Valid health transitions and real terminal outcome; two clients agree with server; disconnected investigator survives under bot control."],
+  "contradicting_outcomes": ["Contradictory damage, missing terminal events, divergent client health or lost investigator after disconnect."],
+  "evidence_requirements": ["Capture JSONL", "Exact source/provenance", "Engine and network test reports"],
+  "status": "proposed"
+}

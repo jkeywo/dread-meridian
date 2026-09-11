@@ -1,0 +1,27 @@
+{
+  "role": "bomber",
+  "item": "bomber-satchel",
+  "action": "Equip_bomber_satchel",
+  "wrist_error_m": {
+    "r": 1.4975481660844222e-07
+  },
+  "unreal_hand_world": {
+    "r": {
+      "t": [
+        -32.285964488983154,
+        15.999972820281982,
+        106.60001039505005
+      ],
+      "q": [
+        -0.6815776228904724,
+        -0.04240007698535919,
+        -0.032386645674705505,
+        0.7297980785369873
+      ]
+    }
+  },
+  "maximum_skin_radius_m": 1.0657198814063038,
+  "pose_clip_only": true,
+  "finger_pose": "provisional flexion; visual contact review required",
+  "passed": true
+}

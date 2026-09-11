@@ -1,0 +1,100 @@
+{
+ "Bomber": {
+  "TargetCommitment": 52.5924
+ },
+ "Bruiser": {
+  "LeashRange": 1492.3444
+ },
+ "Gunman": {
+  "Actions": {
+   "KeepDistance": {
+    "MaxRuntimeTicks": 27
+   }
+  },
+  "SightRange": 612.3128
+ },
+ "Lookout": {
+  "AllyRadius": 1011.3852,
+  "EliteWorth": 0.9737,
+  "TargetCommitment": 13.7513
+ },
+ "Medium": {
+  "Abilities": {
+   "BindSpirit": {
+    "Base": 14.5827
+   }
+  },
+  "Actions": {
+   "EvadeHazard": {
+    "Weight": 0.6048
+   },
+   "Flee": {
+    "Weight": 0.8656
+   }
+  },
+  "EvadeMargin": 131.5508,
+  "FleeEnter": 0.1375,
+  "KCooldown": 1.1811,
+  "MarkedWorth": 0.2811,
+  "PingCompliance": 0.8623,
+  "ThreatenedAllyHealth": 51.7847
+ },
+ "Photographer": {
+  "Abilities": {
+   "Frame": {
+    "Base": 28.6499
+   }
+  },
+  "Actions": {
+   "EvadeHazard": {
+    "Weight": 1.6028
+   },
+   "Flee": {
+    "Weight": 1.5853
+   }
+  },
+  "EliteWorth": 0.5724,
+  "EvadeMargin": 63.5246,
+  "FleeEnemyRadius": 478.3227,
+  "FleeEnter": 0.2556,
+  "FleeExit": 0.3522,
+  "KCooldown": 1.6185,
+  "TargetCommitment": 4.8771
+ },
+ "Sapper": {
+  "Actions": {
+   "EvadeHazard": {
+    "Weight": 1.0801
+   },
+   "SeekPickup": {
+    "Weight": 0.9233
+   }
+  },
+  "EliteWorth": 0.5328,
+  "FleeDistance": 185.6959,
+  "FleeEnter": 0.1843,
+  "KCooldown": 0.7768,
+  "KStock": 2.7864,
+  "MarkedWorth": 0.36,
+  "PingEnemyScore": 291.5309,
+  "TargetCommitment": 46.0947
+ },
+ "Smuggler": {
+  "Abilities": {
+   "Clinch": {
+    "Base": 17.307
+   }
+  },
+  "Actions": {
+   "Flee": {
+    "Weight": 0.835
+   }
+  },
+  "EliteWorth": 0.6516,
+  "FleeExit": 0.3853,
+  "KCooldown": 0.8498,
+  "MarkedWorth": 0.4809,
+  "PingCompliance": 1,
+  "PingEnemyScore": 347.1017
+ }
+}

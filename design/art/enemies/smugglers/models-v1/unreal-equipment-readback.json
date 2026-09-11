@@ -1,0 +1,34 @@
+{
+  "props": {
+    "gunman-rifle": {
+      "persisted_anchors": 4,
+      "passed": true
+    },
+    "bruiser-truncheon": {
+      "persisted_anchors": 2,
+      "passed": true
+    },
+    "lookout-binoculars": {
+      "persisted_anchors": 4,
+      "passed": true
+    },
+    "lookout-pistol": {
+      "persisted_anchors": 3,
+      "passed": true
+    },
+    "bomber-grenade": {
+      "persisted_anchors": 2,
+      "passed": true
+    },
+    "bomber-satchel": {
+      "persisted_anchors": 3,
+      "passed": true
+    },
+    "gang-boss-smg": {
+      "persisted_anchors": 4,
+      "passed": true
+    }
+  },
+  "tpose": "/Game/DreadMeridian/Characters/Enemies/Smugglers/A_Smugglers_TPose.A_Smugglers_TPose",
+  "passed": true
+}

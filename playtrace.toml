@@ -1,0 +1,55 @@
+manifest_version = 2
+adapter = "unreal-local"
+project_id = "dread-meridian"
+name = "Dread Meridian"
+repository = "local"
+engine_version = "5.8.2"
+capabilities = ["local_sources", "unreal_telemetry", "combat_sandbox"]
+
+[[sources]]
+id = "gdd"
+path = "gdd/Mythos_PvE_MOBA_Master_GDD_v0.3.md"
+kind = "markdown"
+role = "design"
+
+[[sources]]
+id = "unreal-project"
+path = "DreadMeridian.uproject"
+kind = "unreal_project"
+role = "implementation"
+
+[[sources]]
+id = "combat-authority"
+path = "Source/DreadMeridian/Private/DMCombatGameMode.cpp"
+kind = "text"
+role = "implementation"
+
+[[sources]]
+id = "combatant"
+path = "Source/DreadMeridian/Private/DMCombatant.cpp"
+kind = "text"
+role = "implementation"
+
+[[sources]]
+id = "sandbox-map"
+path = "Content/DreadMeridian/Maps/L_CombatSandbox.umap"
+kind = "binary"
+role = "content"
+
+[[sources]]
+id = "runtime-config"
+path = "Config/DefaultGame.ini"
+kind = "text"
+role = "configuration"
+
+[[sources]]
+id = "squad-ai"
+path = "Source/DreadMeridian/Private/DMUtilityAI.cpp"
+kind = "text"
+role = "implementation"
+
+[[sources]]
+id = "pings"
+path = "Source/DreadMeridian/Private/DMPing.cpp"
+kind = "text"
+role = "implementation"

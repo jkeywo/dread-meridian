@@ -1,0 +1,459 @@
+#pragma once
+#include "CoreMinimal.h"
+#include "DMSmugglerComponent.h"
+#include "DMInvestigatorComponent.h"
+#include "DMPing.h"
+#include "DMUtilityAI.generated.h"
+
+/**
+ * Utility AI for bot investigators (companions) and enemies.
+ *
+ * Everything in this header is pure: no world, no UObject pointers, no RNG. ADMSquadController builds an
+ * FDMAIContext from the world once per logical tick, DMUtilityAI::Decide turns it into an FDMAIDecision,
+ * and the controller executes and traces the decision. Foundation tests exercise Decide directly.
+ *
+ * Model (see the plan and docs/architecture.md):
+ *  - Every action produces zero or more options. An option has a Rank (dual utility: absolute category)
+ *    and a Score in [0,1] (weight x compensated product of curved considerations). Options are walked in
+ *    (Rank desc, Score desc, action ordinal, target index, point) order.
+ *  - Channels: each option reserves Move, Attack and/or Cast. Lower options still execute on channels that
+ *    remain free, so Flee (Move) and BasicAttack (Attack) coexist in one tick.
+ *  - Conservation: resource-spending options must beat a threshold that rises with scarcity and cooldown
+ *    length, scaled by a hit probability for delayed casts, and are vetoed for wasted casts.
+ *  - Hysteresis: enter/exit latches (return home, flee, keep distance), per-action runtime caps and
+ *    decision cooldowns, and a commitment multiplier on the previous movement action.
+ */
+
+// ---------------------------------------------------------------------------------------------- enums
+
+enum class EDMAIChannel : uint8 { None = 0, Move = 1, Attack = 2, Cast = 4, All = 7 };
+ENUM_CLASS_FLAGS(EDMAIChannel)
+
+UENUM(BlueprintType)
+enum class EDMAIRank : uint8 { Routine = 0, Tactical = 1, Reflex = 2, Locked = 3 };
+
+/** Ordinal is the tie-break key after rank and score. Append only; never reorder. */
+UENUM(BlueprintType)
+enum class EDMAIAction : uint8
+{
+    None, HoldCast, Rescue, ReturnHome, EvadeHazard, Flee, RetreatToPing, KeepDistance, SeekPickup, SeekPingedPickup,
+    RallyToPing, DefendPing, HelpPing, Strafe, Engage, InvestigatePing, Anchor, Patrol, FollowLeader, Hold,
+    BasicAttack, Signature, Throw, HoldFrame, Frame, PlaceSatchel, BindSpirit, Clinch,
+    Count UMETA(Hidden)
+};
+
+/** Small preset palette (Lewis, Game AI Pro 3). x is the bookend-normalised input in [0,1]. */
+UENUM(BlueprintType)
+enum class EDMAICurve : uint8
+{
+    Linear,           // y = x
+    Quadratic,        // y = x^Exponent
+    InverseQuadratic, // y = 1 - x^Exponent
+    Logistic,         // y = 1 / (1 + e^(-Exponent * (x - Midpoint))), renormalised so y(0)=0 and y(1)=1
+    Step,             // y = x >= Midpoint ? 1 : 0
+    Bell              // y = e^(-((x - Midpoint) * Exponent)^2)
+};
+
+/**
+ * Raw inputs a consideration can read. The raw value is clamped to the curve's [Min,Max] bookends and
+ * normalised before the curve is applied. "Target" is the option's target actor; "Point" its goal point.
+ */
+UENUM(BlueprintType)
+enum class EDMAIInput : uint8
+{
+    Distance,            // 2D distance from self to the option's target (or point when untargeted), units
+    TargetHealthFrac,    // target Health / MaxHealth
+    SelfHealthFrac,      // self Health / MaxHealth
+    Threat,              // self's threat table value for the target (raw damage units)
+    StockFrac,           // Charges / ChargeCapacity (0 when the kit has no stock)
+    CooldownFrac,        // Q cooldown remaining / Q cooldown length (0 = ready)
+    EnemiesInRadius,     // living hostiles within the option's ability template Radius of the option point
+    AlliesInRadius,      // living friendlies (excluding self) within FDMAIWeights::AllyRadius of self
+    TargetSpeedOverRadius, // target Speed2D * CastDelayTicks * 0.1 / Radius (0 for instant abilities)
+    AnchorDistance,      // 2D distance from self to its anchor (home or patrol point)
+    LeaderDistance,      // 2D distance from self to the human leader (0 when there is none)
+    HazardDepth,         // how far inside the nearest hostile hazard self stands: (Radius + EvadeMargin) - dist, min 0
+    PingFocusOnTarget,   // weight of the strongest live Focus/Enemy ping on the target (0..1)
+    PingIgnoreOnTarget,  // weight of the strongest live Ignore ping on the target (0..1)
+    PingAge,             // age fraction of the option's ping (0 new .. 1 expiring)
+    PingDistance,        // 2D distance from self to the option's ping location
+    NotCasting,          // 1 unless self is mid-signature cast
+    NotRooted,           // 1 unless self is restrained or framing
+    NotFraming,          // 1 unless self has a FrameTarget
+    HasSight,            // 1 when self has line of sight to the target (always evaluated last; lazy)
+    Count UMETA(Hidden)
+};
+
+// --------------------------------------------------------------------------------------------- data
+
+USTRUCT(BlueprintType)
+struct DREADMERIDIAN_API FDMAICurveSpec
+{
+    GENERATED_BODY()
+    UPROPERTY(EditAnywhere) EDMAICurve Curve = EDMAICurve::Linear;
+    /** Bookends: raw input at Min maps to x=0, at Max maps to x=1. Min must be < Max. */
+    UPROPERTY(EditAnywhere) float Min = 0;
+    UPROPERTY(EditAnywhere) float Max = 1;
+    UPROPERTY(EditAnywhere) float Exponent = 2;
+    UPROPERTY(EditAnywhere) float Midpoint = .5f;
+    /** Applied after the curve: y = 1 - y. */
+    UPROPERTY(EditAnywhere) bool bInvert = false;
+
+    FDMAICurveSpec() = default;
+    FDMAICurveSpec(EDMAICurve InCurve, float InMin, float InMax, float InExponent = 2, float InMidpoint = .5f, bool bInInvert = false)
+        : Curve(InCurve), Min(InMin), Max(InMax), Exponent(InExponent), Midpoint(InMidpoint), bInvert(bInInvert) {}
+    /** Clamp/normalise Raw with the bookends, apply the curve, invert if asked. Always returns [0,1]. */
+    float Evaluate(float Raw) const;
+};
+
+USTRUCT(BlueprintType)
+struct DREADMERIDIAN_API FDMAIConsideration
+{
+    GENERATED_BODY()
+    UPROPERTY(EditAnywhere) EDMAIInput Input = EDMAIInput::Distance;
+    UPROPERTY(EditAnywhere) FDMAICurveSpec Curve;
+    FDMAIConsideration() = default;
+    FDMAIConsideration(EDMAIInput InInput, const FDMAICurveSpec& InCurve) : Input(InInput), Curve(InCurve) {}
+};
+
+/**
+ * One action's data. Code decides when an action has candidates and applies its mandatory switches; the
+ * spec shapes the score. Considerations are evaluated in order and early-out on the first zero, so put
+ * cheap switches first and HasSight last.
+ */
+USTRUCT(BlueprintType)
+struct DREADMERIDIAN_API FDMAIActionSpec
+{
+    GENERATED_BODY()
+    UPROPERTY(EditAnywhere) EDMAIAction Action = EDMAIAction::None;
+    UPROPERTY(EditAnywhere) EDMAIRank Rank = EDMAIRank::Routine;
+    UPROPERTY(EditAnywhere) float Weight = 1;
+    /** EDMAIChannel bits. */
+    UPROPERTY(EditAnywhere) uint8 ChannelMask = 1;
+    UPROPERTY(EditAnywhere) TArray<FDMAIConsideration> Considerations;
+    /** After this many consecutive chosen ticks the score falls to zero (curve 1 - x^6). 0 disables. */
+    UPROPERTY(EditAnywhere) int32 MaxRuntimeTicks = 0;
+    /** After the action stops being chosen, its score is suppressed (curve x^5) for this many ticks. 0 disables. */
+    UPROPERTY(EditAnywhere) int32 DecisionCooldownTicks = 0;
+    UPROPERTY(EditAnywhere) bool bEnabled = true;
+
+    EDMAIChannel Channels() const { return static_cast<EDMAIChannel>(ChannelMask); }
+};
+
+/** Shared decision template for resource-spending abilities (signatures and base Q). */
+USTRUCT(BlueprintType)
+struct DREADMERIDIAN_API FDMAIAbilityTemplate
+{
+    GENERATED_BODY()
+    UPROPERTY(EditAnywhere) float Range = 0;
+    /** Effect radius; 0 for single-target. Used by EnemiesInRadius and PHit. */
+    UPROPERTY(EditAnywhere) float Radius = 0;
+    /** Primary effect magnitude per affected target (damage-equivalent units). */
+    UPROPERTY(EditAnywhere) float Magnitude = 0;
+    /** Secondary magnitude; meaning is per ability (see DMUtilityAI.cpp value functions). */
+    UPROPERTY(EditAnywhere) float SecondaryMagnitude = 0;
+    /** Conservation base threshold before scarcity and cooldown scaling. */
+    UPROPERTY(EditAnywhere) float Base = 10;
+    UPROPERTY(EditAnywhere) int32 CooldownTicks = 0;
+    /** Ticks between activation and effect; drives the "dying" veto and PHit. */
+    UPROPERTY(EditAnywhere) int32 CastDelayTicks = 0;
+    /** Rooted casts reserve Move and Attack as well as Cast. */
+    UPROPERTY(EditAnywhere) bool bRoots = false;
+};
+
+/**
+ * Everything the brain reads for one role or hero. Defaults come from DMUtilityAI::DefaultWeights; the
+ * per-role UDMAIProfile data assets expose the same struct for tuning. All numbers are provisional.
+ */
+USTRUCT(BlueprintType)
+struct DREADMERIDIAN_API FDMAIWeights
+{
+    GENERATED_BODY()
+    UPROPERTY(EditAnywhere) TArray<FDMAIActionSpec> Actions;
+    UPROPERTY(EditAnywhere) TMap<EDMAIAction, FDMAIAbilityTemplate> Abilities;
+
+    // Conservation
+    UPROPERTY(EditAnywhere) float KStock = 2;
+    UPROPERTY(EditAnywhere) float KCooldown = 1;
+    UPROPERTY(EditAnywhere) FDMAICurveSpec PHitCurve = FDMAICurveSpec(EDMAICurve::InverseQuadratic, 0, 2, 2);
+    /** Worth multipliers: 1 + EliteWorth for elites, + MarkedWorth for marked/forced targets. */
+    UPROPERTY(EditAnywhere) float EliteWorth = .5f;
+    UPROPERTY(EditAnywhere) float MarkedWorth = .25f;
+
+    // Hysteresis
+    UPROPERTY(EditAnywhere) float CommitFactor = 1.15f;
+    UPROPERTY(EditAnywhere) int32 CommitTicks = 20;
+    UPROPERTY(EditAnywhere) float TargetCommitment = 75;
+    UPROPERTY(EditAnywhere) float FleeEnter = .25f;
+    UPROPERTY(EditAnywhere) float FleeExit = .4f;
+    UPROPERTY(EditAnywhere) float FleeEnemyRadius = 400;
+    UPROPERTY(EditAnywhere) float FleeSafeRadius = 600;
+    UPROPERTY(EditAnywhere) float FleeDistance = 400;
+    UPROPERTY(EditAnywhere) float KeepDistanceEnter = .5f;
+    UPROPERTY(EditAnywhere) float KeepDistanceExit = .7f;
+    UPROPERTY(EditAnywhere) float KeepDistanceStep = 300;
+    UPROPERTY(EditAnywhere) float SetPositionReluctance = .6f;
+    UPROPERTY(EditAnywhere) float EvadeMargin = 40;
+
+    // Perception and geometry (parity with the previous cascade)
+    UPROPERTY(EditAnywhere) float SightRange = 600;
+    UPROPERTY(EditAnywhere) float LeashRange = 1800;
+    UPROPERTY(EditAnywhere) float LeashReturnRadius = 100;
+    UPROPERTY(EditAnywhere) float AnchorRadius = 90;
+    UPROPERTY(EditAnywhere) float FollowDistance = 240;
+    UPROPERTY(EditAnywhere) float TetherLeaderRadius = 850;
+    UPROPERTY(EditAnywhere) float TetherSelfRadius = 500;
+    UPROPERTY(EditAnywhere) float ApproachBand = 35;
+    UPROPERTY(EditAnywhere) float RescueRadius = 140;
+    UPROPERTY(EditAnywhere) float StrafeRadius = 650;
+    UPROPERTY(EditAnywhere) float StrafeOffset = 460;
+    UPROPERTY(EditAnywhere) float StrafeAngle = 35;
+    UPROPERTY(EditAnywhere) float PickupRadius = 700;
+    UPROPERTY(EditAnywhere) float AllyRadius = 900;
+    UPROPERTY(EditAnywhere) float ThreatenedAllyHealth = 50;
+
+    // Pings
+    UPROPERTY(EditAnywhere) float PingCompliance = 1;
+    UPROPERTY(EditAnywhere) float BotPingWeight = .5f;
+    UPROPERTY(EditAnywhere) float PingFocusScore = 400;
+    UPROPERTY(EditAnywhere) float PingEnemyScore = 250;
+    UPROPERTY(EditAnywhere) float PingIgnorePenalty = 5000;
+    UPROPERTY(EditAnywhere) float PingActBoost = .3f;
+    UPROPERTY(EditAnywhere) float PingIgnoreActPenalty = .8f;
+    UPROPERTY(EditAnywhere) float RallyArriveRadius = 150;
+    UPROPERTY(EditAnywhere) float DefendHoldRadius = 250;
+    UPROPERTY(EditAnywhere) float DefendEngageRadius = 500;
+    UPROPERTY(EditAnywhere) float HelpArriveRadius = 200;
+    UPROPERTY(EditAnywhere) int32 BotPingCooldownTicks = 50;
+
+    /** Reserved: weighted random within this fraction of the top score, drawn from EDMRandomStream::AIChoice. 0 = argmax. */
+    UPROPERTY(EditAnywhere) float TopBandFraction = 0;
+
+    const FDMAIActionSpec* FindAction(EDMAIAction Action) const;
+    FDMAIActionSpec* FindAction(EDMAIAction Action);
+    const FDMAIAbilityTemplate* FindAbility(EDMAIAction Action) const;
+};
+
+// -------------------------------------------------------------------------------------------- views
+
+/** One roster entry as the deciding bot sees it. Index is the roster index in ADMCombatGameMode::GetCombatants. */
+struct DREADMERIDIAN_API FDMAIActorView
+{
+    int32 Index = INDEX_NONE;
+    FString EntityId;
+    bool bEnemy = false, bDown = false, bRestrained = false, bPlayerControlled = false, bCommon = true, bBreakVulnerable = false;
+    /** Line of sight from self. Only meaningful for hostiles; the context builder traces lazily (see BuildContext). */
+    bool bVisible = true;
+    /** A living friend in the same encounter group targets or holds threat on this actor. */
+    bool bGroupEngaged = false;
+    bool bForced = false, bMarked = false, bDiver = false;
+    bool bBoundByMe = false, bHeldByMe = false, bRanged = false;
+    int32 EncounterGroup = INDEX_NONE;
+    /** Roster index this actor is attacking, or INDEX_NONE. */
+    int32 AttackTargetIndex = INDEX_NONE;
+    float Health = 0, MaxHealth = 0, Shield = 0;
+    float Distance = 0;          // 3D, for focus-score parity with FVector::Distance
+    float Distance2D = 0;
+    float AnchorDistance2D = 0;  // from self's anchor
+    float LeaderDistance2D = 0;  // from the leader (0 when none)
+    float Threat = 0;            // self->Threat[EntityId]
+    /** Damage from friendlies already targeting this actor that lands within the ability's cast delay (filled per option by the pure code from AttackDamage/AttackInterval of attackers). */
+    float ExposureMultiplier = 1;
+    float AttackDamage = 0;
+    int32 AttackInterval = 10;
+    int32 NextAttackIn = 0;      // ticks until this actor's next basic attack is ready (0 = ready)
+    float Speed2D = 0;
+    FVector Location = FVector::ZeroVector;
+};
+
+struct DREADMERIDIAN_API FDMAIHazard
+{
+    FVector Center = FVector::ZeroVector;
+    float Radius = 0;
+};
+
+struct DREADMERIDIAN_API FDMAIPingView
+{
+    int32 Id = INDEX_NONE;
+    EDMPingKind Kind = EDMPingKind::Enemy;
+    bool bHuman = false;
+    bool bAuthoredBySelf = false;
+    bool bRespondedBySelf = false;
+    FVector Location = FVector::ZeroVector;
+    int32 TargetIndex = INDEX_NONE;
+    float AgeFrac = 0;
+    int32 AgeTicks = 0;
+    /** (bHuman ? 1 : BotPingWeight) * PingCompliance, clamped to [0,1]. Filled by the context builder. */
+    float Weight = 1;
+};
+
+struct DREADMERIDIAN_API FDMAISelfView
+{
+    int32 Index = INDEX_NONE;
+    FString EntityId;
+    bool bEnemy = false, bProfileRange = false, bLocalEnemy = false, bPatrolMember = false, bCompanionTethered = false;
+    bool bCasting = false, bRestrained = false, bAttackReady = false, bSetPosition = false, bRanged = false;
+    EDMSmuggler Role = EDMSmuggler::None;
+    EDMInvestigator Kind = EDMInvestigator::None;
+    float Health = 0, MaxHealth = 0, AttackRange = 0, AttackDamage = 0;
+    int32 AttackInterval = 10;
+    FVector Location = FVector::ZeroVector, Anchor = FVector::ZeroVector;
+    int32 EncounterGroup = INDEX_NONE, PatrolWaypoint = 0;
+    int32 Charges = 0, ChargeCapacity = 3, Satchels = 0, Bindings = 0;
+    float Momentum = 0;
+    bool bQReady = false;
+    int32 QCooldownRemaining = 0;
+    int32 FrameTarget = INDEX_NONE, HeldTarget = INDEX_NONE;
+    bool bSignatureReady = false;
+    /** Sight to the focus for the signature; the builder evaluates it only when bSignatureReady and a focus exists. */
+    bool bSignatureSight = false;
+};
+
+/** Persisted on the controller between ticks. Decide reads Context.Memory and returns the updated copy. */
+struct DREADMERIDIAN_API FDMAIMemory
+{
+    int32 TargetIndex = INDEX_NONE;
+    int32 TargetSinceTick = 0;
+    EDMAIAction LastMove = EDMAIAction::None;
+    EDMAIAction LastAct = EDMAIAction::None;
+    int32 MoveSinceTick = 0;
+    TMap<EDMAIAction, int32> RuntimeTicks;   // consecutive ticks the action was chosen
+    TMap<EDMAIAction, int32> CooldownUntil;  // decision cooldown deadline per action
+    bool bReturningHome = false, bFleeing = false, bKeepingDistance = false;
+    int32 LastPingTick = -1000;
+};
+
+struct DREADMERIDIAN_API FDMAIContext
+{
+    int32 Tick = 0;
+    FDMAISelfView Self;
+    TArray<FDMAIActorView> Actors;
+    int32 LeaderIndex = INDEX_NONE;
+    TArray<FVector> Pickups;
+    TArray<FDMAIHazard> Hazards;
+    TArray<FDMAIPingView> Pings;
+    FVector PlayableExtent = FVector(2900, 2400, 0);
+    const FDMAIWeights* W = nullptr;
+    FDMAIMemory Memory;
+};
+
+// ------------------------------------------------------------------------------------------ outputs
+
+struct DREADMERIDIAN_API FDMAIScoredConsideration
+{
+    EDMAIInput Input = EDMAIInput::Distance;
+    float Raw = 0;
+    float Score = 0;
+};
+
+struct DREADMERIDIAN_API FDMAIOption
+{
+    EDMAIAction Action = EDMAIAction::None;
+    int32 Target = INDEX_NONE;
+    FVector Point = FVector::ZeroVector;
+    EDMAIChannel Channels = EDMAIChannel::None;
+    EDMAIRank Rank = EDMAIRank::Routine;
+    /** Nominally [0,1]; commitment can push slightly above 1. 0 means not viable. */
+    float Score = 0;
+    float Value = 0, Threshold = 0, PHit = 1;
+    int32 PingId = INDEX_NONE;
+    TArray<FDMAIScoredConsideration> Breakdown;
+    /** Set when vetoed: dying, out_of_range, redundant, no_sight, cooldown, no_stock, casting, profile, runtime, disabled. */
+    const TCHAR* Veto = nullptr;
+    /** Executing this option also clears the focus (Rescue, ReturnHome, HoldCast). */
+    bool bClearsFocus = false;
+};
+
+struct DREADMERIDIAN_API FDMAIPingRequest
+{
+    EDMPingKind Kind = EDMPingKind::Enemy;
+    int32 TargetIndex = INDEX_NONE;
+    FVector Location = FVector::ZeroVector;
+};
+
+struct DREADMERIDIAN_API FDMAIDecision
+{
+    int32 Focus = INDEX_NONE;
+    EDMAIRank FocusRank = EDMAIRank::Routine;
+    float FocusScore = 0;
+    /** Every option, vetoed ones included, in final sort order. */
+    TArray<FDMAIOption> Ranked;
+    TArray<FDMAIOption> Chosen;
+    EDMAIChannel Taken = EDMAIChannel::None;
+    FDMAIMemory Memory;
+    bool bAdvanceWaypoint = false;
+    bool bClearThreat = false;
+    /** True when BasicAttack was not chosen: the controller sets ADMCombatant::bAttackHold accordingly. */
+    bool bAttackHold = true;
+    /** True when a chosen option clears the focus (the controller passes nullptr to SetAttackTarget). */
+    bool bClearFocus = false;
+    TArray<FDMAIPingRequest> PingRequests;
+    /** Ping ids that shaped a chosen option this tick (the controller answers them with on_it). */
+    TArray<int32> PingsOnIt;
+
+    const FDMAIOption* ChosenOn(EDMAIChannel Channel) const;
+    bool Chose(EDMAIAction Action) const;
+};
+
+// ---------------------------------------------------------------------------------------------- API
+
+namespace DMUtilityAI
+{
+    /** Mark's compensation: each score s becomes s + (1 - s) * (1 - 1/n) * s; then the product. Any zero gives zero. */
+    DREADMERIDIAN_API float Combine(TArrayView<const float> Scores);
+
+    /**
+     * Baseline weights per enemy role or investigator kind (a Role of None with a Kind of None is the generic
+     * "Human Raider" used by smoke fixtures). Every action/ability default in the plan's tables lives here.
+     */
+    DREADMERIDIAN_API FDMAIWeights DefaultWeights(EDMSmuggler Role, EDMInvestigator Kind);
+
+    /**
+     * Focus (attack target) selection, a behavioural port of the previous cascade:
+     *  - candidates are living actors on the other team;
+     *  - local enemies (bLocalEnemy) skip candidates farther than LeashRange from the anchor, and unalerted
+     *    candidates beyond SightRange or without sight. Alerted = forced/marked/diver, Threat > 0,
+     *    current target, or bGroupEngaged;
+     *  - tethered companions skip candidates farther than TetherLeaderRadius from the leader AND farther
+     *    than TetherSelfRadius from self;
+     *  - with a live Defend ping, companions skip candidates farther than DefendEngageRadius from the point
+     *    unless the candidate is attacking self;
+     *  - rank: Locked for Forced, Reflex for Diver (enemies) or a Focus ping (companions), Tactical for
+     *    Marked (enemies) or the attacker of a Help-pinged ally (companions), Routine otherwise;
+     *  - score within rank: (bEnemy ? Threat * 1000 : 0) - Distance + (current target ? TargetCommitment : 0)
+     *    + PingEnemyScore * ping weight - PingIgnorePenalty * ignore weight.
+     * Returns the roster index or INDEX_NONE.
+     */
+    DREADMERIDIAN_API int32 ChooseFocus(const FDMAIContext& Context, EDMAIRank* OutRank = nullptr, float* OutScore = nullptr);
+
+    /** Appends every option (viable and vetoed) for the context. Focus may be INDEX_NONE. */
+    DREADMERIDIAN_API void BuildOptions(const FDMAIContext& Context, int32 Focus, TArray<FDMAIOption>& Out);
+
+    /**
+     * Stable sort (Rank desc, Score desc, action ordinal asc, Target asc, Point.X, Point.Y) into Out.Ranked, then walk
+     * the list reserving channels: skip vetoed or zero-score options, skip options whose channels intersect Taken,
+     * otherwise choose and add its channels to Taken. Stops when Taken == All.
+     */
+    DREADMERIDIAN_API void Select(TArray<FDMAIOption>& Options, FDMAIDecision& Out);
+
+    /**
+     * Full decision: update latches, choose focus, build options, select, derive flags, request bot pings and
+     * update memory (target, last move/act, runtime counters, decision cooldowns).
+     * Casting self: the decision holds only HoldCast (All channels, Locked) with Focus INDEX_NONE and bClearFocus.
+     */
+    DREADMERIDIAN_API FDMAIDecision Decide(const FDMAIContext& Context);
+
+    // Conservation helpers (pure, unit-tested)
+    DREADMERIDIAN_API float Threshold(float Base, int32 Stock, int32 Capacity, int32 CooldownTicks, float KStock, float KCooldown);
+    DREADMERIDIAN_API float ConservedScore(float Weight, float Value, float Threshold);
+    /** Health + Shield - damage that friendlies already attacking the target will land within CastDelayTicks. */
+    DREADMERIDIAN_API float ExpectedHealthAtResolve(const FDMAIContext& Context, int32 TargetIndex, int32 CastDelayTicks);
+    /** Strongest live ping weight of the given kind(s) on a roster index (Focus and Enemy both count for PingFocusOnTarget). */
+    DREADMERIDIAN_API float PingWeightOnTarget(const FDMAIContext& Context, int32 TargetIndex, EDMPingKind Kind);
+
+    DREADMERIDIAN_API const TCHAR* ActionName(EDMAIAction Action);
+    DREADMERIDIAN_API const TCHAR* RankName(EDMAIRank Rank);
+    DREADMERIDIAN_API const TCHAR* InputName(EDMAIInput Input);
+    DREADMERIDIAN_API FString ChannelString(EDMAIChannel Channels);
+    DREADMERIDIAN_API EDMAIAction ActionFromName(const FString& Name);
+}

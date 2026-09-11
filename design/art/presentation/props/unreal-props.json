@@ -1,0 +1,30 @@
+{
+  "SM_SapperCarbine_Held": {
+    "bounds": "<Struct 'Vector' (0x0000026F1F335458) {x: 35.400000, y: 4.738002, z: 10.387650}>",
+    "materials": 6
+  },
+  "SM_SapperCarbine_Stowed": {
+    "bounds": "<Struct 'Vector' (0x0000026F1F336998) {x: 35.399999, y: 4.738003, z: 10.387647}>",
+    "materials": 6
+  },
+  "SM_PhotographerRifle_Held": {
+    "bounds": "<Struct 'Vector' (0x0000026F1F338898) {x: 49.225003, y: 5.556921, z: 12.977212}>",
+    "materials": 6
+  },
+  "SM_PhotographerRifle_Stowed": {
+    "bounds": "<Struct 'Vector' (0x0000026F1F335858) {x: 49.225002, y: 5.556921, z: 12.977213}>",
+    "materials": 6
+  },
+  "SM_PhotographerCamera_Held": {
+    "bounds": "<Struct 'Vector' (0x0000026F1F331B18) {x: 11.400000, y: 15.824999, z: 18.174999}>",
+    "materials": 9
+  },
+  "SM_PhotographerCamera_Stowed": {
+    "bounds": "<Struct 'Vector' (0x0000026F1F335718) {x: 11.400001, y: 15.824999, z: 18.174999}>",
+    "materials": 9
+  },
+  "SM_MediumWisp_Held": {
+    "bounds": "<Struct 'Vector' (0x0000026F1F337498) {x: 5.676061, y: 5.731130, z: 16.500000}>",
+    "materials": 2
+  }
+}

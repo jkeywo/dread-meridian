@@ -1,0 +1,566 @@
+#include "DMCombatGameMode.h"
+#include "DMEditorPlaySelection.h"
+#include "DMCombatant.h"
+#include "DMCombatPlayerController.h"
+#include "DMCombatHUD.h"
+#include "DMSquadController.h"
+#include "DMSandboxArena.h"
+#include "DMEncounterLayout.h"
+#include "DMGameState.h"
+#include "DMAIProfile.h"
+#include "DMScroungePickup.h"
+#include "Engine/GameInstance.h"
+#include "EngineUtils.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
+#include "PlaytraceCaptureSubsystem.h"
+#include "TimerManager.h"
+#include "Policies/CondensedJsonPrintPolicy.h"
+#include "Serialization/JsonSerializer.h"
+#include "Serialization/JsonWriter.h"
+
+ADMCombatGameMode::ADMCombatGameMode()
+{
+    DefaultPawnClass = nullptr;
+    PlayerControllerClass = ADMCombatPlayerController::StaticClass();
+    HUDClass = ADMCombatHUD::StaticClass();
+}
+
+void ADMCombatGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
+{
+    Super::InitGame(MapName, Options, ErrorMessage);
+#if !UE_BUILD_SHIPPING
+    FParse::Value(FCommandLine::Get(), TEXT("DMCombatSmoke="), SmokeOutcome);
+    FParse::Value(FCommandLine::Get(), TEXT("DMAIWeights="), AIWeightsPath);
+    bNetworkTest = FParse::Param(FCommandLine::Get(), TEXT("DMNetworkTest"));
+#endif
+}
+
+void ADMCombatGameMode::ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& Metadata)
+{
+    Metadata->SetStringField(TEXT("scenario_id"), TEXT("combat-sandbox"));
+    Metadata->SetStringField(TEXT("run_kind"), TEXT("combat_sandbox"));
+    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.3.0"));
+    if (UsesEncounterLayout()) { Metadata->SetStringField(TEXT("native_faction"), TEXT("smugglers")); }
+    Metadata->SetStringField(TEXT("bot_policy"), TEXT("squad-utility-v3"));
+    Metadata->SetStringField(TEXT("test_profile"), bNetworkTest ? TEXT("network_probe") : (SmokeOutcome.IsEmpty() ? TEXT("interactive") : SmokeOutcome));
+    Metadata->SetNumberField(TEXT("initial_bot_count"), 4);
+    Metadata->RemoveField(TEXT("production_bots"));
+    Metadata->SetNumberField(TEXT("logical_step_seconds"), .1);
+    TArray<TSharedPtr<FJsonValue>> Omissions;
+    for (const TCHAR* Missing : { TEXT("full_investigator_kits"), TEXT("objectives_htn"), TEXT("madness"),
+        TEXT("mythos_boss_encounters"), TEXT("break_cc"), TEXT("named_injury_effects"), TEXT("burst_injury_window"),
+        TEXT("host_migration"), TEXT("deterministic_physics_navigation") })
+    { Omissions.Add(MakeShared<FJsonValueString>(Missing)); }
+    Metadata->SetArrayField(TEXT("omissions"), Omissions);
+}
+
+void ADMCombatGameMode::StartPlay()
+{
+    Super::StartPlay();
+    if (!TActorIterator<ADMSandboxArena>(GetWorld())) { GetWorld()->SpawnActor<ADMSandboxArena>(); }
+    int32 Seed = 1927;
+    FParse::Value(FCommandLine::Get(), TEXT("DMSeed="), Seed);
+    FDMRandomStreams Layout(Seed);
+    const bool bSmoke = !SmokeOutcome.IsEmpty();
+    for (int32 Index = 0; Index < (UsesEncounterLayout() ? 4 + DMEncounterLayout::EnemyCount : 7); ++Index)
+    {
+        const bool bEnemy = Index >= 4;
+        const float X = bEnemy ? (bSmoke ? 170.f : 650.f) : (bSmoke ? -170.f : -650.f);
+        const float Y = ((bEnemy ? Index - 4 : Index) - 1.5f) * 100.f;
+        const float Jitter = bSmoke ? 0.f : static_cast<float>(Layout.Next(EDMRandomStream::RunGeneration) % 40);
+        FActorSpawnParameters Params;
+        Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+        FVector Position = UsesEncounterLayout()
+            ? (bEnemy ? DMEncounterLayout::EnemyPosition(Index - 4) : FVector(-2100, Y, 95))
+            : FVector(X + Jitter, Y, 95);
+        if (UsesEncounterLayout())
+        {
+            // Seed-driven placement jitter (+-30 per axis) so different -DMSeed runs diverge; the encounter test tolerates 100u.
+            Position.X += static_cast<float>(static_cast<int32>(Layout.Next(EDMRandomStream::RunGeneration) % 61) - 30);
+            Position.Y += static_cast<float>(static_cast<int32>(Layout.Next(EDMRandomStream::RunGeneration) % 61) - 30);
+        }
+        ADMCombatant* Actor = GetWorld()->SpawnActor<ADMCombatant>(Position, FRotator::ZeroRotator, Params);
+        check(Actor);
+        const bool bLoss = SmokeOutcome == TEXT("Defeat");
+        const bool bReviveTest = SmokeOutcome == TEXT("Revive");
+        const float HP = bEnemy ? (bLoss ? 2000.f : (bSmoke && !bReviveTest ? 60.f : (bSmoke ? 150.f : 350.f))) : 100.f;
+        const float Damage = bEnemy ? (bLoss ? 500.f : (bReviveTest ? 150.f : (bSmoke ? 3.f : 7.f))) : (bSmoke && !bReviveTest ? 35.f : 12.f);
+        Actor->InitializeCombatant(FString::Printf(TEXT("%s.%d"), bEnemy ? TEXT("enemy") : TEXT("investigator"), bEnemy ? Index - 4 : Index), bEnemy, HP, Damage, bEnemy ? 0 : 20);
+        if (bEnemy && UsesEncounterLayout())
+        {
+            Actor->Smuggler->Initialize(DMEncounterLayout::EnemyRole(Index - 4));
+            Actor->InitializeCombatant(Actor->EntityId, true, Actor->Smuggler->BaseHealth(), Actor->Smuggler->BaseDamage());
+        }
+        Actor->bProfileRange = bSmoke;
+        if (!bEnemy) { Actor->InitializeInvestigator(static_cast<EDMInvestigator>(Index + 1), bSmoke); }
+        if (bReviveTest && bEnemy)
+        {
+            Actor->AttackIntervalTicks = 100;
+            Actor->NextAttackTick = Index == 4 ? 0 : 1000;
+        }
+        Combatants.Add(Actor);
+        TSharedRef<FJsonObject> Spawn = MakeShared<FJsonObject>();
+        Spawn->SetStringField(TEXT("entity_id"), Actor->EntityId);
+        Spawn->SetStringField(TEXT("team"), bEnemy ? TEXT("enemy") : TEXT("investigator"));
+        Spawn->SetNumberField(TEXT("health"), Actor->Health());
+        Spawn->SetNumberField(TEXT("shield"), Actor->Shield());
+        Spawn->SetNumberField(TEXT("attack_damage"), Actor->AttackDamage);
+        Spawn->SetStringField(TEXT("display_name"), Actor->DisplayName());
+        Spawn->SetNumberField(TEXT("attack_range"), Actor->GetAttackRange());
+        Spawn->SetNumberField(TEXT("attack_interval_ticks"), Actor->AttackIntervalTicks);
+        Spawn->SetNumberField(TEXT("initial_next_attack_tick"), Actor->NextAttackTick);
+        Spawn->SetStringField(TEXT("control"), TEXT("bot"));
+        Emit(TEXT("combat.spawned"), Spawn);
+        AttachBot(Actor);
+    }
+    bCombatActive = true;
+    PublishEncounter();
+    if (bSmoke) { bGuardChecksPassed = !Combatants[0]->TryAttack(Combatants[0]) && !Combatants[0]->TryAttack(nullptr); }
+    // This is an isolated combat encounter, not a scenario/boss implementation.
+    Summon();
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    { AssignInvestigator(It->Get()); }
+#if !UE_BUILD_SHIPPING
+    if (FParse::Param(FCommandLine::Get(),TEXT("DMSmugglerProbe")) || FParse::Param(FCommandLine::Get(), TEXT("DMPresentationProbe")) || FParse::Param(FCommandLine::Get(), TEXT("DMLocomotionProbe"))) { return; }
+#endif
+    GetWorldTimerManager().SetTimer(CombatTimer, this, &ADMCombatGameMode::StepCombat, bSmoke ? .01f : .1f, true);
+}
+
+void ADMCombatGameMode::Emit(const FString& Type, const TSharedRef<FJsonObject>& Data)
+{
+    Data->SetNumberField(TEXT("tick"), CombatTick);
+    GetGameInstance()->GetSubsystem<UPlaytraceCaptureSubsystem>()->RecordEvent(Type, Data);
+}
+
+ADMCombatant* ADMCombatGameMode::FindCombatant(const FString& EntityId) const
+{
+    if (EntityId.IsEmpty()) { return nullptr; }
+    for (ADMCombatant* Actor : Combatants) { if (Actor && Actor->EntityId == EntityId) { return Actor; } }
+    return nullptr;
+}
+
+UDMAIProfile* ADMCombatGameMode::ProfileFor(const ADMCombatant& Actor)
+{
+    // Enemies resolve by smuggler role (Kind None); investigators by kind (Role None). Smoke enemies land on Raider.
+    const EDMSmuggler SmugglerRole = Actor.bIsEnemy && Actor.Smuggler ? Actor.Smuggler->Role : EDMSmuggler::None;
+    const EDMInvestigator Kind = !Actor.bIsEnemy && Actor.Investigator ? Actor.Investigator->Kind : EDMInvestigator::None;
+    const FString Name = UDMAIProfile::ProfileName(SmugglerRole, Kind);
+    if (TObjectPtr<UDMAIProfile>* Found = Profiles.Find(Name)) { if (*Found) { return *Found; } }
+    UDMAIProfile* Profile = UDMAIProfile::Resolve(this, SmugglerRole, Kind, AIWeightsPath);
+    Profiles.Add(Name, Profile);
+    return Profile;
+}
+
+void ADMCombatGameMode::AttachBot(ADMCombatant* Actor)
+{
+    ADMSquadController* Bot = GetWorld()->SpawnActor<ADMSquadController>();
+    Bot->SetProfile(ProfileFor(*Actor));
+    Bot->Possess(Actor);
+    Actor->SetAttackHold(false);
+    if (UsesEncounterLayout() && Actor->bIsEnemy)
+    {
+        const int32 EnemyIndex = Combatants.IndexOfByKey(Actor) - 4;
+        const bool bPatrol = EnemyIndex >= DMEncounterLayout::CampCount * DMEncounterLayout::CampSize;
+        Bot->ConfigureEncounter(bPatrol ? 3 : EnemyIndex / 3, Actor->GetActorLocation(), bPatrol, bPatrol ? EnemyIndex - 9 : 0);
+    }
+    Actor->ControlKind = TEXT("bot");
+    Actor->ForceNetUpdate();
+}
+
+void ADMCombatGameMode::AssignInvestigator(APlayerController* Player)
+{
+    if (!Player || Player->GetPawn() || Cast<ADMCombatant>(Player->GetViewTarget()) || !bCombatActive) { return; }
+    FString Preferred;
+    FParse::Value(FCommandLine::Get(), TEXT("DMInvestigator="), Preferred);
+#if WITH_EDITOR
+    // The toolbar owns PIE selection, including when the editor was launched with a CLI default.
+    if (GetWorld()->WorldType == EWorldType::PIE) { Preferred = DMEditorPlaySelection::Load(); }
+#endif
+    const TArray<FString> Names = { TEXT("Sapper"), TEXT("Photographer"), TEXT("Medium"), TEXT("Smuggler") };
+    const int32 Start = FMath::Max(0, Names.IndexOfByPredicate([&](const FString& Name) { return Name.Equals(Preferred, ESearchCase::IgnoreCase); }));
+    for (int32 Offset = 0; Offset < 4; ++Offset)
+    {
+        if (Combatants.Num() < 4) { return; }
+        ADMCombatant* Actor = Combatants[(Start + Offset) % 4];
+        if (Actor->bIsEnemy || Actor->IsPlayerControlled()) { continue; }
+#if WITH_EDITOR
+        if (GetWorld()->WorldType == EWorldType::PIE && DMEditorPlaySelection::LoadBotControl())
+        {
+            // Keep the real squad controller in charge; this player only observes.
+            Player->SetViewTarget(Actor);
+            Player->ClientSetViewTarget(Actor);
+            return;
+        }
+#endif
+        AController* Old = Actor->GetController();
+        if (Old) { Old->UnPossess(); Old->Destroy(); }
+        Actor->StopGoal();
+        Actor->SetAttackTarget(nullptr);
+        Actor->SetAttackHold(false);
+        Actor->ControlKind = TEXT("human");
+        Player->Possess(Actor);
+        TSharedRef<FJsonObject> Data = MakeShared<FJsonObject>();
+        Data->SetStringField(TEXT("entity_id"), Actor->EntityId);
+        Data->SetStringField(TEXT("control"), TEXT("human"));
+        Emit(TEXT("control.changed"), Data);
+        return;
+    }
+    Player->ClientMessage(TEXT("All four investigator slots are occupied."));
+}
+void ADMCombatGameMode::RestartPlayer(AController* Player) { AssignInvestigator(Cast<APlayerController>(Player)); }
+void ADMCombatGameMode::PostLogin(APlayerController* Player) { Super::PostLogin(Player); AssignInvestigator(Player); }
+void ADMCombatGameMode::Logout(AController* Exiting)
+{
+    ReleaseInvestigator(Exiting);
+    Super::Logout(Exiting);
+}
+void ADMCombatGameMode::ReleaseInvestigator(AController* Exiting)
+{
+    ADMCombatant* Actor = Cast<ADMCombatant>(Exiting->GetPawn());
+    // Unpossess before Super so PlayerController teardown does not destroy the shared investigator.
+    if (Actor) { Exiting->UnPossess(); Actor->StopGoal(); Actor->Primary->CancelChannel(); Actor->Primary->ReleaseClinch(); Actor->SetAttackTarget(nullptr); Actor->SetAttackHold(false); }
+    if (Actor && bCombatActive)
+    {
+        AttachBot(Actor);
+        TSharedRef<FJsonObject> Data = MakeShared<FJsonObject>();
+        Data->SetStringField(TEXT("entity_id"), Actor->EntityId);
+        Data->SetStringField(TEXT("control"), TEXT("bot"));
+        Emit(TEXT("control.changed"), Data);
+    }
+}
+
+void ADMCombatGameMode::RequestRevive(ADMCombatant* Actor, ADMCombatant* Ally)
+{
+    if (!bCombatActive || !IsValid(Actor) || !IsValid(Ally) || Actor == Ally || Actor->bIsEnemy || Ally->bIsEnemy
+        || Actor->IsDown() || !Ally->IsDown()) { return; }
+    auto* Existing = Revives.Find(Actor);
+    if (!Existing || Existing->Key.Get() != Ally) { Revives.Add(Actor, {Ally, CombatTick}); }
+}
+
+// ---- Pings
+
+int32 ADMCombatGameMode::CreatePing(EDMPingKind Kind, const FString& AuthorId, bool bAuthorBot, FVector Location, const FString& TargetId)
+{
+    if (!bCombatActive || AuthorId.IsEmpty() || Kind >= EDMPingKind::Count) { return INDEX_NONE; }
+    FString Target = TargetId;
+    FVector Point = Location;
+    switch (Kind)
+    {
+    case EDMPingKind::Enemy: case EDMPingKind::Focus: case EDMPingKind::Ignore:
+    {
+        const ADMCombatant* Hostile = FindCombatant(Target);
+        if (!Hostile || !Hostile->bIsEnemy || Hostile->IsDown()) { return INDEX_NONE; }
+        Point = Hostile->GetActorLocation();
+        break;
+    }
+    case EDMPingKind::Help:
+    {
+        const ADMCombatant* Ally = FindCombatant(Target);
+        if (!Ally || Ally->bIsEnemy) { return INDEX_NONE; }
+        Point = Ally->GetActorLocation();
+        break;
+    }
+    default:
+        // Ground, pickup and Perceive pings carry a location only; it is clamped into the playable extent, never rejected.
+        Target.Empty();
+        if (Point.ContainsNaN()) { return INDEX_NONE; }
+        Point.X = FMath::Clamp(Point.X, -DMEncounterLayout::PlayableX, DMEncounterLayout::PlayableX);
+        Point.Y = FMath::Clamp(Point.Y, -DMEncounterLayout::PlayableY, DMEncounterLayout::PlayableY);
+        break;
+    }
+    TArray<FDMPingEnded> Ended;
+    const int32 Id = PingBoard.Create(Kind, AuthorId, bAuthorBot, Point, Target, CombatTick, Ended);
+    EmitPingEnded(Ended);
+    FDMPing* Ping = Id == INDEX_NONE ? nullptr : PingBoard.Find(Id);
+    if (!Ping) { if (Ended.Num()) { PublishPings(); } return INDEX_NONE; }
+    if (Kind == EDMPingKind::Perceive) { Ping->bSubjective = true; Ping->TargetId.Empty(); }
+    ++Metrics.PingsCreated;
+    TSharedRef<FJsonObject> Data = MakeShared<FJsonObject>();
+    Data->SetNumberField(TEXT("id"), Id);
+    Data->SetStringField(TEXT("kind"), FDMPingBoard::KindName(Kind));
+    Data->SetStringField(TEXT("author_id"), AuthorId);
+    Data->SetBoolField(TEXT("bot"), bAuthorBot);
+    Data->SetStringField(TEXT("target_id"), Ping->TargetId);
+    TSharedPtr<FJsonObject> Where = MakeShared<FJsonObject>();
+    Where->SetNumberField(TEXT("x"), Point.X);
+    Where->SetNumberField(TEXT("y"), Point.Y);
+    Data->SetObjectField(TEXT("location"), Where);
+    Data->SetBoolField(TEXT("subjective"), Ping->bSubjective);
+    Emit(TEXT("ping.created"), Data);
+    PublishPings();
+    return Id;
+}
+
+bool ADMCombatGameMode::CancelPing(int32 Id, const FString& AuthorId)
+{
+    TArray<FDMPingEnded> Ended;
+    if (!PingBoard.Cancel(Id, AuthorId, Ended)) { return false; }
+    EmitPingEnded(Ended);
+    PublishPings();
+    return true;
+}
+
+bool ADMCombatGameMode::AcknowledgePing(int32 Id, const FString& WhoId)
+{
+    if (!PingBoard.Acknowledge(Id, WhoId)) { return false; }
+    PublishPings();
+    return true;
+}
+
+bool ADMCombatGameMode::RespondToPing(int32 Id, const FString& ResponderId, bool bOnIt)
+{
+    if (!PingBoard.Respond(Id, ResponderId, bOnIt)) { return false; }
+    TSharedRef<FJsonObject> Data = MakeShared<FJsonObject>();
+    Data->SetNumberField(TEXT("id"), Id);
+    Data->SetStringField(TEXT("responder_id"), ResponderId);
+    Data->SetStringField(TEXT("response"), bOnIt ? TEXT("on_it") : TEXT("busy"));
+    Emit(TEXT("ping.responded"), Data);
+    PublishPings();
+    return true;
+}
+
+void ADMCombatGameMode::StepPings()
+{
+    if (PingBoard.Pings.IsEmpty()) { return; }
+    TArray<FDMPingEnded> Ended;
+    PingBoard.Step(CombatTick, [this](const FDMPing& Ping)
+    {
+        switch (Ping.Kind)
+        {
+        case EDMPingKind::Enemy: case EDMPingKind::Focus: case EDMPingKind::Ignore:
+        { const ADMCombatant* Target = FindCombatant(Ping.TargetId); return !Target || Target->IsDown(); }
+        case EDMPingKind::Help:
+            // A completed revive fulfils Help pings on the ally where it happens (StepCombat); here only a vanished ally ends one.
+            return FindCombatant(Ping.TargetId) == nullptr;
+        case EDMPingKind::Pickup:
+            for (TActorIterator<ADMScroungePickup> It(GetWorld()); It; ++It)
+            { if (FVector::DistSquared2D(It->GetActorLocation(), Ping.Location) <= FMath::Square(160.f)) { return false; } }
+            return true;
+        default: return false;
+        }
+    }, Ended);
+    EmitPingEnded(Ended);
+    PublishPings();
+}
+
+void ADMCombatGameMode::PublishPings()
+{
+    ADMGameState* Projection = GetGameState<ADMGameState>();
+    if (!Projection) { return; }
+    TArray<FDMPing> Live;
+    for (const FDMPing& Ping : PingBoard.Pings) { if (Ping.IsLive(CombatTick)) { Live.Add(Ping); } }
+    Projection->SetPings(Live);
+}
+
+void ADMCombatGameMode::EmitPingEnded(const TArray<FDMPingEnded>& Ended)
+{
+    for (const FDMPingEnded& Entry : Ended)
+    {
+        TSharedRef<FJsonObject> Data = MakeShared<FJsonObject>();
+        Data->SetNumberField(TEXT("id"), Entry.Ping.Id);
+        Data->SetStringField(TEXT("reason"), FDMPingBoard::EndName(Entry.Reason));
+        Emit(TEXT("ping.ended"), Data);
+    }
+}
+
+// ---- Tuning metrics
+
+void ADMCombatGameMode::NoteDamage(const ADMCombatant& From, const ADMCombatant& To, float Damage)
+{
+    if (!(Damage > 0)) { return; }
+    if (To.bIsEnemy) { Metrics.DamageToEnemies += Damage; } else { Metrics.DamageToInvestigators += Damage; }
+    Metrics.DamageDealtBy.FindOrAdd(From.EntityId) += Damage;
+}
+void ADMCombatGameMode::NoteDowned(const ADMCombatant& Target) { if (Target.bIsEnemy) { ++Metrics.EnemyKills; } else { ++Metrics.InvestigatorDowns; } }
+void ADMCombatGameMode::NoteRevive() { ++Metrics.Revives; }
+void ADMCombatGameMode::NoteSignature() { ++Metrics.SignatureActivations; }
+void ADMCombatGameMode::NoteQCast() { ++Metrics.QCasts; }
+
+void ADMCombatGameMode::LogResult(const FString& Outcome)
+{
+    int32 InvestigatorsUp = 0, EnemiesUp = 0, Investigators = 0, Enemies = 0;
+    for (ADMCombatant* Actor : Combatants)
+    {
+        if (!Actor) { continue; }
+        if (Actor->bIsEnemy) { ++Enemies; EnemiesUp += Actor->IsDown() ? 0 : 1; }
+        else { ++Investigators; InvestigatorsUp += Actor->IsDown() ? 0 : 1; }
+    }
+    TSharedRef<FJsonObject> Data = MakeShared<FJsonObject>();
+    Data->SetStringField(TEXT("outcome"), Outcome);
+    Data->SetNumberField(TEXT("tick"), CombatTick);
+    Data->SetNumberField(TEXT("investigators_standing"), InvestigatorsUp);
+    Data->SetNumberField(TEXT("enemies_standing"), EnemiesUp);
+    Data->SetNumberField(TEXT("enemy_total"), Enemies);
+    Data->SetNumberField(TEXT("investigator_total"), Investigators);
+    Data->SetNumberField(TEXT("damage_to_investigators"), Metrics.DamageToInvestigators);
+    Data->SetNumberField(TEXT("damage_to_enemies"), Metrics.DamageToEnemies);
+    Data->SetNumberField(TEXT("investigator_downs"), Metrics.InvestigatorDowns);
+    Data->SetNumberField(TEXT("enemy_kills"), Metrics.EnemyKills);
+    Data->SetNumberField(TEXT("revives"), Metrics.Revives);
+    Data->SetNumberField(TEXT("signatures"), Metrics.SignatureActivations);
+    Data->SetNumberField(TEXT("q_casts"), Metrics.QCasts);
+    Data->SetNumberField(TEXT("pings"), Metrics.PingsCreated);
+    TSharedPtr<FJsonObject> By = MakeShared<FJsonObject>();
+    TArray<FString> Keys;
+    Metrics.DamageDealtBy.GetKeys(Keys);
+    Keys.Sort();
+    for (const FString& Key : Keys) { By->SetNumberField(Key, Metrics.DamageDealtBy[Key]); }
+    Data->SetObjectField(TEXT("damage_by"), By);
+    FString Json;
+    // Condensed: tune_ai.py reads the whole document from this one log line.
+    FJsonSerializer::Serialize(Data, TJsonWriterFactory<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>::Create(&Json));
+    UE_LOG(LogTemp, Display, TEXT("DREAD_AI_RESULT %s"), *Json);
+}
+
+void ADMCombatGameMode::StepCombat()
+{
+    if (!bCombatActive) { return; }
+    if (bNetworkTest)
+    {
+        int32 Humans = 0;
+        for (ADMCombatant* Actor : Combatants) { Humans += Actor->IsPlayerControlled() ? 1 : 0; }
+        if (Humans < 2) { return; }
+    }
+    ++CombatTick;
+#if !UE_BUILD_SHIPPING
+    if (FParse::Param(FCommandLine::Get(),TEXT("DMSmugglerSoak")) && CombatTick > 1800)
+    { UE_LOG(LogTemp,Error,TEXT("DREAD_SMUGGLER_SOAK_TIMEOUT")); LogResult(TEXT("timeout")); FPlatformMisc::RequestExitWithStatus(false,1); return; }
+#endif
+    for (ADMCombatant* Actor : Combatants) { Actor->SpiritProtection = 0; Actor->SpiritSlow = 0; }
+    // Settle the ping board before any bot reads it this tick.
+    StepPings();
+    for (ADMCombatant* Actor : Combatants) { Actor->Primary->Step(CombatTick); Actor->Smuggler->Step(*this); }
+    if (ADMGameState* Projection = GetGameState<ADMGameState>()) { Projection->SetCombatTick(CombatTick); }
+    for (ADMCombatant* Actor : Combatants)
+    {
+        Actor->StepInvestigator(CombatTick);
+        for (ADMCombatant* Subject : Combatants)
+        { Actor->Investigator->UpdateSpiritLocation(Subject->EntityId, Subject->GetActorLocation()); }
+    }
+    // Stable roster ordering: decisions -> revive channels -> ability resolution -> end condition.
+    // Character movement/physics remains Unreal-authoritative, outside a replay guarantee.
+    for (ADMCombatant* Actor : Combatants)
+    { if (ADMSquadController* Bot = Cast<ADMSquadController>(Actor->GetController())) { Bot->Think(*this); } }
+    for (ADMCombatant* Actor : Combatants)
+    { if (!Actor->bIsEnemy) { Actor->SetReviveChannel(FString(), 0); } }
+    for (ADMCombatant* Actor : Combatants)
+    {
+        const auto* Channel = Revives.Find(Actor);
+        if (!Channel) { continue; }
+        ADMCombatant* Ally = Channel->Key.Get();
+        const int32 Started = Channel->Value;
+        if (!Ally || !Ally->IsDown() || Actor->IsDown() || Actor->LastDamageTick >= Started
+            || FVector::DistSquared(Actor->GetActorLocation(), Ally->GetActorLocation()) > FMath::Square(160.f))
+        { Revives.Remove(Actor); continue; }
+        const int32 Duration = ReviveDurationTicks(Ally->GrievousCount);
+        Ally->SetReviveChannel(Actor->EntityId, static_cast<float>(CombatTick - Started) / Duration);
+        if (CombatTick - Started >= Duration)
+        {
+            if (Actor->Revive(Ally))
+            {
+                ++RevivesCompleted;
+                // A revived ally fulfils every Help ping on them.
+                TArray<FDMPingEnded> Ended;
+                PingBoard.Step(CombatTick, [Ally](const FDMPing& Ping) { return Ping.Kind == EDMPingKind::Help && Ping.TargetId == Ally->EntityId; }, Ended);
+                if (Ended.Num()) { EmitPingEnded(Ended); PublishPings(); }
+            }
+            Revives.Remove(Actor);
+        }
+    }
+    for (ADMCombatant* Actor : Combatants)
+    { if (!Revives.Contains(Actor)) { Actor->TryAttack(Actor->GetAttackTarget()); } }
+    bool bInvestigatorsUp = false, bEnemiesUp = false;
+    for (ADMCombatant* Actor : Combatants)
+    {
+        if (!Actor->IsDown()) { if (Actor->bIsEnemy) { bEnemiesUp = true; } else { bInvestigatorsUp = true; } }
+    }
+    if (UsesEncounterLayout())
+    {
+        const EDMWaveAction Action = SmugglerWave.Advance(bInvestigatorsUp,bEnemiesUp,CombatTick);
+        if (Action == EDMWaveAction::Announce)
+        { auto Data = MakeShared<FJsonObject>(); Data->SetStringField(TEXT("stage"),TEXT("boss_incoming")); Data->SetNumberField(TEXT("arrival_tick"),SmugglerWave.ArrivalTick); Emit(TEXT("encounter.wave"),Data); }
+        else if (Action == EDMWaveAction::SpawnPosse) { SpawnBossPosse(); }
+        else if (Action == EDMWaveAction::Victory || Action == EDMWaveAction::Defeat) { CompleteCombat(Action == EDMWaveAction::Victory); }
+        PublishEncounter();
+    }
+    else if (!bInvestigatorsUp || !bEnemiesUp) { CompleteCombat(bInvestigatorsUp); }
+    else if (!SmokeOutcome.IsEmpty() && CombatTick > 1000)
+    {
+        UE_LOG(LogTemp, Error, TEXT("DREAD_COMBAT_SMOKE_TIMEOUT"));
+        FPlatformMisc::RequestExitWithStatus(false, 1);
+    }
+}
+
+void ADMCombatGameMode::CompleteCombat(bool bVictory)
+{
+    bCombatActive = false;
+    GetWorldTimerManager().ClearTimer(CombatTimer);
+    for (ADMCombatant* Actor : Combatants) { Actor->Smuggler->Cancel(); Actor->StopGoal(); Actor->Primary->CancelChannel(); Actor->Primary->ReleaseClinch(); Actor->GetCharacterMovement()->StopMovementImmediately(); }
+    FinishRun(bVictory);
+    LogResult(bVictory ? TEXT("victory") : TEXT("defeat"));
+#if !UE_BUILD_SHIPPING
+    if (FParse::Param(FCommandLine::Get(),TEXT("DMSmugglerSoak")))
+    { UE_LOG(LogTemp,Display,TEXT("DREAD_SMUGGLER_SOAK_COMPLETE outcome=%s tick=%d roster=%d"),bVictory?TEXT("victory"):TEXT("defeat"),CombatTick,Combatants.Num()); FPlatformMisc::RequestExit(false); }
+#endif
+    if (bNetworkTest)
+    {
+        TSharedRef<FJsonObject> Expected = MakeShared<FJsonObject>();
+        for (ADMCombatant* Actor : Combatants)
+        {
+            Expected->SetNumberField(Actor->EntityId + TEXT(".health"), Actor->Health());
+            Expected->SetNumberField(Actor->EntityId + TEXT(".shield"), Actor->Shield());
+            Expected->SetStringField(Actor->EntityId + TEXT(".name"), Actor->DisplayName());
+            Expected->SetStringField(Actor->EntityId + TEXT(".resources"), Actor->Investigator->ResourceSummary());
+            Expected->SetStringField(Actor->EntityId + TEXT(".primary"), Actor->Primary->ReplicationSummary());
+        }
+        Expected->SetStringField(TEXT("phase"), bVictory ? TEXT("Victory") : TEXT("Defeat"));
+        FString Json;
+        FJsonSerializer::Serialize(Expected, TJsonWriterFactory<>::Create(&Json));
+        for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+        { if (ADMCombatPlayerController* Player = Cast<ADMCombatPlayerController>(It->Get())) { Player->ClientVerifyCombatState(Json); } }
+        UE_LOG(LogTemp, Display, TEXT("DREAD_NETWORK_SERVER_COMPLETE"));
+        FTimerHandle ExitTimer;
+        GetWorldTimerManager().SetTimer(ExitTimer, [] { FPlatformMisc::RequestExit(false); }, 8.f, false);
+    }
+    if (!SmokeOutcome.IsEmpty())
+    {
+        const bool bPassed = Combatants.Num() == 7 && bGuardChecksPassed && (bVictory == (SmokeOutcome != TEXT("Defeat")))
+            && (SmokeOutcome != TEXT("Revive") || RevivesCompleted > 0);
+        UE_LOG(LogTemp, Display, TEXT("DREAD_COMBAT_SMOKE_%s outcome=%s tick=%d"), bPassed ? TEXT("PASSED") : TEXT("FAILED"), bVictory ? TEXT("victory") : TEXT("defeat"), CombatTick);
+        FPlatformMisc::RequestExitWithStatus(false, bPassed ? 0 : 1);
+    }
+}
+
+void ADMCombatGameMode::SpawnBossPosse()
+{
+    for (int32 I=0; I<DMEncounterLayout::PosseCount; ++I)
+    {
+        FActorSpawnParameters P; P.SpawnCollisionHandlingOverride=ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+        auto* A=GetWorld()->SpawnActor<ADMCombatant>(DMEncounterLayout::PossePosition(I),FRotator(0,180,0),P);
+        A->Smuggler->Initialize(DMEncounterLayout::PosseRole(I));
+        A->InitializeCombatant(FString::Printf(TEXT("enemy.posse.%d"),I),true,A->Smuggler->BaseHealth(),A->Smuggler->BaseDamage());
+        Combatants.Add(A); AttachBot(A);
+        CastChecked<ADMSquadController>(A->GetController())->ConfigureEncounter(4,A->GetActorLocation(),false,0);
+        auto Data=MakeShared<FJsonObject>(); Data->SetStringField(TEXT("entity_id"),A->EntityId);
+        Data->SetStringField(TEXT("team"),TEXT("enemy")); Data->SetStringField(TEXT("control"),TEXT("bot"));
+        Data->SetStringField(TEXT("display_name"),A->DisplayName()); Data->SetNumberField(TEXT("health"),A->Health());
+        Data->SetNumberField(TEXT("shield"),0); Data->SetNumberField(TEXT("attack_damage"),A->AttackDamage);
+        Data->SetNumberField(TEXT("attack_range"),A->GetAttackRange()); Data->SetNumberField(TEXT("attack_interval_ticks"),A->AttackIntervalTicks);
+        Data->SetNumberField(TEXT("initial_next_attack_tick"),A->NextAttackTick); Emit(TEXT("combat.spawned"),Data);
+    }
+    auto Data=MakeShared<FJsonObject>(); Data->SetStringField(TEXT("stage"),TEXT("boss_and_posse"));
+    Data->SetNumberField(TEXT("count"),DMEncounterLayout::PosseCount); Emit(TEXT("encounter.wave"),Data);
+}
+void ADMCombatGameMode::PublishEncounter()
+{
+    if (!UsesEncounterLayout()) { return; }
+    FString Text;
+    switch (SmugglerWave.Stage) {
+    case EDMSmugglerWave::Occupation: Text=TEXT("Clear all camps and the patrol"); break;
+    case EDMSmugglerWave::Arrival: Text=FString::Printf(TEXT("Gang Boss arrives in %.1fs"),FMath::Max(0,SmugglerWave.ArrivalTick-CombatTick)*.1f); break;
+    case EDMSmugglerWave::Finale: Text=TEXT("Final wave: defeat boss and posse"); break;
+    default: Text=TEXT("Smuggler encounter complete"); break; }
+    if (auto* Projection=GetGameState<ADMGameState>()) { Projection->SetEncounterObjective(Text); }
+}

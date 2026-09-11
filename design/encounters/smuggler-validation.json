@@ -1,0 +1,22 @@
+{
+  "run_id": "62d1ad4a-457e-caab-5b24-c4b7714adf60",
+  "artifact_digest": "068888a8e555d330aa73c395a75713e217db1ad728150f6a4673913c8383dc88",
+  "run_kind": "combat_sandbox",
+  "outcome": "defeat",
+  "event_count": 1227,
+  "event_counts": {
+    "run.started": 1,
+    "run.state_changed": 2,
+    "combat.spawned": 20,
+    "ritual.summoned": 1,
+    "investigator.resources": 863,
+    "ability.q": 56,
+    "smuggler.signature": 49,
+    "combat.damage": 207,
+    "combat.killed": 11,
+    "combat.downed": 9,
+    "combat.revived": 5,
+    "encounter.wave": 2,
+    "run.ended": 1
+  }
+}

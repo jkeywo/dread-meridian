@@ -1,0 +1,42 @@
+{
+  "sapper": {
+    "skins": 1,
+    "joints": 88,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ],
+    "second_weight_set": true
+  },
+  "photographer": {
+    "skins": 1,
+    "joints": 88,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ],
+    "second_weight_set": true
+  },
+  "medium": {
+    "skins": 1,
+    "joints": 88,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ],
+    "second_weight_set": true
+  },
+  "smuggler": {
+    "skins": 1,
+    "joints": 88,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ],
+    "second_weight_set": true
+  }
+}

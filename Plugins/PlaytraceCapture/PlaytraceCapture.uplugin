@@ -1,0 +1,10 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1.0",
+  "FriendlyName": "Play Trace Local Capture",
+  "Description": "Opt-in local JSONL evidence capture. No network transport or gameplay authority.",
+  "Category": "Development",
+  "CanContainContent": false,
+  "Modules": [{ "Name": "PlaytraceCapture", "Type": "Runtime", "LoadingPhase": "Default" }]
+}

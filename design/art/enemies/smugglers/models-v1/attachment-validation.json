@@ -1,0 +1,75 @@
+{
+  "gunman": {
+    "states": [
+      {
+        "state": "stowed",
+        "max_anchor_matrix_error": 0
+      },
+      {
+        "state": "gunman-rifle_held",
+        "max_anchor_matrix_error": 2.384185791015625e-07
+      }
+    ],
+    "passed": true
+  },
+  "bruiser": {
+    "states": [
+      {
+        "state": "stowed",
+        "max_anchor_matrix_error": 5.960464477539063e-08
+      },
+      {
+        "state": "bruiser-truncheon_held",
+        "max_anchor_matrix_error": 5.960464477539063e-08
+      }
+    ],
+    "passed": true
+  },
+  "lookout": {
+    "states": [
+      {
+        "state": "stowed",
+        "max_anchor_matrix_error": 5.960464477539063e-08
+      },
+      {
+        "state": "lookout-binoculars_held",
+        "max_anchor_matrix_error": 2.384185791015625e-07
+      },
+      {
+        "state": "lookout-pistol_held",
+        "max_anchor_matrix_error": 1.7881393432617188e-07
+      }
+    ],
+    "passed": true
+  },
+  "bomber": {
+    "states": [
+      {
+        "state": "stowed",
+        "max_anchor_matrix_error": 1.1920928955078125e-07
+      },
+      {
+        "state": "bomber-grenade_held",
+        "max_anchor_matrix_error": 1.1920928955078125e-07
+      },
+      {
+        "state": "bomber-satchel_held",
+        "max_anchor_matrix_error": 1.1920928955078125e-07
+      }
+    ],
+    "passed": true
+  },
+  "gang-boss": {
+    "states": [
+      {
+        "state": "stowed",
+        "max_anchor_matrix_error": 0
+      },
+      {
+        "state": "gang-boss-smg_held",
+        "max_anchor_matrix_error": 1.1920928955078125e-07
+      }
+    ],
+    "passed": true
+  }
+}
