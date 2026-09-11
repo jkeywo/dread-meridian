@@ -58,6 +58,15 @@ int32 ADMAbilityMarker::CurrentTick() const
 void ADMAbilityMarker::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+    if (HasAuthority() && bTravelling && bSpirit)
+    {
+        // Glide every frame instead of stepping once per combat tick (10Hz) - the discrete jumps otherwise
+        // read as the spirit flickering/juddering rather than moving.
+        const FVector At = GetActorLocation();
+        const FVector Delta = TravelGoal - At;
+        const float Step = TravelSpeed * DeltaSeconds;
+        SetActorLocation(Delta.SizeSquared2D() <= FMath::Square(Step) ? TravelGoal : At + Delta.GetSafeNormal2D() * Step);
+    }
     if (HasAuthority() && !bTravelling && (bSpirit || bHostile))
     {
         if (IsValid(BoundTarget))

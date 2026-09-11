@@ -46,12 +46,17 @@ assert isinstance(texture, unreal.Texture2D), 'T_GhostlyFigure_BaseColor import 
 unreal.EditorAssetLibrary.save_loaded_asset(texture)
 
 mat_path = DEST + '/M_GhostlyFigure'
-material = unreal.load_asset(mat_path) if unreal.EditorAssetLibrary.does_asset_exist(mat_path) \
-    else tools.create_asset('M_GhostlyFigure', DEST, unreal.Material, unreal.MaterialFactoryNew())
+# Rerunning this import re-edits the existing material in place, and MaterialEditingLibrary.delete_all_material_expressions
+# asserts (!IsRooted()) against an already-loaded, rooted material asset. Deleting and recreating it fresh avoids that.
+if unreal.EditorAssetLibrary.does_asset_exist(mat_path):
+    unreal.EditorAssetLibrary.delete_asset(mat_path)
+material = tools.create_asset('M_GhostlyFigure', DEST, unreal.Material, unreal.MaterialFactoryNew())
 lib = unreal.MaterialEditingLibrary
-lib.delete_all_material_expressions(material)
 material.set_editor_property('shading_model', unreal.MaterialShadingModel.MSM_UNLIT)
 material.set_editor_property('blend_mode', unreal.BlendMode.BLEND_TRANSLUCENT)
+# Single-sided made the mesh vanish - its exported face winding only renders as the intended silhouette
+# with both sides drawn. The spirit's flicker turned out to be its per-combat-tick travel stepping, not
+# this material, so keep it two-sided.
 material.set_editor_property('two_sided', True)
 
 sample = lib.create_material_expression(material, unreal.MaterialExpressionTextureSample)

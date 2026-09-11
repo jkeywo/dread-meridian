@@ -55,7 +55,6 @@ namespace
     constexpr float UltimateMadness = 30;
 
     // Medium.
-    constexpr float BeckonSpeed = 90;            // units per tick
     constexpr float BeckonRingRadius = 60;       // spread around the arrival point so spirits do not stack
     constexpr float ArrivalShield = 8;
     constexpr float ArrivalShieldPerAttention = .12f;
@@ -685,13 +684,9 @@ void UDMKitComponent::StepMedium(int32 Tick)
     for (ADMAbilityMarker* Spirit : Actor->Primary->Bindings)
     {
         if (!IsValid(Spirit) || !Spirit->bTravelling) { continue; }
-        const FVector At = Spirit->GetActorLocation();
         const FVector To = Spirit->TravelGoal;
-        if (FVector::DistSquared2D(At, To) > FMath::Square(BeckonSpeed))
-        {
-            Spirit->SetActorLocation(At + (To - At).GetSafeNormal2D() * BeckonSpeed);
-            continue;
-        }
+        // The marker glides toward To every frame in its own Tick(); this just watches for arrival.
+        if (!Spirit->GetActorLocation().Equals(To, 1.f)) { continue; }
         // Arrival: the spirit settles as a ground presence and makes its one pulse.
         Spirit->SetActorLocation(To);
         Spirit->bTravelling = false;

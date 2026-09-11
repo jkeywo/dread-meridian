@@ -58,6 +58,9 @@ ADMCombatant::ADMCombatant()
     Body->SetRelativeScale3D(FVector(.6, .6, 1));
     Label = CreateDefaultSubobject<UTextRenderComponent>(TEXT("StatusLabel"));
     Label->SetupAttachment(GetRootComponent());
+    // The badge's rotation is driven entirely by the per-tick camera-facing update below, never by the capsule's
+    // own facing - absolute rotation stops the character's turning from dragging the badge along with it.
+    Label->SetUsingAbsoluteRotation(true);
     Label->SetRelativeLocation(FVector(0, 0, 130));
     Label->SetWorldSize(20);
     Label->SetHorizontalAlignment(EHTA_Center);
@@ -126,14 +129,10 @@ void ADMCombatant::Tick(float DeltaSeconds)
             if (!bIsEnemy) { Label->SetTextRenderColor(Investigator->Color().ToFColor(true)); }
             if (auto* PC = UGameplayStatics::GetPlayerController(this, 0))
             {
-                // Yaw-only billboard: with the fixed steep camera pitch, a full look-at would tilt the badge
-                // toward the sky instead of standing it upright facing the viewer.
+                // Full look-at: with the fixed, steep camera pitch this lays the badge flat and horizontal,
+                // facing straight up at the viewer, rather than standing it upright edge-on to the camera.
                 if (PC->PlayerCameraManager)
-                {
-                    FRotator Facing = (PC->PlayerCameraManager->GetCameraLocation() - Label->GetComponentLocation()).Rotation();
-                    Facing.Pitch = 0; Facing.Roll = 0;
-                    Label->SetWorldRotation(Facing);
-                }
+                { Label->SetWorldRotation((PC->PlayerCameraManager->GetCameraLocation() - Label->GetComponentLocation()).Rotation()); }
             }
         }
         Presentation->UpdatePresentation();
