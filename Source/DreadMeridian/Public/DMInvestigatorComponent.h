@@ -29,6 +29,8 @@ public:
     FString PassiveName() const;
     FString ResourceSummary(const FString& TargetId = TEXT("")) const;
     FLinearColor Color() const;
+    /** Team colour by kind, so screens without a live component (menu, lobby) match the HUD. */
+    static FLinearColor ColorFor(EDMInvestigator Value);
     float Range() const;
     float Damage() const;
     int32 Interval() const;

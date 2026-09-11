@@ -36,6 +36,8 @@ void ADMGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
     DOREPLIFETIME(ADMGameState, RunState);
     DOREPLIFETIME(ADMGameState, CombatTick);
     DOREPLIFETIME(ADMGameState, Pings);
+    DOREPLIFETIME(ADMGameState, ShellPhase);
+    DOREPLIFETIME(ADMGameState, bShellVictory);
 }
 
 void ADMGameState::SetEncounterObjective(const FString& Text)
@@ -48,5 +50,13 @@ void ADMGameState::SetPings(const TArray<FDMPing>& Live)
     for (int32 I = 0; bSame && I < Live.Num(); ++I) { bSame = SamePing(Live[I], Pings[I]); }
     if (bSame) { return; }
     Pings = Live;
+    ForceNetUpdate();
+}
+
+void ADMGameState::SetShellPhase(EDMShellPhase Phase, bool bVictory)
+{
+    if (!HasAuthority() || (ShellPhase == Phase && bShellVictory == bVictory)) { return; }
+    ShellPhase = Phase;
+    bShellVictory = bVictory;
     ForceNetUpdate();
 }

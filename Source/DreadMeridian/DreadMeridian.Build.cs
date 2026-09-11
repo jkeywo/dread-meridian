@@ -9,7 +9,7 @@ public class DreadMeridian : ModuleRules
             "Core", "CoreUObject", "Engine", "GameplayTags", "GameplayAbilities", "GameplayTasks", "AIModule"
         });
         PrivateDependencyModuleNames.AddRange(new[] {
-            "Json", "PlaytraceCapture", "EnhancedInput", "InputCore", "Niagara"
+            "Json", "PlaytraceCapture", "EnhancedInput", "InputCore", "Niagara", "Slate", "SlateCore"
         });
     }
 }

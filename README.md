@@ -58,6 +58,7 @@ omissions in captures. Sandbox and smoke-profile values are provisional tuning.
 .\tools\Unreal.ps1 -Action CombatSmoke -Outcome Defeat
 .\tools\Unreal.ps1 -Action CombatSmoke -Outcome Revive
 .\tools\Unreal.ps1 -Action NetworkTest
+.\tools\Unreal.ps1 -Action ShellSmoke -Outcome Victory
 python -m unittest discover -s tests -v
 ```
 
@@ -70,6 +71,19 @@ test tuning. The network test starts hidden loopback processes, disconnects one
 client, then checks two clients against final authoritative health/shield/state.
 It requires a recorded handoff back to bot control. Reports: `Saved/NetworkTests`.
 This does not verify matchmaking, host migration or physical controller feel.
+
+## Front end
+
+```powershell
+.\tools\Unreal.ps1 -Action Shell
+```
+
+Opens the shell level: main menu, expedition lobby, then the mission streamed in on **Launch
+Expedition**, then a case report showing the run's real Victory or Defeat. It is the same
+encounter, bots and capture that `-Action Play` runs, started from the lobby instead of on load.
+Settings, scenario and seat selection, Leads and the case report's consequence list are drawn as
+explicit placeholders. See [shell flow](docs/shell-flow.md) for the full list and
+`-Action ShellSmoke` for the headless check.
 
 The native map is `Content/DreadMeridian/Maps/L_CombatSandbox.umap`.
 `-Action GenerateMap` creates it if absent and preserves existing authored edits.

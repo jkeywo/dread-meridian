@@ -75,6 +75,15 @@ public:
     const FDMCombatMetrics& GetMetrics() const { return Metrics; }
 protected:
     virtual void ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& Metadata) override;
+    /**
+     * False defers the encounter so a shell (menu/lobby) can start it later. The sandbox map starts
+     * immediately; ADMShellGameMode overrides this and calls BeginEncounter() on Launch Expedition.
+     */
+    virtual bool ShouldBeginEncounterOnStartPlay() const { return true; }
+    /** Spawns the roster, publishes the encounter and starts the combat timer. Safe to call once. */
+    void BeginEncounter();
+    /** Fires on the authority after the run is finished and combatants are stopped. */
+    virtual void OnEncounterComplete(bool bVictory) {}
 private:
     UPROPERTY() TArray<TObjectPtr<ADMCombatant>> Combatants;
     UPROPERTY() TMap<FString, TObjectPtr<UDMAIProfile>> Profiles;

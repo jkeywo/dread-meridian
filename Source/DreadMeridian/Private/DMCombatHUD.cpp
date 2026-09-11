@@ -3,6 +3,7 @@
 #include "DMCombatPlayerController.h"
 #include "DMEncounterLayout.h"
 #include "DMGameState.h"
+#include "DMHudStyle.h"
 #include "Engine/Canvas.h"
 #include "Engine/World.h"
 #include "Engine/Texture2D.h"
@@ -11,19 +12,7 @@
 
 namespace DMHud
 {
-    // Palette from design/hud: cold near-black grounds, brass chrome, one occult accent.
-    static const FLinearColor Ground(.035f, .055f, .055f, .86f);
-    static const FLinearColor Sunk(0, 0, 0, .6f);
-    static const FLinearColor Brass(.78f, .63f, .29f);
-    static const FLinearColor BrassDim(.78f, .63f, .29f, .3f);
-    static const FLinearColor Bone(.87f, .84f, .77f);
-    static const FLinearColor Muted(.55f, .58f, .56f);
-    static const FLinearColor Health(.49f, .66f, .43f);
-    static const FLinearColor Shield(.62f, .73f, .79f);
-    static const FLinearColor Danger(.82f, .29f, .22f);
-    static const FLinearColor Ally(.31f, .54f, .48f);
-    static const FLinearColor Gap(.42f, .45f, .44f);
-
+    // Palette lives in DMHudStyle.h so the shell screens draw from the same one.
     static const float CapsuleHalfHeight = 90;
 
     /** World point projected for a ping marker; keep in sync with PingAnchor in DMCombatPlayerController.cpp. */

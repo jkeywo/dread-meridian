@@ -19,7 +19,9 @@ public:
     ADMCombatHUD();
     virtual void DrawHUD() override;
 
-private:
+protected:
+    // Protected rather than private so ADMShellHUD can draw its screens with the same
+    // panels, labels and portraits as the combat HUD.
     // Hard references retain portrait assets in cooked builds as well as PIE.
     UPROPERTY() TArray<TObjectPtr<class UTexture2D>> PlayerPortraits;
     UPROPERTY() TArray<TObjectPtr<class UTexture2D>> EnemyPortraits;

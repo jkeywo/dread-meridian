@@ -34,7 +34,11 @@ FString UDMInvestigatorComponent::PassiveName() const
 }
 FLinearColor UDMInvestigatorComponent::Color() const
 {
-    switch (Kind) {
+    return ColorFor(Kind);
+}
+FLinearColor UDMInvestigatorComponent::ColorFor(EDMInvestigator Value)
+{
+    switch (Value) {
     case EDMInvestigator::Sapper: return FLinearColor(1, .55f, .12f);
     case EDMInvestigator::Photographer: return FLinearColor(.3f, .8f, 1);
     case EDMInvestigator::Medium: return FLinearColor(.7f, .35f, 1);

@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Generate', 'GenerateMap', 'GenerateAIProfiles', 'Python', 'Build', 'Test', 'EditorTest', 'Smoke', 'CombatSmoke', 'SmugglerSmoke', 'Editor', 'Play', 'NetworkTest')]
+    [ValidateSet('Generate', 'GenerateMap', 'GenerateShellMap', 'GenerateAIProfiles', 'Python', 'Build', 'Test', 'EditorTest', 'Smoke', 'CombatSmoke', 'SmugglerSmoke', 'ShellSmoke', 'Editor', 'Play', 'Shell', 'NetworkTest')]
     [string]$Action = 'Build',
     [string]$EngineRoot = $env:UE_ROOT,
     [int]$Seed = 1927,
@@ -52,6 +52,14 @@ if ($Action -eq 'GenerateMap') {
     & $cmdEditor $projectFile -run=pythonscript "-script=$generator" -unattended -nop4 -nullrhi -nosound
     if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $projectRoot 'Content\DreadMeridian\Maps\L_CombatSandbox.umap'))) {
         throw 'Sandbox map generation failed.'
+    }
+    exit 0
+}
+if ($Action -eq 'GenerateShellMap') {
+    $generator = Join-Path $PSScriptRoot 'generate_shell.py'
+    & $cmdEditor $projectFile -run=pythonscript "-script=$generator" -unattended -nop4 -nullrhi -nosound
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $projectRoot 'Content\DreadMeridian\Maps\L_Shell.umap'))) {
+        throw 'Shell map generation failed.'
     }
     exit 0
 }
@@ -113,6 +121,8 @@ $gdd = Join-Path $projectRoot 'gdd\Mythos_PvE_MOBA_Master_GDD_v0.3.md'
 $gddDigest = (Get-FileHash -LiteralPath $gdd -Algorithm SHA256).Hash.ToLowerInvariant()
 $map = '/Game/DreadMeridian/Maps/L_CombatSandbox'
 if ($Action -eq 'Smoke') { $map = '/Engine/Maps/Entry?game=/Script/DreadMeridian.DMGameMode' }
+# The shell opens the front end; the sandbox streams in when the lobby launches.
+if ($Action -in @('Shell', 'ShellSmoke')) { $map = '/Game/DreadMeridian/Maps/L_Shell' }
 $launchArgs = @($projectFile, $map, '-PlaytraceCapture', "-DMInvestigator=$Investigator", "-DMSeed=$Seed",
     "-DMGameRevision=$revision", "-DMSourceDigest=$sourceDigest", "-DMGDDDigest=$gddDigest")
 if ($status) { $launchArgs += '-DMDirty' }
@@ -124,6 +134,17 @@ if ($Action -eq 'NetworkTest') {
     & $cmdEditor @launchArgs -server -unattended -nop4 -nosplash -nullrhi -nosound -DMSmugglerSoak "-abslog=$factionLog"
     if ($LASTEXITCODE -ne 0 -or -not (Select-String -LiteralPath $factionLog -SimpleMatch 'DREAD_SMUGGLER_SOAK_COMPLETE' -Quiet)) { throw "Smuggler simulation did not finish: $factionLog" }
     Write-Output "Smuggler simulation completed. Outcome and capture path: $factionLog"
+} elseif ($Action -eq 'ShellSmoke') {
+    # Drives the front end headlessly: main menu -> lobby -> Launch Expedition -> streamed
+    # mission -> case report, using the fast combat smoke roster to reach an outcome.
+    $shellLog = Join-Path $projectRoot ('Saved\Logs\shell-' + [guid]::NewGuid().ToString('N') + '.log')
+    # -RenderOffscreen additionally draws the screens and writes them to Saved/Screenshots.
+    $shellRender = if ($RenderOffscreen) { @('-game', '-RenderOffscreen', '-DMShellShot', '-ResX=1440', '-ResY=900') } else { @('-server', '-nullrhi') }
+    & $cmdEditor @launchArgs -unattended -nop4 -nosplash -nosound @shellRender -DMShellProbe "-DMCombatSmoke=$Outcome" "-abslog=$shellLog"
+    foreach ($marker in @('DREAD_SHELL_PROBE_MENU', 'DREAD_SHELL_MISSION_SHOWN', 'DREAD_SHELL_PROBE_COMPLETE', 'DREAD_COMBAT_SMOKE_PASSED')) {
+        if (-not (Select-String -LiteralPath $shellLog -SimpleMatch $marker -Quiet)) { throw "Shell flow marker absent ($marker): $shellLog" }
+    }
+    Write-Output "Shell flow passed. Log: $shellLog"
 } elseif ($Action -in @('Smoke', 'CombatSmoke')) {
     $smokeLog = Join-Path $projectRoot ('Saved\Logs\smoke-' + [guid]::NewGuid().ToString('N') + '.log')
     $testFlag = if ($Action -eq 'Smoke') { '-DMSmokeTest' } else { "-DMCombatSmoke=$Outcome" }
@@ -135,7 +156,7 @@ if ($Action -eq 'NetworkTest') {
     }
     Write-Output "Smoke passed. Capture path is in $smokeLog. Use Play Trace validate-telemetry for combat; tools/validate_capture.py for the foundation."
 } else {
-    if ($Action -eq 'Play') { $launchArgs += @('-game', '-windowed', '-ResX=1280', '-ResY=800') }
+    if ($Action -in @('Play', 'Shell')) { $launchArgs += @('-game', '-windowed', '-ResX=1280', '-ResY=800') }
     # This visible editor is the explicitly selected interactive action.
     & (Join-Path $EngineRoot 'Engine\Binaries\Win64\UnrealEditor.exe') @launchArgs
 }

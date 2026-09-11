@@ -60,6 +60,12 @@ void ADMCombatGameMode::ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& 
 void ADMCombatGameMode::StartPlay()
 {
     Super::StartPlay();
+    if (ShouldBeginEncounterOnStartPlay()) { BeginEncounter(); }
+}
+
+void ADMCombatGameMode::BeginEncounter()
+{
+    if (bCombatActive || Combatants.Num() > 0) { return; }
     if (!TActorIterator<ADMSandboxArena>(GetWorld())) { GetWorld()->SpawnActor<ADMSandboxArena>(); }
     int32 Seed = 1927;
     FParse::Value(FCommandLine::Get(), TEXT("DMSeed="), Seed);
@@ -516,6 +522,7 @@ void ADMCombatGameMode::CompleteCombat(bool bVictory)
     for (ADMCombatant* Actor : Combatants) { Actor->Smuggler->Cancel(); Actor->StopGoal(); Actor->Primary->CancelChannel(); Actor->Primary->ReleaseClinch(); Actor->Kit->Cancel(true); Actor->GetCharacterMovement()->StopMovementImmediately(); }
     FinishRun(bVictory);
     LogResult(bVictory ? TEXT("victory") : TEXT("defeat"));
+    OnEncounterComplete(bVictory);
 #if !UE_BUILD_SHIPPING
     if (FParse::Param(FCommandLine::Get(),TEXT("DMSmugglerSoak")))
     { UE_LOG(LogTemp,Display,TEXT("DREAD_SMUGGLER_SOAK_COMPLETE outcome=%s tick=%d roster=%d"),bVictory?TEXT("victory"):TEXT("defeat"),CombatTick,Combatants.Num()); FPlatformMisc::RequestExit(false); }
