@@ -181,7 +181,7 @@ bool UDMKitComponent::Resolve()
     LastFailure = Validate(RequestedSlot, Target, RequestedPoint);
     if (!LastFailure.IsEmpty()) { return false; }
     if (!ResolveAbility(RequestedSlot, Target, RequestedPoint)) { return false; }
-    M->NoteKitCast(RequestedSlot);
+    M->NoteKitCast(RequestedSlot, *Actor);
     Actor->RecordResources(SlotKey(RequestedSlot));
     RefreshCooldowns();
     Actor->ForceNetUpdate();
@@ -211,7 +211,7 @@ bool UDMKitComponent::RequestWire(FVector A, FVector B)
     { bWirePending = bSavedPending; PendingWireStart = Saved; LastFailure = TEXT("Choose clear ground in the arena"); return false; }
     if (!PlaceWire(GroundA, GroundB)) { bWirePending = bSavedPending; PendingWireStart = Saved; return false; }
     StartCooldown(EDMKitSlot::E, Spec(Self()->Investigator->Kind, EDMKitSlot::E).CooldownTicks);
-    M->NoteKitCast(EDMKitSlot::E);
+    M->NoteKitCast(EDMKitSlot::E, *Self());
     Self()->RecordResources(SlotKey(EDMKitSlot::E));
     Self()->ForceNetUpdate();
     return true;

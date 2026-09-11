@@ -27,6 +27,8 @@ struct DREADMERIDIAN_API FDMCombatMetrics
     int32 PingsCreated = 0;
     /** EntityId -> damage dealt, for per-role insight. */
     TMap<FString, float> DamageDealtBy;
+    /** "<EntityId>.<w|e|r>" -> casts. The totals above cannot show that every kit fired, only that some did. */
+    TMap<FString, int32> KitCastsBy;
 };
 
 UCLASS()
@@ -71,7 +73,7 @@ public:
     void NoteRevive();
     void NoteSignature();
     void NoteQCast();
-    void NoteKitCast(EDMKitSlot Slot);
+    void NoteKitCast(EDMKitSlot Slot, const ADMCombatant& Caster);
     const FDMCombatMetrics& GetMetrics() const { return Metrics; }
 protected:
     virtual void ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& Metadata) override;

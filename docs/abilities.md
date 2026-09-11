@@ -1,4 +1,10 @@
-# Base Q slice
+# Abilities
+
+Every investigator now has Basic, Passive, Q and the named W/E/R of GDD Appendix K.
+This page covers the shared targeting model and the four Q abilities; the named kits
+have their own page, [named kits](kits.md). Evolution branches remain deferred.
+
+## Q
 
 Q (LB) enters targeting; LMB (A) confirms; RMB (B/Escape) cancels. A controller uses the selected target or left-stick ground aim, with Tab/RB cycling targets. Medium targeting includes allies. Q is server-authoritative GAS; invalid targets, cooldowns, range, line of sight and resource failures have explicit feedback and spend nothing.
 
@@ -9,7 +15,7 @@ Q (LB) enters targeting; LMB (A) confirms; RMB (B/Escape) cancels. A controller 
 
 Bot Q casts follow one conservation rule. A cast scores its expected value (effect magnitude across affected targets, extra worth for elites and marked targets, hit probability for delayed casts) against a threshold that rises as Prepared Charges run low and with cooldown length; casts that are out of range, redundant (a satchel already placed, an ally already bound, Exposure already high, a restrained target) or aimed at a target that will die first are vetoed. A Sapper therefore keeps its last charge for two enemies or an elite and seeks resupply when empty; a Medium binds a threatened ally before an unbound enemy; a Photographer frames while Exposure is low. Thresholds and magnitudes are provisional.
 
-All numbers are provisional sandbox tuning, not amendments to GDD Appendix K. No W/E/R or evolution branches are added. The Break vulnerability gate exists, but full Break/Resolve and scenario mechanics remain deferred. The supplied investigator skins now use retargeted combat animations; spells use particles, range rings, binding markers and brief enemy windup telegraphs. See [combat presentation](combat-presentation.md).
+All numbers are provisional sandbox tuning, not amendments to GDD Appendix K. Evolution branches are not added. The Break vulnerability gate exists, but full Break/Resolve and scenario mechanics remain deferred. The supplied investigator skins now use retargeted combat animations; spells use particles, range rings, binding markers and brief enemy windup telegraphs. See [combat presentation](combat-presentation.md).
 
 Replication covers cooldowns, channels, held actors, placed markers and per-target/per-spirit resources. The network probe compares their final state on both clients; PIE integration tests exercise the four Q paths and rejected casts. Physical controller feel still needs a hands-on playtest. Infrastructure smoke profiles retain their declared basic-attack tuning and disable bot Q choices; interactive/network runs use Q.
 

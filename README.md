@@ -122,4 +122,4 @@ Non-original content is recorded in [third-party content](docs/third-party-conte
 
 ## Base Q abilities
 
-The four base Q abilities are now available. See [controls, behavior and tuning](docs/base-q.md). Select the investigator with the editor Play-as picker, then use Q/LB to aim.
+Every investigator has Basic, Q and its named W/E/R. See [abilities](docs/abilities.md) for the shared targeting model and Q, and [named kits](docs/kits.md) for W/E/R. Select the investigator with the editor Play-as picker, then use Q/W/E/R (LB/RT/LT/D-pad down) to aim.

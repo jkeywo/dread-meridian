@@ -6,8 +6,11 @@ they do not replace its requirements or define a finished MVP.
 Implemented starter slice: native arena, GAS basic attack/Health/Shield, downing
 and rescue, threat-based companions, four persistent investigator slots,
 human/bot handoffs, Enhanced Input mappings and local Play Trace source/telemetry
-ingestion. The rows below retain the full GDD acceptance scope. Named kits,
-burst/named Injuries, Break/CC and scenario-aware team planning remain outstanding.
+ingestion. All four investigators now have Basic, Q and their named W/E/R at the
+A nodes, used by humans and companions alike; see [named kits](kits.md). The rows
+below retain the full GDD acceptance scope. Ability evolutions, burst/named
+Injuries, the real Break/CC and Madness systems behind their stub meters, and
+scenario-aware team planning remain outstanding.
 
 | Slice | Deliverable | Acceptance |
 |---|---|---|

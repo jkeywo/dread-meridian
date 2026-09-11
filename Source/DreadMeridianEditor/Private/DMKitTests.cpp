@@ -3,6 +3,8 @@
 #include "DMCombatGameMode.h"
 #include "DMAbilityMarker.h"
 #include "DMKitComponent.h"
+#include "DMAIProfile.h"
+#include "DMUtilityAI.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Editor.h"
 #include "Engine/World.h"
@@ -694,6 +696,38 @@ bool FDMSmugglerKitTest::RunTest(const FString& Parameters)
 {
     if (!GEditor || GEditor->PlayWorld) { AddError(TEXT("Run the kit check in an idle editor.")); return false; }
     FAutomationTestFramework::Get().EnqueueLatentCommand(MakeShared<FDMVerifySmugglerKit>(this));
+    return true;
+}
+
+
+/**
+ * The AI profile assets must carry the kit abilities. `UDMAIProfile::Resolve` prefers the asset over the C++
+ * defaults, so an asset authored before an ability existed silently shadows it and the bots never consider it -
+ * a failure no Foundation test can see, because those build weights from DefaultWeights directly. This test
+ * resolves each investigator profile the way the game does and checks its kit is complete.
+ */
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FDMKitProfileTest, "DreadMeridian.Editor.Kits.Profiles",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FDMKitProfileTest::RunTest(const FString&)
+{
+    struct FCase { EDMInvestigator Kind; const TCHAR* Name; EDMAIAction W, E, R; };
+    const FCase Cases[] = {
+        { EDMInvestigator::Sapper, TEXT("Sapper"), EDMAIAction::SuppressingFire, EDMAIAction::Tripwire, EDMAIAction::DeadGround },
+        { EDMInvestigator::Photographer, TEXT("Photographer"), EDMAIAction::Flashbulb, EDMAIAction::Develop, EDMAIAction::ImpossiblePhotograph },
+        { EDMInvestigator::Medium, TEXT("Medium"), EDMAIAction::Beckon, EDMAIAction::Intercession, EDMAIAction::OpenSeance },
+        { EDMInvestigator::Smuggler, TEXT("Smuggler"), EDMAIAction::ShoulderThrough, EDMAIAction::DigIn, EDMAIAction::DrownedMan },
+    };
+    for (const FCase& Case : Cases)
+    {
+        UDMAIProfile* Profile = UDMAIProfile::Resolve(GetTransientPackage(), EDMSmuggler::None, Case.Kind);
+        if (!TestNotNull(*FString::Printf(TEXT("%s profile resolves"), Case.Name), Profile)) { continue; }
+        for (EDMAIAction Action : { Case.W, Case.E, Case.R })
+        {
+            TestTrue(*FString::Printf(TEXT("%s profile carries ability %d"), Case.Name, static_cast<int32>(Action)),
+                Profile->Weights.Abilities.Contains(Action));
+        }
+    }
     return true;
 }
 

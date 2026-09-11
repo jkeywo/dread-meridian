@@ -386,15 +386,17 @@ void ADMCombatGameMode::NoteDowned(const ADMCombatant& Target) { if (Target.bIsE
 void ADMCombatGameMode::NoteRevive() { ++Metrics.Revives; }
 void ADMCombatGameMode::NoteSignature() { ++Metrics.SignatureActivations; }
 void ADMCombatGameMode::NoteQCast() { ++Metrics.QCasts; }
-void ADMCombatGameMode::NoteKitCast(EDMKitSlot Slot)
+void ADMCombatGameMode::NoteKitCast(EDMKitSlot Slot, const ADMCombatant& Caster)
 {
+    const TCHAR* Key = nullptr;
     switch (Slot)
     {
-    case EDMKitSlot::W: ++Metrics.WCasts; break;
-    case EDMKitSlot::E: ++Metrics.ECasts; break;
-    case EDMKitSlot::R: ++Metrics.RCasts; break;
-    default: break;
+    case EDMKitSlot::W: ++Metrics.WCasts; Key = TEXT("w"); break;
+    case EDMKitSlot::E: ++Metrics.ECasts; Key = TEXT("e"); break;
+    case EDMKitSlot::R: ++Metrics.RCasts; Key = TEXT("r"); break;
+    default: return;
     }
+    ++Metrics.KitCastsBy.FindOrAdd(Caster.EntityId + TEXT(".") + Key);
 }
 
 void ADMCombatGameMode::LogResult(const FString& Outcome)
@@ -430,6 +432,12 @@ void ADMCombatGameMode::LogResult(const FString& Outcome)
     Keys.Sort();
     for (const FString& Key : Keys) { By->SetNumberField(Key, Metrics.DamageDealtBy[Key]); }
     Data->SetObjectField(TEXT("damage_by"), By);
+    TSharedPtr<FJsonObject> Casts = MakeShared<FJsonObject>();
+    Keys.Reset();
+    Metrics.KitCastsBy.GetKeys(Keys);
+    Keys.Sort();
+    for (const FString& Key : Keys) { Casts->SetNumberField(Key, Metrics.KitCastsBy[Key]); }
+    Data->SetObjectField(TEXT("kit_casts_by"), Casts);
     FString Json;
     // Condensed: tune_ai.py reads the whole document from this one log line.
     FJsonSerializer::Serialize(Data, TJsonWriterFactory<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>::Create(&Json));

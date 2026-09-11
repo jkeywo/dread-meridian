@@ -1,7 +1,7 @@
 # Investigator basics
 
 Names and rules follow GDD Appendix K. Exact numbers below are provisional sandbox tuning.
-Base Q abilities are available; see [controls and behavior](base-q.md). W/E/R and evolutions remain deferred. See [combat presentation](combat-presentation.md) for investigator skins, held/stowed gear and animation.
+Basic, Q and the named W/E/R are available; see [abilities](abilities.md) and [named kits](kits.md). Evolutions remain deferred. See [combat presentation](combat-presentation.md) for investigator skins, held/stowed gear and animation.
 
 | Investigator | Basic attack | Resource and passive |
 |---|---|---|

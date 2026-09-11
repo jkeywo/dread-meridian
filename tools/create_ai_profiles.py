@@ -2,7 +2,14 @@
 
 Each /Game/DreadMeridian/AI/AIP_<Name> asset is a UDMAIProfile whose Weights start as DMUtilityAI::DefaultWeights
 for that role or investigator kind. Existing assets are preserved so authored tuning is never overwritten.
+
+Set DM_PROFILE_REFRESH=1 to re-apply the C++ defaults to assets that already exist. This is needed whenever
+DefaultWeights gains an action or ability: UDMAIProfile::Resolve prefers the asset, so a stale one shadows the
+new defaults and the bots quietly never see the addition. Refreshing costs nothing, because tuning results are
+baked into DefaultWeights (see ApplyTunedDefaults) and experiments run through -DMAIWeights rather than the
+asset; anything hand-edited in the asset itself would be lost.
 """
+import os
 import unreal
 
 FOLDER = "/Game/DreadMeridian/AI"
@@ -12,12 +19,21 @@ profile_class = unreal.load_class(None, "/Script/DreadMeridian.DMAIProfile")
 if not profile_class:
     raise RuntimeError("UDMAIProfile is not available; build the DreadMeridian module first")
 tools = unreal.AssetToolsHelpers.get_asset_tools()
-created = []
+refresh = os.environ.get("DM_PROFILE_REFRESH") == "1"
+created, refreshed = [], []
 for name in NAMES:
     asset_name = "AIP_" + name
     path = f"{FOLDER}/{asset_name}"
     if unreal.EditorAssetLibrary.does_asset_exist(path):
-        unreal.log(f"{path} already exists; preserving authored tuning.")
+        if not refresh:
+            unreal.log(f"{path} already exists; preserving authored tuning.")
+            continue
+        existing = unreal.EditorAssetLibrary.load_asset(path)
+        existing.set_editor_property("profile_id", name)
+        existing.apply_defaults()
+        if not unreal.EditorAssetLibrary.save_asset(path):
+            raise RuntimeError(f"Could not save {path}")
+        refreshed.append(name)
         continue
     asset = None
     try:
@@ -36,3 +52,4 @@ for name in NAMES:
         raise RuntimeError(f"Could not save {path}")
     created.append(name)
 unreal.log(f"DREAD_AI_PROFILES_CREATED count={len(created)} names={','.join(created)}")
+unreal.log(f"DREAD_AI_PROFILES_REFRESHED count={len(refreshed)} names={','.join(refreshed)}")

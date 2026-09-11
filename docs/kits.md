@@ -1,6 +1,6 @@
 # Named investigator kits
 
-Every investigator has Basic + Passive + Q/W/E + R (GDD 4.5). Q is described in [base Q](base-q.md); this page
+Every investigator has Basic + Passive + Q/W/E + R (GDD 4.5). Q is described in [abilities](abilities.md); this page
 covers the named W/E/R abilities at their **A nodes** only. The evolution lattice (B-F) is not implemented, and
 `ability_evolutions` is a declared omission in captures.
 

@@ -53,13 +53,22 @@ identical in interactive and headless play. Every candidate action is an option
 with a rank (Locked > Reflex > Tactical > Routine) and a score in [0,1] from
 curved considerations. Options are walked in stable order and each reserves only
 the Move, Attack or Cast channels it needs, so a retreat and a basic attack
-coexist in one tick. Signatures and base Q must beat a conservation threshold
-that rises with scarcity and cooldown, scaled by hit probability, and are vetoed
-when wasted. Enter/exit latches (return home, flee, keep distance), runtime caps
+coexist in one tick. Signatures, base Q and the twelve named W/E/R
+abilities must beat a conservation threshold that rises with scarcity and
+cooldown, scaled by hit probability, and are vetoed when wasted. An ultimate's
+600-tick cooldown would make that threshold unreachable, so per-ability
+`ThresholdCooldownCap` bounds the cooldown term without loosening the shared
+knob for every ability on the same profile. An ability that supports another
+ranks below it: at equal rank a new option can outbid a tuned resource curve for
+the one cast channel a tick allows, and a weight chosen to lose that contest only
+holds at one resource count. Enter/exit latches (return home, flee, keep distance), runtime caps
 and decision cooldowns stop oscillation. The attack channel is a separate hold
 gate on the combatant: the focus target stays set for aggro cues and Gunman
 positioning even while the bot is told not to fire. Weights are `UDMAIProfile`
-data assets per role/hero with C++ defaults, so headless runs need no content;
+data assets per role/hero with C++ defaults, so headless runs need no content.
+The asset wins where it exists, so a stale one shadows newly added abilities;
+`tools/create_ai_profiles.py` with `DM_PROFILE_REFRESH=1` re-applies the defaults.
+
 `-DMAIWeights=<json>` overrides them for tuning. Decisions use roster order and
 stable sorts, never random streams. `ai.decision` traces carry the option and
 consideration breakdown whenever a bot's focus or chosen actions change.

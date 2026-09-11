@@ -470,7 +470,7 @@ void ADMCombatHUD::DrawEncounter(const FDMHudModel& Model)
 void ADMCombatHUD::DrawCondition(const FDMHudModel& Model)
 {
     if (!Model.bHasSelf) { return; }
-    const float W = 244 * S, H = 76 * S;
+    const float W = 244 * S, H = 92 * S;
     const float X = 118 * S, Y = Canvas->ClipY - H - 18 * S;
     Panel(X, Y, W, H, DMHud::BrassDim);
     Label(TEXT("CONDITION"), DMHud::Muted, X + 10 * S, Y + 7 * S, .9f);
@@ -480,6 +480,8 @@ void ADMCombatHUD::DrawCondition(const FDMHudModel& Model)
     // The meter is real but the system is not: the label keeps the gap explicit rather than reading as finished data.
     Bar(X + 10 * S, Y + 48 * S, 110 * S, 8 * S, Model.Self.Madness / 100.f, DMHud::Gap);
     Label(FString::Printf(TEXT("Madness %.0f (stub: R spikes only)"), Model.Self.Madness), DMHud::Gap, X + 10 * S, Y + 58 * S, .75f);
+    // Elite RESOLVE bars are the same kind of stub, and are read from here rather than crowding every unit card.
+    Label(TEXT("Resolve stub: pressure/Broken only"), DMHud::Gap, X + 10 * S, Y + 72 * S, .75f);
 }
 
 void ADMCombatHUD::DrawInvestigator(const FDMHudModel& Model)
