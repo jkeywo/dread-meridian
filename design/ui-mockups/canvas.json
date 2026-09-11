@@ -1,0 +1,8 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Main menu", "x": 0, "y": 0, "w": 1440, "h": 900 },
+    { "file": "Lobby.dc.html", "title": "Expedition lobby", "x": 1560, "y": 0, "w": 1440, "h": 900 },
+    { "file": "CaseReport.dc.html", "title": "Mission end · Case report", "x": 3120, "y": 0, "w": 1440, "h": 900 }
+  ],
+  "launch": { "view": "canvas" }
+}

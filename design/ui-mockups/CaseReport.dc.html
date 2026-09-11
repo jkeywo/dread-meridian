@@ -1,0 +1,174 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Special+Elite&display=swap">
+  <style>
+    body { margin: 0; background: #0B1212; color: #DED6C4; font-family: "Crimson Pro", Georgia, "Times New Roman", serif; -webkit-font-smoothing: antialiased; }
+    a { color: #C7A14A; text-decoration: none; } a:hover { color: #DED6C4; }
+    .disp { font-family: "Big Shoulders Display", Impact, "Arial Narrow", sans-serif; font-weight: 900; letter-spacing: .01em; text-transform: uppercase; }
+    .type { font-family: "Special Elite", "Courier New", monospace; }
+    .brk { position: relative; }
+    .brk::before, .brk::after { content: ""; position: absolute; width: 12px; height: 12px; border-color: #DED6C4; border-style: solid; }
+    .brk::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+    .brk::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+    .btn:hover { filter: brightness(1.15); }
+    .row { display: flex; align-items: flex-start; gap: 10px; font-size: 15px; line-height: 1.35; color: #B9B3A4; }
+    .mark { flex: none; width: 10px; height: 10px; margin-top: 5px; display: inline-block; box-sizing: border-box; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 900px; background: #0B1212; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden;">
+
+  <!-- Header -->
+  <div style="padding: 22px 40px 0; display: flex; flex-direction: column; gap: 10px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <div class="type" style="font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: #C7A14A;">Case report · Swamp Fishing Village · Faster Ritual · seed [SEED]</div>
+      <div class="type" style="font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: #8C948F;">[DATE] · 31:42</div>
+    </div>
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; border-bottom: 1px solid rgba(199,161,74,.3); padding-bottom: 18px;">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <div class="disp" style="font-size: 112px; line-height: .86; color: #C7A14A;">Victory</div>
+        <div style="font-size: 20px; line-height: 1.35; color: #B9B3A4;">The expedition summoned the Elder One at Convergence and put it down in the drained basin.</div>
+      </div>
+      <div style="display: flex; gap: 32px; align-items: flex-end;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div class="type" style="font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: #8C948F;">Elder One faced</div>
+          <div class="disp" style="font-size: 34px; line-height: 1; color: #DED6C4;">Shub-Niggurath</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div class="type" style="font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: #8C948F;">Ritual reached</div>
+          <div class="disp" style="font-size: 34px; line-height: 1; color: #DED6C4;">Convergence</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div class="type" style="font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: #8C948F;">Resonant investigator</div>
+          <div class="disp" style="font-size: 34px; line-height: 1; color: #B359FF;">Mara · Obsession</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Consequences -->
+  <div style="flex: 1; padding: 20px 40px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: auto auto; gap: 16px; min-height: 0; box-sizing: border-box;">
+
+    <!-- Objectives -->
+    <div class="brk" style="grid-column: span 4; padding: 18px 20px; background: #111A1A; display: flex; flex-direction: column; gap: 12px;">
+      <div class="type" style="font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: #C7A14A;">Objectives</div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div class="row"><span class="mark" style="background: #7DA86E;"></span><span><span style="color: #DED6C4;">Drain the basin</span> · completed, compulsory</span></div>
+        <div class="row"><span class="mark" style="background: #7DA86E;"></span><span><span style="color: #DED6C4;">Break the Bell Sequence</span> · completed at the second site</span></div>
+        <div class="row"><span class="mark" style="background: #7DA86E;"></span><span><span style="color: #DED6C4;">Silence the Counter-Ritualist</span> · completed</span></div>
+        <div class="row"><span class="mark" style="background: #D14A38;"></span><span><span style="color: #DED6C4;">Topple the Marsh Idols</span> · failed, two of five left standing</span></div>
+        <div class="row"><span class="mark" style="border: 1px solid #8C948F;"></span><span><span style="color: #DED6C4;">Relight the lighthouse</span> · expired at Intrusion</span></div>
+      </div>
+    </div>
+
+    <!-- Ritual -->
+    <div class="brk" style="grid-column: span 4; padding: 18px 20px; background: #111A1A; display: flex; flex-direction: column; gap: 12px;">
+      <div class="type" style="font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: #C7A14A;">Ritual consequences</div>
+      <div style="display: flex; align-items: center; gap: 0; padding: 4px 0 6px;">
+        <div class="type" style="font-size: 11px; color: #C7A14A; letter-spacing: .08em;">INCIPIENT</div><div style="flex: 1; height: 1px; background: #C7A14A;"></div>
+        <div class="type" style="font-size: 11px; color: #C7A14A; letter-spacing: .08em; padding: 0 6px;">STIRRING</div><div style="flex: 1; height: 1px; background: #C7A14A;"></div>
+        <div class="type" style="font-size: 11px; color: #C7A14A; letter-spacing: .08em; padding: 0 6px;">INTRUSION</div><div style="flex: 1; height: 1px; background: #C7A14A;"></div>
+        <div class="type" style="font-size: 11px; color: #DED6C4; letter-spacing: .08em; padding: 0 6px; border: 1px solid #C7A14A;">CONVERGENCE</div><div style="flex: 1; height: 1px; background: #2A3535;"></div>
+        <div class="type" style="font-size: 11px; color: #8C948F; letter-spacing: .08em;">APOCALYPSE</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div class="row"><span class="mark" style="background: #C7A14A;"></span><span>Manifestation forced deliberately with the compulsory chain complete.</span></div>
+        <div class="row"><span class="mark" style="background: #D14A38;"></span><span>The standing Idols strengthened nearby cultists through Convergence.</span></div>
+        <div class="row"><span class="mark" style="background: #D14A38;"></span><span>Corruption from the basin reached the church road and did not recede.</span></div>
+      </div>
+    </div>
+
+    <!-- Leads -->
+    <div class="brk" style="grid-column: span 4; padding: 18px 20px; background: #111A1A; display: flex; flex-direction: column; gap: 12px;">
+      <div class="type" style="font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: #C7A14A;">Leads and new evidence</div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div class="row"><span class="mark" style="background: #7DA86E;"></span><span><span style="color: #DED6C4;">Find the True Growth</span> · completed, team</span></div>
+        <div class="row"><span class="mark" style="border: 1px solid #8C948F;"></span><span><span style="color: #DED6C4;">What the Water Hid</span> · basin exposed after Convergence, not counted</span></div>
+        <div class="row"><span class="mark" style="border: 1px solid #8C948F;"></span><span><span style="color: #DED6C4;">Prepared Ground</span> · no qualifying catch</span></div>
+      </div>
+      <div style="margin-top: auto; padding: 12px 14px; border: 1px solid #C7A14A; display: flex; align-items: center; gap: 14px;">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C7A14A" stroke-width="1.5"><rect x="4" y="3" width="20" height="22"/><path d="M9 9h10M9 14h10M9 19h6"/></svg>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <div class="disp" style="font-size: 20px; line-height: 1; color: #DED6C4;">2 items added to the Archive</div>
+          <div style="font-size: 14px; color: #8C948F;">A photograph that shows too much. A letter from the fishing co-operative.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Investigators -->
+    <div class="brk" style="grid-column: span 8; padding: 18px 20px; background: #111A1A; display: flex; flex-direction: column; gap: 12px;">
+      <div class="type" style="font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: #C7A14A;">Investigators</div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px;">
+        <div style="display: flex; flex-direction: column; gap: 8px; border-top: 2px solid #FF8C1F; padding-top: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 44px; height: 44px; overflow: hidden; background: #0B1212;"><img src="sapper.webp" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;"></div>
+            <div style="display: flex; flex-direction: column;"><div class="disp" style="font-size: 20px; line-height: 1; color: #DED6C4;">Hollis</div><div class="type" style="font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #FF8C1F;">The Sapper</div></div>
+          </div>
+          <div class="row"><span class="mark" style="background: #D14A38;"></span><span>Downed twice. Injury: Shrapnel Knee, plus one grievous injury.</span></div>
+          <div class="row"><span class="mark" style="border: 1px solid #8C948F;"></span><span>Madness floor 2. Kill Zone build.</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; border-top: 2px solid #B359FF; padding-top: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 44px; height: 44px; overflow: hidden; background: #0B1212;"><img src="medium.webp" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;"></div>
+            <div style="display: flex; flex-direction: column;"><div class="disp" style="font-size: 20px; line-height: 1; color: #DED6C4;">Mara</div><div class="type" style="font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #B359FF;">The Medium · Resonant</div></div>
+          </div>
+          <div class="row"><span class="mark" style="background: #B359FF;"></span><span>Identified the true growth at the third Crisis.</span></div>
+          <div class="row"><span class="mark" style="border: 1px solid #8C948F;"></span><span>Madness floor 4. Never downed.</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; border-top: 2px solid #4DCCFF; padding-top: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 44px; height: 44px; overflow: hidden; background: #0B1212;"><img src="photographer.webp" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;"></div>
+            <div style="display: flex; flex-direction: column;"><div class="disp" style="font-size: 20px; line-height: 1; color: #DED6C4;">Dez</div><div class="type" style="font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #4DCCFF;">The Photographer</div></div>
+          </div>
+          <div class="row"><span class="mark" style="background: #D14A38;"></span><span>Downed once. Injury: Cracked Ribs.</span></div>
+          <div class="row"><span class="mark" style="background: #C7A14A;"></span><span>Relic: Cracked Saint's Medal.</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; border-top: 2px solid #40FF99; padding-top: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 44px; height: 44px; overflow: hidden; background: #0B1212;"><img src="smuggler.webp" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;"></div>
+            <div style="display: flex; flex-direction: column;"><div class="disp" style="font-size: 20px; line-height: 1; color: #DED6C4;">Companion</div><div class="type" style="font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #40FF99;">The Smuggler · Companion</div></div>
+          </div>
+          <div class="row"><span class="mark" style="background: #D14A38;"></span><span>Downed once at the jetties. Three revives given.</span></div>
+          <div class="row"><span class="mark" style="border: 1px solid #8C948F;"></span><span>Madness floor 1.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scenario consequences -->
+    <div class="brk" style="grid-column: span 4; padding: 18px 20px; background: #111A1A; display: flex; flex-direction: column; gap: 12px;">
+      <div class="type" style="font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: #C7A14A;">What the village keeps</div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div class="row"><span class="mark" style="border: 1px solid #8C948F;"></span><span>The lighthouse stays dark.</span></div>
+        <div class="row"><span class="mark" style="border: 1px solid #8C948F;"></span><span>The smugglers' boathouse burned with the season's stock inside.</span></div>
+        <div class="row"><span class="mark" style="border: 1px solid #8C948F;"></span><span>Three villagers were led out along the causeway. Nine were not found.</span></div>
+        <div class="row"><span class="mark" style="border: 1px solid #8C948F;"></span><span>The drained basin is now on the county map.</span></div>
+      </div>
+      <div style="font-size: 13px; color: #8C948F; margin-top: auto; line-height: 1.35;">Flavour only, unless an investigation Lead says otherwise.</div>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div style="height: 88px; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(199,161,74,.3); box-sizing: border-box; background: #0E1616;">
+    <div style="display: flex; align-items: center; gap: 28px;">
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 15px; color: #8C948F;"><span class="type" style="width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #8C948F; border-radius: 50%; font-size: 12px; color: #DED6C4;">A</span>Open the Archive</div>
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 15px; color: #8C948F;"><span class="type" style="width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #8C948F; border-radius: 50%; font-size: 12px; color: #DED6C4;">Y</span>Copy seed</div>
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 15px; color: #8C948F;"><span class="type" style="width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #8C948F; border-radius: 50%; font-size: 12px; color: #DED6C4;">B</span>Back to lobby</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <a class="btn" href="#" style="display: inline-flex; align-items: center; justify-content: center; height: 52px; padding: 0 26px; border: 1px solid rgba(199,161,74,.3); color: #B9B3A4; font-family: 'Big Shoulders Display', Impact, sans-serif; font-weight: 700; font-size: 20px; letter-spacing: .1em; text-transform: uppercase;">Back to lobby</a>
+      <a class="btn" href="#" style="display: inline-flex; align-items: center; justify-content: center; height: 52px; padding: 0 26px; border: 1px solid #C7A14A; color: #C7A14A; font-family: 'Big Shoulders Display', Impact, sans-serif; font-weight: 700; font-size: 20px; letter-spacing: .1em; text-transform: uppercase;">Play again</a>
+      <a class="btn" href="#" style="display: inline-flex; align-items: center; justify-content: center; height: 52px; padding: 0 32px; background: #C7A14A; color: #0B1212; font-family: 'Big Shoulders Display', Impact, sans-serif; font-weight: 900; font-size: 22px; letter-spacing: .1em; text-transform: uppercase;">Open the Archive · 2 new</a>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
