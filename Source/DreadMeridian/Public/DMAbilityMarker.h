@@ -51,4 +51,9 @@ private:
     UPROPERTY() TObjectPtr<class UInstancedStaticMeshComponent> Ring;
     UPROPERTY() TObjectPtr<class UTextRenderComponent> Label;
     UPROPERTY() TObjectPtr<class UMaterialInstanceDynamic> Glow;
+    /** The Medium's ghostly-figure mesh, shown instead of Orb for spirits. */
+    UPROPERTY() TObjectPtr<class UStaticMeshComponent> GhostBody;
+    /** Server-only: where an unbound spirit started, so it wanders around that point rather than drifting away. */
+    FVector WanderOrigin = FVector::ZeroVector;
+    bool bWanderOriginSet = false;
 };

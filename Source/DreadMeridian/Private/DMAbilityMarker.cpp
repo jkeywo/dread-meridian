@@ -1,5 +1,6 @@
 #include "DMAbilityMarker.h"
 #include "DMCombatant.h"
+#include "DMPrimaryComponent.h"
 #include "DMCombatGameMode.h"
 #include "DMGameState.h"
 #include "Components/StaticMeshComponent.h"
@@ -16,6 +17,8 @@ namespace
     // 0..23 outline the shape, 24..47 are embers/detail. Both pools are reused by every shape.
     constexpr int32 OutlineCount = 24;
     constexpr int32 InstanceCount = 48;
+    // How far an unbound spirit wanders from where it was cast.
+    constexpr float SpiritWanderRadius = UDMPrimaryComponent::SpiritRadius * .9f;
 }
 
 ADMAbilityMarker::ADMAbilityMarker()
@@ -32,6 +35,12 @@ ADMAbilityMarker::ADMAbilityMarker()
     Orb->SetCastShadow(false); Ring->SetCastShadow(false);
     Label = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Label")); Label->SetupAttachment(GetRootComponent());
     Label->SetRelativeLocation(FVector(0, 0, 45)); Label->SetHorizontalAlignment(EHTA_Center); Label->SetWorldSize(18);
+    GhostBody = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("GhostBody")); GhostBody->SetupAttachment(GetRootComponent());
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> GhostMesh(TEXT("/Game/DreadMeridian/Presentation/Props/SM_GhostlyFigure"));
+    static ConstructorHelpers::FObjectFinder<UMaterialInterface> GhostMaterial(TEXT("/Game/DreadMeridian/Presentation/Props/M_GhostlyFigure"));
+    GhostBody->SetStaticMesh(GhostMesh.Object); GhostBody->SetMaterial(0, GhostMaterial.Object);
+    GhostBody->SetRelativeScale3D(FVector(.75f)); GhostBody->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    GhostBody->SetCastShadow(false); GhostBody->SetVisibility(false);
 }
 void ADMAbilityMarker::BeginPlay()
 {
@@ -49,25 +58,43 @@ int32 ADMAbilityMarker::CurrentTick() const
 void ADMAbilityMarker::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
-    if (HasAuthority() && (bSpirit || bHostile) && !bTravelling && IsValid(BoundTarget))
+    if (HasAuthority() && !bTravelling && (bSpirit || bHostile))
     {
-        FVector Anchor = BoundTarget->GetActorLocation() - FVector(0, 0, 70);
-        if (bSpirit)
+        if (IsValid(BoundTarget))
         {
-            // Deterministic per-spirit drift so a bound spirit doesn't sit rigidly pinned to the corpse.
+            FVector Anchor = BoundTarget->GetActorLocation() - FVector(0, 0, 70);
+            if (bSpirit)
+            {
+                // Deterministic per-spirit drift so a bound spirit doesn't sit rigidly pinned to the corpse.
+                const float Seed = (GetTypeHash(SpiritId) % 1000) * .01f;
+                const float T = GetWorld()->GetTimeSeconds() + Seed;
+                Anchor += FVector(FMath::Sin(T * .6f) * 22.f, FMath::Cos(T * .45f) * 22.f, 0);
+            }
+            SetActorLocation(Anchor);
+        }
+        else if (bSpirit)
+        {
+            // No corpse to orbit: wander around where the spirit was cast instead of sitting rigid.
+            if (!bWanderOriginSet) { WanderOrigin = GetActorLocation(); bWanderOriginSet = true; }
             const float Seed = (GetTypeHash(SpiritId) % 1000) * .01f;
             const float T = GetWorld()->GetTimeSeconds() + Seed;
-            Anchor += FVector(FMath::Sin(T * .6f) * 22.f, FMath::Cos(T * .45f) * 22.f, 0);
+            FVector Offset(FMath::Sin(T * .17f) * SpiritWanderRadius * .5f + FMath::Sin(T * .053f + 1.7f) * SpiritWanderRadius * .5f,
+                FMath::Cos(T * .13f) * SpiritWanderRadius * .5f + FMath::Cos(T * .071f + .9f) * SpiritWanderRadius * .5f, 0);
+            SetActorLocation(WanderOrigin + Offset.GetClampedToMaxSize(SpiritWanderRadius));
         }
-        SetActorLocation(Anchor);
     }
     if (GetNetMode() == NM_DedicatedServer) { return; }
     const FLinearColor Color = bHostile ? FLinearColor(1,.08f,.03f) : bSpirit ? FLinearColor(.7f, .25f, 1)
         : Shape == EDMMarkerShape::Cone ? FLinearColor(1, .7f, .2f) : FLinearColor(1, .5f, .05f);
     const bool bArmed = IsArmed();
     if (Glow) { Glow->SetVectorParameterValue(TEXT("Tint"), Color * (bArmed ? 3 : 1.2f)); }
-    Orb->SetRelativeLocation(FVector(0, 0, bSpirit ? 60 + FMath::Sin(GetWorld()->GetTimeSeconds() * 3) * 10 : 0));
-    Orb->SetVisibility(Shape != EDMMarkerShape::Cone);
+    Orb->SetVisibility(!bSpirit && Shape != EDMMarkerShape::Cone);
+    GhostBody->SetVisibility(bSpirit);
+    if (bSpirit)
+    {
+        // No animation on the ghostly figure itself, just a slow bob.
+        GhostBody->SetRelativeLocation(FVector(0, 0, 60 + FMath::Sin(GetWorld()->GetTimeSeconds() * 1.1f) * 12.f));
+    }
     FString Text = CustomLabel;
     if (Text.IsEmpty())
     {
