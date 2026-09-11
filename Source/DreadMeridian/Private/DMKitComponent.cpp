@@ -78,7 +78,7 @@ namespace
     constexpr int32 ProtectionTicks = 10;
 
     // Smuggler.
-    constexpr float ChargeStep = 70;             // units per tick
+    constexpr float ChargeSpeed = 700;           // units per second; the charge advances per frame, not per tick
     constexpr float ChargeWidth = 70;
     constexpr float ChargeDamage = 15;
     constexpr float ChargePush = 180;
@@ -496,6 +496,28 @@ bool UDMKitComponent::ResolveSmuggler(EDMKitSlot Slot, FVector Point)
     }
 }
 
+void UDMKitComponent::AdvanceCharge(float DeltaSeconds)
+{
+    ADMCombatant* Actor = Self();
+    ADMCombatGameMode* M = Mode();
+    if (!M || !Actor->HasAuthority() || ChargeUntilTick <= 0) { return; }
+    // World geometry stops the charge; bodies do not, so the Smuggler barges through a crowd rather than
+    // stalling on the first shoulder.
+    const FVector From = Actor->GetActorLocation();
+    FVector To = From + ChargeDirection * ChargeSpeed * DeltaSeconds;
+    FCollisionQueryParams Query(SCENE_QUERY_STAT(ShoulderThrough), false, Actor);
+    for (ADMCombatant* Other : M->GetCombatants()) { Query.AddIgnoredActor(Other); }
+    FHitResult Hit;
+    if (GetWorld()->LineTraceSingleByChannel(Hit, From, To, ECC_Visibility, Query))
+    {
+        // Only ever brings the end closer: this runs every frame, so recomputing it from the current tick
+        // would keep pushing the end out and leave the Smuggler charging a wall forever.
+        To = Hit.ImpactPoint;
+        ChargeUntilTick = FMath::Min(ChargeUntilTick, CurrentTick() + 1);
+    }
+    Actor->SetActorLocation(To);
+}
+
 void UDMKitComponent::StepSmuggler(int32 Tick)
 {
     ADMCombatant* Actor = Self();
@@ -511,21 +533,14 @@ void UDMKitComponent::StepSmuggler(int32 Tick)
         Actor->ForceNetUpdate();
         return;
     }
-    // World geometry stops the charge; bodies do not, so the Smuggler barges through a crowd rather than
-    // stalling on the first shoulder.
-    const FVector From = Actor->GetActorLocation();
-    FVector To = From + ChargeDirection * ChargeStep;
-    FCollisionQueryParams Query(SCENE_QUERY_STAT(ShoulderThrough), false, Actor);
-    for (ADMCombatant* Other : M->GetCombatants()) { Query.AddIgnoredActor(Other); }
-    FHitResult Hit;
-    if (GetWorld()->LineTraceSingleByChannel(Hit, From, To, ECC_Visibility, Query)) { To = Hit.ImpactPoint; ChargeUntilTick = Tick + 1; }
-    Actor->SetActorLocation(To);
+    // AdvanceCharge carries the Smuggler forward every frame; contacts are still sampled on the rules tick.
+    const FVector At = Actor->GetActorLocation();
     const float Push = ChargePush * (IsRActive() ? DrownedChargeMultiplier : 1.f);
     for (ADMCombatant* Enemy : M->GetCombatants())
     {
         if (!IsValid(Enemy) || !Enemy->bIsEnemy || Enemy->IsDown()) { continue; }
         if (ChargeHits.Contains(Enemy)) { continue; }
-        if (FVector::DistSquared2D(To, Enemy->GetActorLocation()) > FMath::Square(ChargeWidth)) { continue; }
+        if (FVector::DistSquared2D(At, Enemy->GetActorLocation()) > FMath::Square(ChargeWidth)) { continue; }
         FDMControl Control;
         Control.Damage = ChargeDamage; Control.Displacement = ChargeDirection * Push;
         Control.StaggerTicks = ChargeStaggerTicks; Control.BreakPressure = ChargeBreakPressure;

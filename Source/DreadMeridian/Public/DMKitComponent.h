@@ -66,6 +66,11 @@ public:
     /** Authority: game mode tick; clients: the GameState projection. */
     int32 CurrentTick() const;
     bool IsCharging() const { return ChargeUntilTick > CurrentTick(); }
+    /**
+     * Authority: carries an active Shoulder Through forward by DeltaSeconds and stops it on world geometry.
+     * The charge advances per frame so it glides; the rules tick still owns contacts and when it ends.
+     */
+    void AdvanceCharge(float DeltaSeconds);
     bool IsBraced() const { return BracedUntilTick > CurrentTick(); }
     bool IsRActive() const { return RActiveUntilTick > CurrentTick(); }
     /** Integers and ids only, so the network probe can compare it. */

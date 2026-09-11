@@ -109,7 +109,8 @@ void ADMCombatant::Tick(float DeltaSeconds)
     Super::Tick(DeltaSeconds);
     GetCharacterMovement()->MaxWalkSpeed = ReplicatedMoveSpeed;
     if (IsDown() || IsRestrained()) { GetCharacterMovement()->StopMovementImmediately(); }
-    else if (Kit->IsCharging()) { /* the server drives the charge; the owning client must not predict against it */ }
+    // The server drives the charge; the owning client must not predict against it.
+    else if (Kit->IsCharging()) { if (HasAuthority()) { Kit->AdvanceCharge(DeltaSeconds); } }
     else if (bHasMoveGoal && IsLocallyControlled())
     {
         const FVector Direction = (MoveGoal - GetActorLocation()).GetSafeNormal2D();
