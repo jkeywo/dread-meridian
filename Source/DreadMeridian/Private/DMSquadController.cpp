@@ -292,6 +292,16 @@ FString ADMSquadController::Execute(ADMCombatGameMode& Mode, const FDMAIContext&
             if (!Target) { Reject(TEXT("no_target"), O.Action); }
             else if (!Self->Primary->Request(Target, Target->GetActorLocation())) { Reject(Self->Primary->LastFailure, O.Action); }
             break;
+        case EDMAIAction::SuppressingFire:
+            if (!Self->Kit->Request(EDMKitSlot::W, nullptr, Point)) { Reject(Self->Kit->LastFailure, O.Action); }
+            break;
+        case EDMAIAction::Tripwire:
+            // Both ends in one call: a bot must never be left holding half a wire.
+            if (!Self->Kit->RequestWire(O.Point, O.Point2)) { Reject(Self->Kit->LastFailure, O.Action); }
+            break;
+        case EDMAIAction::DeadGround:
+            if (!Self->Kit->Request(EDMKitSlot::R, nullptr, Self->GetActorLocation())) { Reject(Self->Kit->LastFailure, O.Action); }
+            break;
         default: break;
         }
     }

@@ -45,9 +45,10 @@ beat a scarcity-scaled threshold, and latches stop dithering. Companions rescue
 downed allies, retreat toward the leader at low Health, step out of bomber
 circles and answer [pings](docs/pings.md). Tuning lives in per-hero/role data
 assets with C++ defaults. It is a per-bot combat policy, not the GDD team planner.
-Full W/E/R kits and evolutions, full Break/CC, burst-window/named Injury effects,
-Madness, HTN/objectives, bosses, matchmaking and host migration remain explicit
-omissions in captures. Sandbox and smoke-profile values are provisional tuning.
+Ability evolutions, the three remaining W/E/R kits, full Break/CC, burst-window and
+named Injury effects, Madness, HTN/objectives, bosses, matchmaking and host
+migration remain explicit omissions in captures. Break and Madness exist only as
+declared stub meters. Sandbox and smoke-profile values are provisional tuning.
 
 ## Verify
 
@@ -116,7 +117,7 @@ contract; engine/network checks require the pinned Unreal installation.
 
 ## Investigator basics
 
-The four named investigators use their supplied rigged models, held weapons, holstered gear, retargeted combat animations and attack/ability effects. See [combat presentation and asset sources](docs/combat-presentation.md). See [character rules and resource availability](docs/characters.md). Base Q is implemented; W/E/R remain deferred.
+The four named investigators use their supplied rigged models, held weapons, holstered gear, retargeted combat animations and attack/ability effects. See [combat presentation and asset sources](docs/combat-presentation.md). See [character rules and resource availability](docs/characters.md). Base Q is implemented for all four; the Sapper's W/E/R are implemented, the other three investigators' remain deferred. See [named kits](docs/kits.md).
 Non-original content is recorded in [third-party content](docs/third-party-content.md).
 
 ## Base Q abilities

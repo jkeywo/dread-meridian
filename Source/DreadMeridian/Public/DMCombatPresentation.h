@@ -24,6 +24,10 @@ public:
 private:
     void Play(UAnimSequence* Clip, bool bLoop, float Rate = 1, bool bRestart = false);
     void Action(UAnimSequence* Clip, float Duration);
+    /** One-shot effect at a world point, destroyed after Seconds so a looping system cannot outlive its cue. */
+    void Spawn(UNiagaraSystem* System, const FVector& At, float Scale, float Seconds);
+    /** Effect attached to the owner for Seconds; used for the ultimates' altered-state auras. */
+    void Attach(UNiagaraSystem* System, float Seconds);
     void Equip(bool bCamera);
     bool UsesGunPose() const;
     void UpdateEnemyGrip();
@@ -36,6 +40,12 @@ private:
     UPROPERTY() TArray<TObjectPtr<UStaticMesh>> Items;
     UPROPERTY() TObjectPtr<UNiagaraSystem> Explosion;
     UPROPERTY() TObjectPtr<UNiagaraSystem> Impact;
+    // Named-kit effects, loaded per ability as its cues land.
+    UPROPERTY() TObjectPtr<UNiagaraSystem> MuzzleFlash;
+    UPROPERTY() TObjectPtr<UNiagaraSystem> WireSnap;
+    UPROPERTY() TObjectPtr<UNiagaraSystem> Shock;
+    UPROPERTY() TObjectPtr<UNiagaraSystem> DeferredAura;
+    UPROPERTY() TObjectPtr<UNiagaraSystem> TargetMark;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> HeldItem;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> StowedItem;
     UPROPERTY() TObjectPtr<UAnimSequence> Playing;

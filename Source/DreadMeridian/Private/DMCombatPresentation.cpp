@@ -44,7 +44,31 @@ UDMCombatPresentation::UDMCombatPresentation()
     const TCHAR* PropNames[] = { TEXT("SapperCarbine_Held"), TEXT("PhotographerRifle_Held"), TEXT("PhotographerCamera_Stowed"), TEXT("PhotographerCamera_Held"), TEXT("PhotographerRifle_Stowed"), TEXT("MediumWisp_Held") };
     for (const TCHAR* Name : PropNames) { ConstructorHelpers::FObjectFinder<UStaticMesh> Item(*FString::Printf(TEXT("/Game/DreadMeridian/Presentation/Props/SM_%s"), Name)); Items.Add(Item.Object); }
     ConstructorHelpers::FObjectFinder<UNiagaraSystem> Blast(TEXT("/Game/Explosions_W3Vol1/Niagara/NS_ImpactExplosion")); Explosion = Blast.Object;
-
+    ConstructorHelpers::FObjectFinder<UNiagaraSystem> Flash(TEXT("/Game/Explosions_W3Vol1/Niagara/NS_Burst2")); MuzzleFlash = Flash.Object;
+    ConstructorHelpers::FObjectFinder<UNiagaraSystem> Snap(TEXT("/Game/Explosions_W3Vol1/Niagara/NS_highimpact")); WireSnap = Snap.Object;
+    ConstructorHelpers::FObjectFinder<UNiagaraSystem> Wave(TEXT("/Game/BigNiagaraBundle/NiagaraEffectMix2/Effects/NS_ShockWave")); Shock = Wave.Object;
+    ConstructorHelpers::FObjectFinder<UNiagaraSystem> Aura(TEXT("/Game/BigNiagaraBundle/NiagaraEffectsMix/Effects/NS_EnergyLife")); DeferredAura = Aura.Object;
+    ConstructorHelpers::FObjectFinder<UNiagaraSystem> Mark(TEXT("/Game/NiagaraExamples/FX_Markers/NS_Marker_Target")); TargetMark = Mark.Object;
+}
+void UDMCombatPresentation::Spawn(UNiagaraSystem* System, const FVector& At, float Scale, float Seconds)
+{
+    if (!System) { return; }
+    auto* FX = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), System, At, FRotator::ZeroRotator, FVector(Scale));
+    if (!FX) { return; }
+    FX->SetAutoDestroy(true);
+    // A bounded lifetime: several of these systems loop, and a cosmetic effect must never outlive its cue.
+    FTimerHandle Timer;
+    GetWorld()->GetTimerManager().SetTimer(Timer, FTimerDelegate::CreateWeakLambda(FX, [FX] { FX->DestroyComponent(); }), Seconds, false);
+}
+void UDMCombatPresentation::Attach(UNiagaraSystem* System, float Seconds)
+{
+    auto* Actor = CastChecked<ADMCombatant>(GetOwner());
+    if (!System) { return; }
+    auto* FX = UNiagaraFunctionLibrary::SpawnSystemAttached(System, Actor->GetRootComponent(), NAME_None, FVector(0, 0, -80),
+        FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
+    if (!FX) { return; }
+    FTimerHandle Timer;
+    GetWorld()->GetTimerManager().SetTimer(Timer, FTimerDelegate::CreateWeakLambda(FX, [FX] { FX->DestroyComponent(); }), Seconds, false);
 }
 void UDMCombatPresentation::Play(UAnimSequence* Clip, bool bLoop, float Rate, bool bRestart)
 {
@@ -230,6 +254,19 @@ void UDMCombatPresentation::Cue(uint8 Event, FVector Target)
     else if (Event == 6) { Action(Clips[Grenade],.6f); Burst(Actor->GetMesh()->GetSocketLocation(TEXT("hand_r")),Target,FLinearColor(2,.25f,.05f),6); }
     else if (Event == 7) { Action(Kind == 15 ? EnemyActions[2] : Clips[CastGesture],.7f); Burst(Target,Target,FLinearColor(2,.12f,.05f),Kind == 15 ? 8 : 7); }
     else if (Event == 3) { Action(Clips[Grenade], .4f); Burst(Target, Target, FLinearColor(2, 1.5f, .4f), 4); }
+    // ---- Sapper kit. 9/11/13 play on the caster; 10/12/14 play on the enemy the effect reached.
+    else if (Event == 9)
+    {
+        Action(Clips[MGShoot], .8f);
+        const FVector Barrel = HeldItem && HeldItem->DoesSocketExist(TEXT("Muzzle")) ? HeldItem->GetSocketLocation(TEXT("Muzzle")) : Actor->GetMesh()->GetSocketLocation(TEXT("hand_r"));
+        Burst(Barrel, Barrel + (Target - Barrel).GetSafeNormal() * 12, FLinearColor(5, 2.4f, .4f), 4);
+        Spawn(MuzzleFlash, Barrel, .35f, .8f);
+    }
+    else if (Event == 10) { Burst(Target, Target, FLinearColor(2, 1.2f, .35f), 5); }
+    else if (Event == 11) { Action(Clips[Place], .6f); Burst(Target, Target, FLinearColor(1.6f, 1.1f, .3f), 9); }
+    else if (Event == 12) { Spawn(WireSnap, Target, .5f, 1.f); Spawn(Shock, Target, .5f, 1.f); Burst(Target, Target, FLinearColor(3, 1.6f, .5f), 9); }
+    else if (Event == 13) { Attach(DeferredAura, 6.f); }
+    else if (Event == 14) { Spawn(TargetMark, Target + FVector(0, 0, 40), .6f, 1.5f); }
     const FVector Direction = Target - Actor->GetActorLocation();
     if (!Direction.IsNearlyZero())
     {

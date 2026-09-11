@@ -42,6 +42,8 @@ public:
     bool Ground(FVector Point, FVector& Out) const;
     /** Line of sight from self to Point ignoring combatant bodies. */
     bool Sight(FVector Point, ADMCombatant* Target = nullptr) const;
+    /** Destroys the satchels with these serials without detonating them: Dead Ground already resolved their blast. */
+    void ConsumeSatchels(const TSet<int32>& Serials);
     UPROPERTY(Replicated) float Cooldown = 0;
     UPROPERTY(Replicated) TObjectPtr<ADMCombatant> FrameTarget;
     UPROPERTY(Replicated) TObjectPtr<ADMCombatant> HeldTarget;
@@ -58,6 +60,7 @@ private:
     int32 FrameEndTick = 0;
     int32 HoldEndTick = 0;
     int32 SpiritSerial = 0;
+    int32 ChargeSerial = 0;
     FGameplayAbilitySpecHandle AbilityHandle;
     TWeakObjectPtr<ADMCombatant> RequestedTarget;
     FVector RequestedPoint = FVector::ZeroVector;

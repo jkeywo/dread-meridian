@@ -2,6 +2,7 @@
 #include "DMPrimaryAbility.h"
 #include "DMAbilityMarker.h"
 #include "DMCombatant.h"
+#include "DMKitComponent.h"
 #include "DMCombatGameMode.h"
 #include "DMEncounterLayout.h"
 #include "DMScroungePickup.h"
@@ -111,7 +112,7 @@ bool UDMPrimaryComponent::Resolve()
         FVector Floor; if (!Ground(RequestedPoint, Floor)) { return false; }
         auto* Charge = GetWorld()->SpawnActor<ADMAbilityMarker>(Floor, FRotator::ZeroRotator);
         if (!Charge) { LastFailure = TEXT("Placement failed"); return false; }
-        Charge->SetOwner(Actor); Charge->ArmedTick = Now() + 5; Charge->Radius = SatchelRadius;
+        Charge->SetOwner(Actor); Charge->ArmedTick = Now() + 5; Charge->Radius = SatchelRadius; Charge->Serial = ++ChargeSerial;
         Satchels.Add(Charge); --R->Charges; NextCastTick = Now() + 8; Emit(TEXT("place_satchel"));
     }
     else if (R->Kind == EDMInvestigator::Photographer)
@@ -177,6 +178,8 @@ bool UDMPrimaryComponent::DetonateSatchel(int32 Index)
     auto* Charge = Satchels[Index].Get();
     if (!IsValid(Charge) || Charge->ArmedTick > Now()) { return false; }
     const FVector Center = Charge->GetActorLocation();
+    // Detonating by hand is this trap's resolution, so any Dead Ground tags it holds must not fire again later.
+    Self()->Kit->DropTrap(FDMDeadGroundLedger::Satchel, Charge->Serial);
     Emit(TEXT("detonate"));
     for (ADMCombatant* Enemy : Mode->GetCombatants())
     { if (SatchelCanHit(Charge, Enemy)) { Self()->DealCombatDamage(Enemy, 55, TEXT("ability.q.satchel")); } }
@@ -184,6 +187,19 @@ bool UDMPrimaryComponent::DetonateSatchel(int32 Index)
     Self()->MulticastPresentation(4, Center);
     Charge->Destroy(); Satchels.RemoveAt(Index); Self()->ForceNetUpdate();
     return true;
+}
+void UDMPrimaryComponent::ConsumeSatchels(const TSet<int32>& Serials)
+{
+    if (!Self()->HasAuthority() || Serials.IsEmpty()) { return; }
+    for (int32 I = Satchels.Num() - 1; I >= 0; --I)
+    {
+        ADMAbilityMarker* Charge = Satchels[I].Get();
+        if (!IsValid(Charge)) { Satchels.RemoveAt(I); continue; }
+        if (!Serials.Contains(Charge->Serial)) { continue; }
+        Self()->MulticastPresentation(4, Charge->GetActorLocation());
+        Charge->Destroy(); Satchels.RemoveAt(I);
+    }
+    Self()->ForceNetUpdate();
 }
 void UDMPrimaryComponent::CancelChannel()
 {
@@ -216,10 +232,19 @@ void UDMPrimaryComponent::Step(int32 Tick)
     }
     if (Actor->IsDown() || !Mode || !Mode->IsCombatActive()) { return; }
     // Persistent charges trigger on the authority regardless of player/bot control.
+    const bool bDeferring = Actor->Kit->IsDeadGroundActive();
     for (int32 I = Satchels.Num() - 1; I >= 0; --I)
     {
         const auto* Charge = Satchels[I].Get();
         if (!IsValid(Charge) || Charge->ArmedTick > Tick) { continue; }
+        if (bDeferring)
+        {
+            // Dead Ground records the triggers that would have happened instead of resolving them. A satchel is an
+            // area trap, so every enemy in its blast is tagged; the charge stays armed until the batch resolves.
+            for (ADMCombatant* Enemy : Mode->GetCombatants())
+            { if (SatchelCanHit(Charge, Enemy)) { Actor->Kit->TagTrap(FDMDeadGroundLedger::Satchel, Charge->Serial, Enemy); } }
+            continue;
+        }
         for (ADMCombatant* Enemy : Mode->GetCombatants())
         { if (SatchelCanHit(Charge, Enemy)) { DetonateSatchel(I); break; } }
     }

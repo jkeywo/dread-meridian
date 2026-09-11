@@ -1,4 +1,5 @@
 #include "DMUtilityAI.h"
+#include "DMKitRules.h"
 #include "Algo/StableSort.h"
 
 // ------------------------------------------------------------------------------------------ curves
@@ -193,6 +194,57 @@ namespace
             if (Radius <= 0) { return 0; }
             for (const FDMAIActorView& A : C.Actors) { if (Hostile(A) && FVector::Dist2D(Point, A.Location) <= Radius) { Sum += Worth(A); } }
             return Sum;
+        }
+        /** Any armed trap of the bot's own: Dead Ground has nothing to defer without one. */
+        bool HasArmedTrap() const
+        {
+            for (const FDMAIMarkerView& Mk : C.Markers)
+            { if (Mk.bArmed && (Mk.Kind == FDMAIMarkerView::Satchel || Mk.Kind == FDMAIMarkerView::Wire)) { return true; } }
+            return false;
+        }
+        /** Worth of hostiles standing near any armed trap, counting each hostile once however many traps reach it. */
+        float WorthNearArmedTraps(float Radius) const
+        {
+            float Sum = 0;
+            for (const FDMAIActorView& A : C.Actors)
+            {
+                if (!Hostile(A)) { continue; }
+                for (const FDMAIMarkerView& Mk : C.Markers)
+                {
+                    if (!Mk.bArmed || (Mk.Kind != FDMAIMarkerView::Satchel && Mk.Kind != FDMAIMarkerView::Wire)) { continue; }
+                    const float Distance = Mk.Kind == FDMAIMarkerView::Wire
+                        ? DMKitRules::DistanceToSegment2D(Mk.Location, Mk.WireEnd, A.Location)
+                        : static_cast<float>(FVector::Dist2D(Mk.Location, A.Location));
+                    if (Distance <= Radius) { Sum += Worth(A); break; }
+                }
+            }
+            return Sum;
+        }
+        bool ArmedTrapWithin(const FVector& Point, float Radius) const
+        {
+            for (const FDMAIMarkerView& Mk : C.Markers)
+            {
+                if (!Mk.bArmed || (Mk.Kind != FDMAIMarkerView::Satchel && Mk.Kind != FDMAIMarkerView::Wire)) { continue; }
+                const float Distance = Mk.Kind == FDMAIMarkerView::Wire
+                    ? DMKitRules::DistanceToSegment2D(Mk.Location, Mk.WireEnd, Point)
+                    : static_cast<float>(FVector::Dist2D(Mk.Location, Point));
+                if (Distance <= Radius) { return true; }
+            }
+            return false;
+        }
+        /** A live suppression cone already covering the point: casting a second one there adds nothing. */
+        bool ZoneCovers(const FVector& Point) const
+        {
+            for (const FDMAIMarkerView& Mk : C.Markers)
+            { if (Mk.Kind == FDMAIMarkerView::Zone && DMKitRules::PointInCone(Mk.Location, Mk.Direction, Mk.HalfAngle, Mk.Length, Point)) { return true; } }
+            return false;
+        }
+        /** True when the actor is closing on self rather than retreating; a wire in front only pays against an approach. */
+        bool Approaching(const FDMAIActorView& A) const
+        {
+            const FVector Velocity = A.Velocity2D.GetSafeNormal2D();
+            if (Velocity.IsNearlyZero()) { return false; }
+            return FVector::DotProduct(Velocity, (S.Location - A.Location).GetSafeNormal2D()) > 0;
         }
         int32 AlliesWithin(float Radius, bool bRangedOnly) const
         {
@@ -475,6 +527,41 @@ namespace
                 }
             }
 
+            // Named kits (companions). Separate from the base-Q block: these do not share Q's cooldown or its
+            // framing/holding gate, and each ability carries its own readiness flag.
+            if (bCompanion && !S.bProfileRange && S.Kind == EDMInvestigator::Sapper)
+            {
+                if (const FDMAIAbilityTemplate* T = W.FindAbility(EDMAIAction::SuppressingFire); T && F)
+                {
+                    const TCHAR* Veto = F->Distance2D > T->Range ? VetoOutOfRange
+                        : ZoneCovers(F->Location) ? VetoRedundant
+                        : DyingCheck(F, T) <= 0 ? VetoDying
+                        : !S.bWReady ? VetoCooldown : nullptr;
+                    // Worth more where the Sapper has already prepared ground: suppression exists to hold enemies in it.
+                    const float Value = T->Magnitude * HostileWorthWithin(F->Location, T->Radius) * (ArmedTrapWithin(F->Location, 300) ? 1.5f : 1.f);
+                    Ability(EDMAIAction::SuppressingFire, F, F->Location, Veto, Value, -1, 0);
+                }
+                if (const FDMAIAbilityTemplate* T = W.FindAbility(EDMAIAction::Tripwire); T && F)
+                {
+                    // Laid across the approach line, far enough ahead that an advancing enemy still has to cross it.
+                    const FVector Dir = (F->Location - S.Location).GetSafeNormal2D();
+                    const FVector Perp(-Dir.Y, Dir.X, 0);
+                    const FVector Mid = S.Location + Dir * 250;
+                    const FVector A = Clamp(Mid - Perp * T->Radius, 60), B = Clamp(Mid + Perp * T->Radius, 60);
+                    const TCHAR* Veto = Dir.IsNearlyZero() ? VetoRedundant
+                        : S.Wires >= 2 || S.bWirePending ? VetoRedundant
+                        : F->Distance2D < 200 ? VetoRedundant          // already past where the wire would go
+                        : F->Distance2D > T->Range ? VetoOutOfRange
+                        : !S.bEReady ? VetoCooldown : nullptr;
+                    Ability(EDMAIAction::Tripwire, F, A, Veto, T->Magnitude * Worth(*F) * (Approaching(*F) ? 1.f : .4f), -1, 0, B);
+                }
+                if (const FDMAIAbilityTemplate* T = W.FindAbility(EDMAIAction::DeadGround))
+                {
+                    const TCHAR* Veto = !HasArmedTrap() ? VetoRedundant : !S.bRReady ? VetoCooldown : nullptr;
+                    Ability(EDMAIAction::DeadGround, nullptr, S.Location, Veto, T->Magnitude * WorthNearArmedTraps(T->Radius), -1, 0);
+                }
+            }
+
             // Pickups (Sapper).
             if (bCompanion && S.Kind == EDMInvestigator::Sapper && S.Charges < S.ChargeCapacity)
             {
@@ -592,10 +679,10 @@ namespace
             S.MaxRuntimeTicks = Runtime; S.DecisionCooldownTicks = Cooldown; S.bEnabled = Weight > 0;
             return S;
         }
-        void Template(EDMAIAction A, float Range, float Radius, float Magnitude, float Secondary, float Base, int32 Cooldown, int32 Delay, bool bRoots)
+        void Template(EDMAIAction A, float Range, float Radius, float Magnitude, float Secondary, float Base, int32 Cooldown, int32 Delay, bool bRoots, int32 ThresholdCap = 0)
         {
             FDMAIAbilityTemplate T; T.Range = Range; T.Radius = Radius; T.Magnitude = Magnitude; T.SecondaryMagnitude = Secondary; T.Base = Base;
-            T.CooldownTicks = Cooldown; T.CastDelayTicks = Delay; T.bRoots = bRoots;
+            T.CooldownTicks = Cooldown; T.CastDelayTicks = Delay; T.bRoots = bRoots; T.ThresholdCooldownCap = ThresholdCap;
             W.Abilities.Add(A, T);
         }
     };
@@ -781,6 +868,19 @@ namespace DMUtilityAI
             // spend on a single mover and the last one is held for a pair, an elite or a marked target.
             D.Template(EDMAIAction::PlaceSatchel, 650, 220, 55, 0, 23, 8, 5, false);
             D.Add(EDMAIAction::PlaceSatchel, EDMAIRank::Tactical, 1, ChCast, QCons());
+            // Base 10 puts the threshold at 19.3, so one common near the focus (24) is already worth suppressing.
+            // Routine, not Tactical: only one cast is chosen per tick, and suppression exists to hold enemies in
+            // prepared ground rather than to replace preparing it. Ranking it below the traps says that outright,
+            // where balancing weights against the satchel's conservation curve would only hold for one charge count.
+            D.Template(EDMAIAction::SuppressingFire, 550, 250, 24, 0, 10, 120, 0, false);
+            D.Add(EDMAIAction::SuppressingFire, EDMAIRank::Routine, 1, ChCast, QCons());
+            // Base 16 -> threshold 25.9: an approaching common (40) clears it, one walking away (16) never does.
+            D.Template(EDMAIAction::Tripwire, 650, 150, 40, 0, 16, 80, 0, false);
+            D.Add(EDMAIAction::Tripwire, EDMAIRank::Tactical, 1, ChCast, QCons());
+            // The threshold cap keeps a 600-tick ultimate reachable: uncapped it would need a value no fight produces.
+            // Base 32 with the cap -> threshold 69.3, so two commons or one elite near a trap is worth deferring for.
+            D.Template(EDMAIAction::DeadGround, 0, 300, 55, 0, 32, 600, 0, false, 150);
+            D.Add(EDMAIAction::DeadGround, EDMAIRank::Tactical, 1, ChCast, QCons());
             break;
         case EDMInvestigator::Medium:
             D.Template(EDMAIAction::BindSpirit, 650, 0, 40, 20, 10, 25, 0, false);

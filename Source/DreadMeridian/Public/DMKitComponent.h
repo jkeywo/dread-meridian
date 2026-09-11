@@ -100,6 +100,18 @@ private:
     /** Per-kind rules after the shared checks. */
     FString ValidateAbility(EDMKitSlot Slot, ADMCombatant* Target, FVector Point) const;
     bool ResolveAbility(EDMKitSlot Slot, ADMCombatant* Target, FVector Point);
+    FString ValidateSapper(EDMKitSlot Slot, FVector Point) const;
+    bool ResolveSapper(EDMKitSlot Slot, FVector Point);
+    /** Suppression ticks, wire crossings and the Dead Ground batch. */
+    void StepSapper(int32 Tick);
+    /** Spawns a wire between two validated ground points, evicting the oldest when a third is placed. */
+    bool PlaceWire(FVector A, FVector B);
+    /** The wire's control effect, applied to whoever crossed it. */
+    void TriggerWire(ADMAbilityMarker* Wire, ADMCombatant* Enemy);
+    /** Resolves every tag the ledger holds, then consumes the traps that carried one. */
+    void ResolveDeadGround();
+    /** Line of sight between two world points, ignoring combatant bodies. */
+    bool Sight(const FVector& From, const FVector& To) const;
     void EndR();
     void EndBrace(bool bShove);
     int32 NextCastTick[3] = { 0, 0, 0 };

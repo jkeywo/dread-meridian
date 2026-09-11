@@ -116,8 +116,13 @@ HAND_KNOBS: dict[str, list[Knob]] = {
     "GangBoss": COMMANDER + [Knob("Abilities.Signature.Base", 1, 20, 5), Knob("KCooldown", 0, 3, 1),
                  Knob("StrafeRadius", 300, 900, 650), Knob("StrafeOffset", 200, 700, 460), Knob("StrafeAngle", 10, 80, 35),
                  Knob("TargetCommitment", 0, 300, 75)],
+    # The kit Bases are the cast-or-hold boundary for each named ability; DeadGround also exposes the cap that
+    # keeps a 600-tick ultimate reachable at all, since that interacts with the shared KCooldown above.
     "Sapper": COMPANION + [weight("SeekPickup", 0.2, 2.0, 0.9), Knob("PickupRadius", 300, 1200, 700),
-               Knob("Abilities.PlaceSatchel.Base", 1, 80, 23), Knob("KStock", 0, 4, 2)],
+               Knob("Abilities.PlaceSatchel.Base", 1, 80, 23), Knob("KStock", 0, 4, 2),
+               Knob("Abilities.SuppressingFire.Base", 1, 60, 10), Knob("Abilities.Tripwire.Base", 1, 60, 16),
+               Knob("Abilities.DeadGround.Base", 1, 120, 32),
+               Knob("Abilities.DeadGround.ThresholdCooldownCap", 50, 600, 150, True)],
     "Photographer": COMPANION + [Knob("Abilities.Frame.Base", 1, 60, 20)],
     "Medium": COMPANION + [Knob("Abilities.BindSpirit.Base", 1, 40, 10), Knob("ThreatenedAllyHealth", 20, 90, 50)],
     "Smuggler": COMPANION + [Knob("Abilities.Clinch.Base", 1, 40, 10)],

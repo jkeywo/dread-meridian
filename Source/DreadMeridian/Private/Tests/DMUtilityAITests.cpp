@@ -20,9 +20,17 @@ namespace
             S.bRanged = bEnemy && Role != EDMSmuggler::None && Role != EDMSmuggler::Bruiser;
             S.Health = 100; S.MaxHealth = 100; S.AttackRange = 300; S.AttackDamage = 10; S.AttackInterval = 10;
             S.Charges = 3; S.ChargeCapacity = 3; S.bQReady = true; S.bSignatureReady = true; S.bSignatureSight = true;
+            S.bWReady = true; S.bEReady = true; S.bRReady = true;
             Add(FVector::ZeroVector, bEnemy);
         }
         FRig(const FRig&) = delete;
+        /** One of the bot's own persistent markers, armed unless said otherwise. */
+        FDMAIMarkerView& Marker(FDMAIMarkerView::EKind Kind, FVector Location, bool bArmed = true)
+        {
+            FDMAIMarkerView& M = C.Markers.AddDefaulted_GetRef();
+            M.Kind = Kind; M.Location = Location; M.WireEnd = Location; M.bArmed = bArmed; M.Serial = C.Markers.Num();
+            return M;
+        }
         FDMAIActorView& Add(FVector Location, bool bEnemy, float Health = 100)
         {
             FDMAIActorView& A = C.Actors.AddDefaulted_GetRef();
@@ -305,6 +313,62 @@ bool FDMUtilityAIConservationTest::RunTest(const FString& Parameters)
         R.Add(FVector(500, 0, 0), false).bMarked = true;
         const FDMAIDecision D = R.Step();
         TestTrue(TEXT("Redundant veto on an already marked target"), VetoIs(FRig::Find(D, EDMAIAction::Signature), TEXT("redundant")));
+    }
+    // ---- Sapper named kit. One Cast channel is shared, so these also have to out-rank each other sensibly.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Sapper, false);
+        FDMAIActorView& F = R.Add(FVector(300, 0, 0), true);
+        FDMAIDecision D = R.Step();
+        const FDMAIOption* Zone = FRig::Find(D, EDMAIAction::SuppressingFire);
+        TestTrue(TEXT("Suppression is worth casting on one enemy"), Zone && Zone->Veto == nullptr && Zone->Score > 0);
+        // A cone already covering the focus adds nothing; the option must not re-fire every tick it is off cooldown.
+        FDMAIMarkerView& Cone = R.Marker(FDMAIMarkerView::Zone, FVector::ZeroVector);
+        Cone.Direction = FVector(1, 0, 0); Cone.HalfAngle = 25; Cone.Length = 600;
+        D = R.Step();
+        TestTrue(TEXT("Suppression vetoed while a live cone covers the focus"), VetoIs(FRig::Find(D, EDMAIAction::SuppressingFire), TEXT("redundant")));
+        R.C.Markers.Reset();
+        F.Location = FVector(900, 0, 0);
+        D = R.Step();
+        TestTrue(TEXT("Suppression vetoed beyond its range"), VetoIs(FRig::Find(D, EDMAIAction::SuppressingFire), TEXT("out_of_range")));
+    }
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Sapper, false);
+        FDMAIActorView& F = R.Add(FVector(400, 0, 0), true);
+        F.Velocity2D = FVector(-300, 0, 0);   // closing on the Sapper
+        FDMAIDecision D = R.Step();
+        const FDMAIOption* Wire = FRig::Find(D, EDMAIAction::Tripwire);
+        TestTrue(TEXT("Wire laid across an approach"), Wire && Wire->Veto == nullptr && Wire->Score > 0);
+        TestTrue(TEXT("Wire carries both ends"), Wire && !Wire->Point.Equals(Wire->Point2) && Near(FVector::Dist2D(Wire->Point, Wire->Point2), 300, 1.f));
+        F.Velocity2D = FVector(300, 0, 0);    // walking away
+        D = R.Step();
+        Wire = FRig::Find(D, EDMAIAction::Tripwire);
+        TestTrue(TEXT("No wire behind a retreating enemy"), Wire && Wire->Veto == nullptr && Wire->Score == 0);
+        F.Velocity2D = FVector(-300, 0, 0);
+        R.C.Self.Wires = 2; D = R.Step();
+        TestTrue(TEXT("Wire vetoed at the wire cap"), VetoIs(FRig::Find(D, EDMAIAction::Tripwire), TEXT("redundant")));
+        R.C.Self.Wires = 0; R.C.Self.bWirePending = true; D = R.Step();
+        TestTrue(TEXT("Wire vetoed while one is half placed"), VetoIs(FRig::Find(D, EDMAIAction::Tripwire), TEXT("redundant")));
+        R.C.Self.bWirePending = false; F.Location = FVector(150, 0, 0); D = R.Step();
+        TestTrue(TEXT("No wire in front of an enemy already past it"), VetoIs(FRig::Find(D, EDMAIAction::Tripwire), TEXT("redundant")));
+    }
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Sapper, false);
+        R.Add(FVector(500, 0, 0), true);
+        FDMAIDecision D = R.Step();
+        TestTrue(TEXT("Dead Ground needs a prepared trap"), VetoIs(FRig::Find(D, EDMAIAction::DeadGround), TEXT("redundant")));
+        R.Marker(FDMAIMarkerView::Satchel, FVector(500, 0, 0));
+        // Out of charges, so the satchel does not take the shared Cast channel and the ultimate is judged on its own.
+        R.C.Self.Charges = 0;
+        D = R.Step();
+        const FDMAIOption* Ultimate = FRig::Find(D, EDMAIAction::DeadGround);
+        // One common by a satchel is not worth a 60-second ultimate; the threshold has to be reachable all the same.
+        TestTrue(TEXT("Dead Ground held for one enemy"), Ultimate && Ultimate->Veto == nullptr && Ultimate->Score == 0);
+        TestTrue(TEXT("Ultimate threshold uses the capped cooldown"), Ultimate && Near(Ultimate->Threshold, Threshold(32, -1, 0, 150, 2.7864f, 0.7768f)));
+        // Without the cap the same ultimate would need roughly two and a half times the value to fire at all.
+        TestTrue(TEXT("The cap is what brings the ultimate into reach"), Threshold(32, -1, 0, 600, 2.7864f, 0.7768f) > 2.5f * Threshold(32, -1, 0, 150, 2.7864f, 0.7768f));
+        R.Add(FVector(520, 0, 0), true);
+        D = R.Step();
+        TestTrue(TEXT("Two enemies by a trap are worth deferring"), D.Chose(EDMAIAction::DeadGround));
     }
     {
         FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
