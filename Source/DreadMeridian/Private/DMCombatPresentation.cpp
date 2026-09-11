@@ -65,21 +65,21 @@ void UDMCombatPresentation::Equip(bool bCamera)
         { Actor->AddInstanceComponent(Item); Item->SetCollisionEnabled(ECollisionEnabled::NoCollision); Item->RegisterComponent(); }
     }
     HeldItem->SetStaticMesh(nullptr); StowedItem->SetStaticMesh(nullptr);
-    HeldItem->AttachToComponent(Actor->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("SOCKET_hand_r"));
+    HeldItem->AttachToComponent(Actor->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("SOCKET_hand_r"));
     if (Kind == 1) { HeldItem->SetStaticMesh(Items[0]); }
     if (Kind == 2)
     {
         HeldItem->SetStaticMesh(Items[bCamera ? 3 : 1]); StowedItem->SetStaticMesh(Items[bCamera ? 4 : 2]);
-        StowedItem->AttachToComponent(Actor->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, bCamera ? TEXT("SOCKET_stow_back") : TEXT("SOCKET_stow_chest"));
+        StowedItem->AttachToComponent(Actor->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, bCamera ? TEXT("SOCKET_stow_back") : TEXT("SOCKET_stow_chest"));
     }
-    if (Kind == 3) { HeldItem->SetStaticMesh(Items[5]); HeldItem->AttachToComponent(Actor->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("SOCKET_fx_palm_r")); }
+    if (Kind == 3) { HeldItem->SetStaticMesh(Items[5]); HeldItem->AttachToComponent(Actor->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("SOCKET_fx_palm_r")); }
     if (Kind >= 11 && Kind <= 15)
     {
         HeldItem->SetStaticMesh(EnemyItems[Kind-11]);
         if (Kind == 13 || Kind == 14)
         {
             StowedItem->SetStaticMesh(EnemyItems[Kind == 13 ? 5 : 6]);
-            StowedItem->AttachToComponent(Actor->GetMesh(),FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+            StowedItem->AttachToComponent(Actor->GetMesh(),FAttachmentTransformRules::SnapToTargetIncludingScale,
                 Kind == 13 ? TEXT("SOCKET_stow_chest") : TEXT("SOCKET_holster_hip_r"));
             if (StowedItem->DoesSocketExist(TEXT("ANCHOR_stow")))
             { StowedItem->SetRelativeTransform(StowedItem->GetSocketTransform(TEXT("ANCHOR_stow"),RTS_Component).Inverse()); }
@@ -96,6 +96,10 @@ void UDMCombatPresentation::UpdatePresentation()
     if (Kind != NewKind)
     {
         Kind = NewKind;
+        // Scale from the feet without changing gameplay collision or movement.
+        const float VisualScale = (Kind == 4 || Kind == 12) ? 1.2f :
+            (Kind == 1 || Kind == 11 || Kind == 15) ? 1.1f : 1.f;
+        Actor->GetMesh()->SetRelativeScale3D(FVector(VisualScale));
         if (Kind >= 1 && Kind <= 4 && Skins[Kind - 1]) { Actor->GetMesh()->SetSkeletalMeshAsset(Skins[Kind - 1]); }
         if (Kind >= 11 && Kind <= 15 && EnemySkins[Kind-11]) { Actor->GetMesh()->SetSkeletalMeshAsset(EnemySkins[Kind-11]); }
         Playing = nullptr; Equip(false);

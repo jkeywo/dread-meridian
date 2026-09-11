@@ -1,0 +1,268 @@
+{
+  "lookout": {
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/SKM_Lookout.SKM_Lookout",
+    "bones": 89,
+    "sockets": 8,
+    "materials": [
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout"
+    ],
+    "evaluated_clips": [
+      "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+      "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+      "/Game/DreadMeridian/Presentation/Animations/A_DM_Idle_Rifle_Hip"
+    ],
+    "passed": true
+  },
+  "bomber": {
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/SKM_Bomber.SKM_Bomber",
+    "bones": 89,
+    "sockets": 9,
+    "materials": [
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber"
+    ],
+    "evaluated_clips": [
+      "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+      "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+      "/Game/DreadMeridian/Presentation/Animations/A_DM_Idle_Rifle_Hip"
+    ],
+    "passed": true
+  },
+  "smuggler": {
+    "mesh": "/Game/DreadMeridian/Characters/Investigators/Smuggler/SKM_Smuggler.SKM_Smuggler",
+    "bones": 89,
+    "sockets": 8,
+    "materials": [
+      "/Game/DreadMeridian/Characters/Investigators/Smuggler/M_Supplied_smuggler.M_Supplied_smuggler",
+      "/Game/DreadMeridian/Characters/Investigators/Smuggler/M_Supplied_smuggler.M_Supplied_smuggler",
+      "/Game/DreadMeridian/Characters/Investigators/Smuggler/M_Supplied_smuggler.M_Supplied_smuggler",
+      "/Game/DreadMeridian/Characters/Investigators/Smuggler/M_Supplied_smuggler.M_Supplied_smuggler",
+      "/Game/DreadMeridian/Characters/Investigators/Smuggler/M_Supplied_smuggler.M_Supplied_smuggler",
+      "/Game/DreadMeridian/Characters/Investigators/Smuggler/M_Supplied_smuggler.M_Supplied_smuggler",
+      "/Game/DreadMeridian/Characters/Investigators/Smuggler/M_Supplied_smuggler.M_Supplied_smuggler",
+      "/Game/DreadMeridian/Characters/Investigators/Smuggler/M_Supplied_smuggler.M_Supplied_smuggler",
+      "/Game/DreadMeridian/Characters/Investigators/Smuggler/M_Supplied_smuggler.M_Supplied_smuggler",
+      "/Game/DreadMeridian/Characters/Investigators/Smuggler/M_Supplied_smuggler.M_Supplied_smuggler",
+      "/Game/DreadMeridian/Characters/Investigators/Smuggler/M_Supplied_smuggler.M_Supplied_smuggler",
+      "/Game/DreadMeridian/Characters/Investigators/Smuggler/M_Supplied_smuggler.M_Supplied_smuggler",
+      "/Game/DreadMeridian/Characters/Investigators/Smuggler/M_Supplied_smuggler.M_Supplied_smuggler",
+      "/Game/DreadMeridian/Characters/Investigators/Smuggler/M_Supplied_smuggler.M_Supplied_smuggler"
+    ],
+    "evaluated_clips": [
+      "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+      "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+      "/Game/DreadMeridian/Presentation/Animations/A_DM_Idle_Rifle_Hip"
+    ],
+    "passed": true
+  },
+  "photographer": {
+    "mesh": "/Game/DreadMeridian/Characters/Investigators/Photographer/SKM_Photographer.SKM_Photographer",
+    "bones": 89,
+    "sockets": 8,
+    "materials": [
+      "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer",
+      "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer",
+      "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer",
+      "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer",
+      "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer",
+      "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer",
+      "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer",
+      "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer",
+      "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer",
+      "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer",
+      "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer",
+      "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer",
+      "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer",
+      "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer",
+      "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer",
+      "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer",
+      "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer"
+    ],
+    "evaluated_clips": [
+      "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+      "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+      "/Game/DreadMeridian/Presentation/Animations/A_DM_Idle_Rifle_Hip"
+    ],
+    "passed": true
+  },
+  "medium": {
+    "mesh": "/Game/DreadMeridian/Characters/Investigators/Medium/SKM_Medium.SKM_Medium",
+    "bones": 89,
+    "sockets": 8,
+    "materials": [
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+      "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium"
+    ],
+    "evaluated_clips": [
+      "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+      "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+      "/Game/DreadMeridian/Presentation/Animations/A_DM_Idle_Rifle_Hip"
+    ],
+    "passed": true
+  },
+  "sapper": {
+    "mesh": "/Game/DreadMeridian/Characters/Investigators/Sapper/SKM_Sapper.SKM_Sapper",
+    "bones": 89,
+    "sockets": 8,
+    "materials": [
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+      "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper"
+    ],
+    "evaluated_clips": [
+      "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+      "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+      "/Game/DreadMeridian/Presentation/Animations/A_DM_Idle_Rifle_Hip"
+    ],
+    "passed": true
+  },
+  "gunman": {
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/SKM_Gunman.SKM_Gunman",
+    "bones": 89,
+    "sockets": 8,
+    "materials": [
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/M_Supplied_gunman.M_Supplied_gunman",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/M_Supplied_gunman.M_Supplied_gunman",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/M_Supplied_gunman.M_Supplied_gunman",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/M_Supplied_gunman.M_Supplied_gunman",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/M_Supplied_gunman.M_Supplied_gunman",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/M_Supplied_gunman.M_Supplied_gunman",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/M_Supplied_gunman.M_Supplied_gunman",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/M_Supplied_gunman.M_Supplied_gunman",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/M_Supplied_gunman.M_Supplied_gunman",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/M_Supplied_gunman.M_Supplied_gunman",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/M_Supplied_gunman.M_Supplied_gunman",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/M_Supplied_gunman.M_Supplied_gunman",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/M_Supplied_gunman.M_Supplied_gunman",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/M_Supplied_gunman.M_Supplied_gunman"
+    ],
+    "evaluated_clips": [
+      "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+      "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+      "/Game/DreadMeridian/Presentation/Animations/A_DM_Idle_Rifle_Hip"
+    ],
+    "passed": true
+  },
+  "bruiser": {
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/SKM_Bruiser.SKM_Bruiser",
+    "bones": 89,
+    "sockets": 8,
+    "materials": [
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/M_Supplied_bruiser.M_Supplied_bruiser",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/M_Supplied_bruiser.M_Supplied_bruiser",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/M_Supplied_bruiser.M_Supplied_bruiser",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/M_Supplied_bruiser.M_Supplied_bruiser",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/M_Supplied_bruiser.M_Supplied_bruiser",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/M_Supplied_bruiser.M_Supplied_bruiser",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/M_Supplied_bruiser.M_Supplied_bruiser",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/M_Supplied_bruiser.M_Supplied_bruiser",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/M_Supplied_bruiser.M_Supplied_bruiser",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/M_Supplied_bruiser.M_Supplied_bruiser",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/M_Supplied_bruiser.M_Supplied_bruiser",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/M_Supplied_bruiser.M_Supplied_bruiser",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/M_Supplied_bruiser.M_Supplied_bruiser",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/M_Supplied_bruiser.M_Supplied_bruiser"
+    ],
+    "evaluated_clips": [
+      "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+      "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+      "/Game/DreadMeridian/Presentation/Animations/A_DM_Idle_Rifle_Hip"
+    ],
+    "passed": true
+  },
+  "gang-boss": {
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/SKM_GangBoss.SKM_GangBoss",
+    "bones": 89,
+    "sockets": 8,
+    "materials": [
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/M_Supplied_gang_boss.M_Supplied_gang_boss",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/M_Supplied_gang_boss.M_Supplied_gang_boss",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/M_Supplied_gang_boss.M_Supplied_gang_boss",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/M_Supplied_gang_boss.M_Supplied_gang_boss",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/M_Supplied_gang_boss.M_Supplied_gang_boss",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/M_Supplied_gang_boss.M_Supplied_gang_boss",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/M_Supplied_gang_boss.M_Supplied_gang_boss",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/M_Supplied_gang_boss.M_Supplied_gang_boss",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/M_Supplied_gang_boss.M_Supplied_gang_boss",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/M_Supplied_gang_boss.M_Supplied_gang_boss",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/M_Supplied_gang_boss.M_Supplied_gang_boss",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/M_Supplied_gang_boss.M_Supplied_gang_boss",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/M_Supplied_gang_boss.M_Supplied_gang_boss",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/M_Supplied_gang_boss.M_Supplied_gang_boss",
+      "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/M_Supplied_gang_boss.M_Supplied_gang_boss"
+    ],
+    "evaluated_clips": [
+      "/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle",
+      "/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Fwd",
+      "/Game/DreadMeridian/Presentation/Animations/A_DM_Idle_Rifle_Hip"
+    ],
+    "passed": true
+  }
+}

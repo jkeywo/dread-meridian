@@ -1,0 +1,15 @@
+{
+  "asset": "gunman",
+  "blender_bones": 88,
+  "unreal_root_node": "root",
+  "vertices": 2445,
+  "weighted_vertices": 2445,
+  "max_influences": 8,
+  "weight_sum_max_error": 1.7881393432617188e-07,
+  "sockets": 8,
+  "actions": [
+    "Manny_Idle",
+    "Manny_Walk",
+    "T_Pose"
+  ]
+}

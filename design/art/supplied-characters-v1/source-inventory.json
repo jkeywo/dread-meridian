@@ -1,0 +1,492 @@
+[
+  {
+    "id": 1,
+    "file": "adventurer female 3d model.glb",
+    "path": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\1\\adventurer female 3d model.glb",
+    "sha256": "7aaee6970288006c3d39c86feb3bb2b3d6b3819456d4a61c696d04705cdd3af8",
+    "min": [
+      -0.3974609375,
+      -0.1337890923023224,
+      0.0
+    ],
+    "max": [
+      0.3974609375,
+      0.1337890923023224,
+      0.998046875
+    ],
+    "size": [
+      0.794921875,
+      0.2675781846046448,
+      0.998046875
+    ],
+    "meshes": [
+      [
+        "tripo_node_22d8b169-d224-4923-bdbf-de1847c12cef",
+        3328,
+        4896
+      ]
+    ],
+    "armatures": [],
+    "materials": [
+      "tripo_node_22d8b169-d224-4923-bdbf-de1847c12cef_material"
+    ],
+    "images": [
+      [
+        "adventurer+female+3d+model_basecolor.jpg",
+        "",
+        [
+          4096,
+          4096
+        ]
+      ],
+      [
+        "adventurer+female+3d+model_normal.jpg",
+        "",
+        [
+          4096,
+          4096
+        ]
+      ],
+      [
+        "adventurer+female+3d+model_rm.png",
+        "",
+        [
+          4096,
+          4096
+        ]
+      ]
+    ]
+  },
+  {
+    "id": 2,
+    "file": "female explorer 3d model.glb",
+    "path": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\2\\female explorer 3d model.glb",
+    "sha256": "70554e39fb375ddc421a88eb1f5759470a0926d709610fecc28395bd2ae495e2",
+    "min": [
+      -0.4072265625,
+      -0.1357421875,
+      0.0
+    ],
+    "max": [
+      0.4072265625,
+      0.1357421875,
+      0.998046875
+    ],
+    "size": [
+      0.814453125,
+      0.271484375,
+      0.998046875
+    ],
+    "meshes": [
+      [
+        "tripo_node_cfcf12d3-d805-4c04-9057-5f68c2ff5ccc",
+        7205,
+        4906
+      ]
+    ],
+    "armatures": [],
+    "materials": [
+      "tripo_node_cfcf12d3-d805-4c04-9057-5f68c2ff5ccc_material"
+    ],
+    "images": [
+      [
+        "female+explorer+3d+model_basecolor.jpg",
+        "",
+        [
+          4096,
+          4096
+        ]
+      ]
+    ]
+  },
+  {
+    "id": 3,
+    "file": "character+3d+model.zip",
+    "path": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\3\\tripo_convert_a8c70dbd-950a-4f24-9615-9c71f600f3a1.fbx",
+    "sha256": "ad48d758be187a86ffbe8975014c030eac7beee593afed7d2a05c4d495004b22",
+    "min": [
+      -0.4216308295726776,
+      -0.2316894233226776,
+      -1.0127466865128554e-08
+    ],
+    "max": [
+      0.4216308891773224,
+      0.23168949782848358,
+      0.99951171875
+    ],
+    "size": [
+      0.84326171875,
+      0.46337890625,
+      0.99951171875
+    ],
+    "meshes": [
+      [
+        "tripo_node_a8c70dbd",
+        10713,
+        11528
+      ]
+    ],
+    "armatures": [],
+    "materials": [
+      "tripo_mat_a8c70dbd"
+    ],
+    "images": [
+      [
+        "character_3d_model_metallic",
+        "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\3\\tripo_convert_a8c70dbd-950a-4f24-9615-9c71f600f3a1.fbm\\character_3d_model_metallic.JPEG",
+        [
+          4096,
+          4096
+        ]
+      ],
+      [
+        "character_3d_model_roughness",
+        "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\3\\tripo_convert_a8c70dbd-950a-4f24-9615-9c71f600f3a1.fbm\\character_3d_model_roughness.JPEG",
+        [
+          4096,
+          4096
+        ]
+      ],
+      [
+        "tripo_image_a8c70dbd_0",
+        "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\3\\tripo_convert_a8c70dbd-950a-4f24-9615-9c71f600f3a1.fbm\\tripo_rgb_e2cda957-aa12-4a82-a303-8b2e3657f19d.jpg",
+        [
+          4096,
+          4096
+        ]
+      ],
+      [
+        "tripo_image_a8c70dbd_3",
+        "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\3\\tripo_convert_a8c70dbd-950a-4f24-9615-9c71f600f3a1.fbm\\tripo_normal_7973267f-1381-4f7e-89b5-def19281b719.jpg",
+        [
+          4096,
+          4096
+        ]
+      ]
+    ]
+  },
+  {
+    "id": 4,
+    "file": "female+adventurer+3d+model.zip",
+    "path": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\4\\tripo_convert_d2e3478d-2bcc-4692-b6be-a74c6a657406.fbx",
+    "sha256": "b67d8a6e71ef0fe679f5ea526d58a848ee7ef2b5fefe711b14bf156c387e4b88",
+    "min": [
+      -0.368896484375,
+      -0.103271484375,
+      -4.5141401727732955e-09
+    ],
+    "max": [
+      0.368896484375,
+      0.10327152907848358,
+      0.99951171875
+    ],
+    "size": [
+      0.73779296875,
+      0.20654301345348358,
+      0.99951171875
+    ],
+    "meshes": [
+      [
+        "tripo_node_d2e3478d",
+        11506,
+        12607
+      ]
+    ],
+    "armatures": [],
+    "materials": [
+      "tripo_mat_d2e3478d"
+    ],
+    "images": [
+      [
+        "female_adventurer_3d_model_metallic",
+        "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\4\\tripo_convert_d2e3478d-2bcc-4692-b6be-a74c6a657406.fbm\\female_adventurer_3d_model_metallic.JPEG",
+        [
+          4096,
+          4096
+        ]
+      ],
+      [
+        "female_adventurer_3d_model_roughness",
+        "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\4\\tripo_convert_d2e3478d-2bcc-4692-b6be-a74c6a657406.fbm\\female_adventurer_3d_model_roughness.JPEG",
+        [
+          4096,
+          4096
+        ]
+      ],
+      [
+        "tripo_image_d2e3478d_0",
+        "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\4\\tripo_convert_d2e3478d-2bcc-4692-b6be-a74c6a657406.fbm\\tripo_rgb_3e758a99-e127-418d-b313-181dc63939f5.jpg",
+        [
+          4096,
+          4096
+        ]
+      ],
+      [
+        "tripo_image_d2e3478d_3",
+        "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\4\\tripo_convert_d2e3478d-2bcc-4692-b6be-a74c6a657406.fbm\\tripo_normal_3143a225-92fc-4968-8e12-f131d01cc62d.jpg",
+        [
+          4096,
+          4096
+        ]
+      ]
+    ]
+  },
+  {
+    "id": 5,
+    "file": "fantasy+wizard+character+3d+model.zip",
+    "path": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\5\\tripo_convert_4dd868ba-4c27-49a7-8a32-6f47273c6888.fbx",
+    "sha256": "51a40a520649996efbd3e24ac4ed875d59dc30a2c89034c878b864500e3519e0",
+    "min": [
+      -0.401123046875,
+      -0.1433105617761612,
+      -6.26430285421975e-09
+    ],
+    "max": [
+      0.401123046875,
+      0.1433105766773224,
+      0.99951171875
+    ],
+    "size": [
+      0.80224609375,
+      0.2866211533546448,
+      0.99951171875
+    ],
+    "meshes": [
+      [
+        "tripo_node_4dd868ba",
+        10897,
+        12015
+      ]
+    ],
+    "armatures": [],
+    "materials": [
+      "tripo_mat_4dd868ba"
+    ],
+    "images": [
+      [
+        "fantasy_wizard_character_3d_model_metallic",
+        "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\5\\tripo_convert_4dd868ba-4c27-49a7-8a32-6f47273c6888.fbm\\fantasy_wizard_character_3d_model_metallic.JPEG",
+        [
+          4096,
+          4096
+        ]
+      ],
+      [
+        "fantasy_wizard_character_3d_model_roughness",
+        "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\5\\tripo_convert_4dd868ba-4c27-49a7-8a32-6f47273c6888.fbm\\fantasy_wizard_character_3d_model_roughness.JPEG",
+        [
+          4096,
+          4096
+        ]
+      ],
+      [
+        "tripo_image_4dd868ba_0",
+        "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\5\\tripo_convert_4dd868ba-4c27-49a7-8a32-6f47273c6888.fbm\\tripo_rgb_d21104f6-c65c-46ca-9d72-0085f8e3a250.jpg",
+        [
+          4096,
+          4096
+        ]
+      ],
+      [
+        "tripo_image_4dd868ba_3",
+        "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\5\\tripo_convert_4dd868ba-4c27-49a7-8a32-6f47273c6888.fbm\\tripo_normal_98303a2e-e0f5-4f4d-8db2-a6cad39f1dbb.jpg",
+        [
+          4096,
+          4096
+        ]
+      ]
+    ]
+  },
+  {
+    "id": 6,
+    "file": "historical+soldier+3d+model.zip",
+    "path": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\6\\tripo_convert_9141ee9f-6315-4820-81c7-f6f4f07e5b1f.fbx",
+    "sha256": "21857dfcca14335b92822fc522771c6cdcda9f9c6760005b12dbc277c08349bf",
+    "min": [
+      -0.474365234375,
+      -0.213623046875,
+      -9.337759898642162e-09
+    ],
+    "max": [
+      0.474365234375,
+      0.21362309157848358,
+      0.99951171875
+    ],
+    "size": [
+      0.94873046875,
+      0.4272461533546448,
+      0.99951171875
+    ],
+    "meshes": [
+      [
+        "tripo_node_9141ee9f",
+        10991,
+        12460
+      ]
+    ],
+    "armatures": [],
+    "materials": [
+      "tripo_mat_9141ee9f"
+    ],
+    "images": [
+      [
+        "historical_soldier_3d_model_metallic",
+        "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\6\\tripo_convert_9141ee9f-6315-4820-81c7-f6f4f07e5b1f.fbm\\historical_soldier_3d_model_metallic.JPEG",
+        [
+          4096,
+          4096
+        ]
+      ],
+      [
+        "historical_soldier_3d_model_roughness",
+        "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\6\\tripo_convert_9141ee9f-6315-4820-81c7-f6f4f07e5b1f.fbm\\historical_soldier_3d_model_roughness.JPEG",
+        [
+          4096,
+          4096
+        ]
+      ],
+      [
+        "tripo_image_9141ee9f_0",
+        "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\6\\tripo_convert_9141ee9f-6315-4820-81c7-f6f4f07e5b1f.fbm\\tripo_rgb_714e2e3e-7963-4409-8847-9bf5736c087d.jpg",
+        [
+          4096,
+          4096
+        ]
+      ],
+      [
+        "tripo_image_9141ee9f_3",
+        "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\6\\tripo_convert_9141ee9f-6315-4820-81c7-f6f4f07e5b1f.fbm\\tripo_normal_0bcba192-e883-491b-b9b2-5bc877627278.jpg",
+        [
+          4096,
+          4096
+        ]
+      ]
+    ]
+  },
+  {
+    "id": 7,
+    "file": "cowboy character 3d model.glb",
+    "path": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\7\\cowboy character 3d model.glb",
+    "sha256": "35f7ac6e31b4069f4f3e8c4dd052d6a0def9bd1a96bdbcfa9ab885b662d3813d",
+    "min": [
+      -0.3681640625,
+      -0.1826171576976776,
+      0.0
+    ],
+    "max": [
+      0.3681640625,
+      0.1826171576976776,
+      0.998046875
+    ],
+    "size": [
+      0.736328125,
+      0.3652343153953552,
+      0.998046875
+    ],
+    "meshes": [
+      [
+        "tripo_node_b2d9285f-e748-4e14-b601-6ea7733cdc04",
+        8209,
+        4881
+      ]
+    ],
+    "armatures": [],
+    "materials": [
+      "tripo_node_b2d9285f-e748-4e14-b601-6ea7733cdc04_material"
+    ],
+    "images": [
+      [
+        "cowboy+character+3d+model_basecolor.jpg",
+        "",
+        [
+          4096,
+          4096
+        ]
+      ]
+    ]
+  },
+  {
+    "id": 8,
+    "file": "pirate 3d model.glb",
+    "path": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\8\\pirate 3d model.glb",
+    "sha256": "71dd582be05f74a04b731fd7384966ff483eddc9b79ae0713524e4db970abb16",
+    "min": [
+      -0.4384765625,
+      -0.1298828423023224,
+      0.0
+    ],
+    "max": [
+      0.4384765625,
+      0.1298828423023224,
+      0.998046875
+    ],
+    "size": [
+      0.876953125,
+      0.2597656846046448,
+      0.998046875
+    ],
+    "meshes": [
+      [
+        "tripo_node_e49b8148-3440-4605-b63b-51fcee2a0d57",
+        3398,
+        4900
+      ]
+    ],
+    "armatures": [],
+    "materials": [
+      "tripo_node_e49b8148-3440-4605-b63b-51fcee2a0d57_material"
+    ],
+    "images": [
+      [
+        "pirate+3d+model_basecolor.jpg",
+        "",
+        [
+          4096,
+          4096
+        ]
+      ]
+    ]
+  },
+  {
+    "id": 9,
+    "file": "vintage gangster 3d model.glb",
+    "path": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\source\\9\\vintage gangster 3d model.glb",
+    "sha256": "e2f191d0208cc435801e58a84a78c0fd476e5e427c3b0652d9e23847e3b3ae43",
+    "min": [
+      -0.4130859375,
+      -0.1513671875,
+      0.0
+    ],
+    "max": [
+      0.4130859375,
+      0.1513671875,
+      0.998046875
+    ],
+    "size": [
+      0.826171875,
+      0.302734375,
+      0.998046875
+    ],
+    "meshes": [
+      [
+        "tripo_node_c5ac5ea4-413f-4874-8d6a-ac7a4fdbef67",
+        6304,
+        4749
+      ]
+    ],
+    "armatures": [],
+    "materials": [
+      "tripo_node_c5ac5ea4-413f-4874-8d6a-ac7a4fdbef67_material"
+    ],
+    "images": [
+      [
+        "vintage+gangster+3d+model_basecolor.jpg",
+        "",
+        [
+          4096,
+          4096
+        ]
+      ]
+    ]
+  }
+]

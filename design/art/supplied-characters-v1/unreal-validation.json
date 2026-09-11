@@ -1,0 +1,92 @@
+{
+  "lookout": {
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/SKM_Lookout.SKM_Lookout",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "bones": 89,
+    "sockets": 8,
+    "material": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/M_Supplied_lookout.M_Supplied_lookout",
+    "reference_rotation_error_degrees": 0.01798290257227388,
+    "reference_translation_error_cm": 0.0007437087238227325,
+    "saved": true
+  },
+  "bomber": {
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/SKM_Bomber.SKM_Bomber",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "bones": 89,
+    "sockets": 9,
+    "material": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/M_Supplied_bomber.M_Supplied_bomber",
+    "reference_rotation_error_degrees": 0.01798290257227388,
+    "reference_translation_error_cm": 0.0007437087238227325,
+    "saved": true
+  },
+  "smuggler": {
+    "mesh": "/Game/DreadMeridian/Characters/Investigators/Smuggler/SKM_Smuggler.SKM_Smuggler",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "bones": 89,
+    "sockets": 8,
+    "material": "/Game/DreadMeridian/Characters/Investigators/Smuggler/M_Supplied_smuggler.M_Supplied_smuggler",
+    "reference_rotation_error_degrees": 0.01798290257227388,
+    "reference_translation_error_cm": 0.0007437087238227325,
+    "saved": true
+  },
+  "photographer": {
+    "mesh": "/Game/DreadMeridian/Characters/Investigators/Photographer/SKM_Photographer.SKM_Photographer",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "bones": 89,
+    "sockets": 8,
+    "material": "/Game/DreadMeridian/Characters/Investigators/Photographer/M_Supplied_photographer.M_Supplied_photographer",
+    "reference_rotation_error_degrees": 0.01798290257227388,
+    "reference_translation_error_cm": 0.0007437087238227325,
+    "saved": true
+  },
+  "medium": {
+    "mesh": "/Game/DreadMeridian/Characters/Investigators/Medium/SKM_Medium.SKM_Medium",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "bones": 89,
+    "sockets": 8,
+    "material": "/Game/DreadMeridian/Characters/Investigators/Medium/M_Supplied_medium.M_Supplied_medium",
+    "reference_rotation_error_degrees": 0.01798290257227388,
+    "reference_translation_error_cm": 0.0007437087238227325,
+    "saved": true
+  },
+  "sapper": {
+    "mesh": "/Game/DreadMeridian/Characters/Investigators/Sapper/SKM_Sapper.SKM_Sapper",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "bones": 89,
+    "sockets": 8,
+    "material": "/Game/DreadMeridian/Characters/Investigators/Sapper/M_Supplied_sapper.M_Supplied_sapper",
+    "reference_rotation_error_degrees": 0.01798290257227388,
+    "reference_translation_error_cm": 0.0007437087238227325,
+    "saved": true
+  },
+  "gunman": {
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/SKM_Gunman.SKM_Gunman",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "bones": 89,
+    "sockets": 8,
+    "material": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/M_Supplied_gunman.M_Supplied_gunman",
+    "reference_rotation_error_degrees": 0.01798290257227388,
+    "reference_translation_error_cm": 0.0007437087238227325,
+    "saved": true
+  },
+  "bruiser": {
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/SKM_Bruiser.SKM_Bruiser",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "bones": 89,
+    "sockets": 8,
+    "material": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/M_Supplied_bruiser.M_Supplied_bruiser",
+    "reference_rotation_error_degrees": 0.01798290257227388,
+    "reference_translation_error_cm": 0.0007437087238227325,
+    "saved": true
+  },
+  "gang-boss": {
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/SKM_GangBoss.SKM_GangBoss",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "bones": 89,
+    "sockets": 8,
+    "material": "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/M_Supplied_gang_boss.M_Supplied_gang_boss",
+    "reference_rotation_error_degrees": 0.01798290257227388,
+    "reference_translation_error_cm": 0.0007437087238227325,
+    "saved": true
+  }
+}

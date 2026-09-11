@@ -1,0 +1,15 @@
+{
+  "asset": "bruiser",
+  "blender_bones": 88,
+  "unreal_root_node": "root",
+  "vertices": 2452,
+  "weighted_vertices": 2452,
+  "max_influences": 8,
+  "weight_sum_max_error": 2.384185791015625e-07,
+  "sockets": 8,
+  "actions": [
+    "Manny_Idle",
+    "Manny_Walk",
+    "T_Pose"
+  ]
+}

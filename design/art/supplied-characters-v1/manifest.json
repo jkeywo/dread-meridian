@@ -1,0 +1,115 @@
+{
+  "lookout": {
+    "source_id": 1,
+    "source_file": "adventurer female 3d model.glb",
+    "source_sha256": "7aaee6970288006c3d39c86feb3bb2b3d6b3819456d4a61c696d04705cdd3af8",
+    "textures": {
+      "basecolor": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\lookout-basecolor.png",
+      "normal": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\lookout-normal.png",
+      "rm": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\lookout-rm.png"
+    },
+    "native_path": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Lookout/SKM_Lookout",
+    "vertices": 3328,
+    "polygons": 4896
+  },
+  "bomber": {
+    "source_id": 2,
+    "source_file": "female explorer 3d model.glb",
+    "source_sha256": "70554e39fb375ddc421a88eb1f5759470a0926d709610fecc28395bd2ae495e2",
+    "textures": {
+      "basecolor": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\bomber-basecolor.png"
+    },
+    "native_path": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bomber/SKM_Bomber",
+    "vertices": 7205,
+    "polygons": 4906
+  },
+  "smuggler": {
+    "source_id": 3,
+    "source_file": "character+3d+model.zip",
+    "source_sha256": "ad48d758be187a86ffbe8975014c030eac7beee593afed7d2a05c4d495004b22",
+    "textures": {
+      "metallic": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\smuggler-metallic.png",
+      "roughness": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\smuggler-roughness.png",
+      "normal": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\smuggler-normal.png",
+      "basecolor": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\smuggler-basecolor.png"
+    },
+    "native_path": "/Game/DreadMeridian/Characters/Investigators/Smuggler/SKM_Smuggler",
+    "vertices": 10713,
+    "polygons": 11528
+  },
+  "photographer": {
+    "source_id": 4,
+    "source_file": "female+adventurer+3d+model.zip",
+    "source_sha256": "b67d8a6e71ef0fe679f5ea526d58a848ee7ef2b5fefe711b14bf156c387e4b88",
+    "textures": {
+      "metallic": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\photographer-metallic.png",
+      "roughness": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\photographer-roughness.png",
+      "normal": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\photographer-normal.png",
+      "basecolor": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\photographer-basecolor.png"
+    },
+    "native_path": "/Game/DreadMeridian/Characters/Investigators/Photographer/SKM_Photographer",
+    "vertices": 11506,
+    "polygons": 12607
+  },
+  "medium": {
+    "source_id": 5,
+    "source_file": "fantasy+wizard+character+3d+model.zip",
+    "source_sha256": "51a40a520649996efbd3e24ac4ed875d59dc30a2c89034c878b864500e3519e0",
+    "textures": {
+      "metallic": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\medium-metallic.png",
+      "roughness": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\medium-roughness.png",
+      "normal": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\medium-normal.png",
+      "basecolor": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\medium-basecolor.png"
+    },
+    "native_path": "/Game/DreadMeridian/Characters/Investigators/Medium/SKM_Medium",
+    "vertices": 10897,
+    "polygons": 12015
+  },
+  "sapper": {
+    "source_id": 6,
+    "source_file": "historical+soldier+3d+model.zip",
+    "source_sha256": "21857dfcca14335b92822fc522771c6cdcda9f9c6760005b12dbc277c08349bf",
+    "textures": {
+      "metallic": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\sapper-metallic.png",
+      "roughness": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\sapper-roughness.png",
+      "normal": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\sapper-normal.png",
+      "basecolor": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\sapper-basecolor.png"
+    },
+    "native_path": "/Game/DreadMeridian/Characters/Investigators/Sapper/SKM_Sapper",
+    "vertices": 10991,
+    "polygons": 12460
+  },
+  "gunman": {
+    "source_id": 7,
+    "source_file": "cowboy character 3d model.glb",
+    "source_sha256": "35f7ac6e31b4069f4f3e8c4dd052d6a0def9bd1a96bdbcfa9ab885b662d3813d",
+    "textures": {
+      "basecolor": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\gunman-basecolor.png"
+    },
+    "native_path": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Gunman/SKM_Gunman",
+    "vertices": 8209,
+    "polygons": 4881
+  },
+  "bruiser": {
+    "source_id": 8,
+    "source_file": "pirate 3d model.glb",
+    "source_sha256": "71dd582be05f74a04b731fd7384966ff483eddc9b79ae0713524e4db970abb16",
+    "textures": {
+      "basecolor": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\bruiser-basecolor.png"
+    },
+    "native_path": "/Game/DreadMeridian/Characters/Enemies/Smugglers/Bruiser/SKM_Bruiser",
+    "vertices": 3398,
+    "polygons": 4900
+  },
+  "gang-boss": {
+    "source_id": 9,
+    "source_file": "vintage gangster 3d model.glb",
+    "source_sha256": "e2f191d0208cc435801e58a84a78c0fd476e5e427c3b0652d9e23847e3b3ae43",
+    "textures": {
+      "basecolor": "C:\\Coding\\dread-meridian\\design\\art\\supplied-characters-v1\\textures\\gang-boss-basecolor.png"
+    },
+    "native_path": "/Game/DreadMeridian/Characters/Enemies/Smugglers/GangBoss/SKM_GangBoss",
+    "vertices": 6304,
+    "polygons": 4749
+  }
+}

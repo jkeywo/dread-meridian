@@ -1,0 +1,119 @@
+{
+  "lookout": {
+    "passed": true,
+    "sampled_poses": 15,
+    "maximum_radius_m": 1.0150156342827923,
+    "joints": 88,
+    "textures": 3,
+    "sockets": 8,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ]
+  },
+  "bomber": {
+    "passed": true,
+    "sampled_poses": 15,
+    "maximum_radius_m": 1.068068815258079,
+    "joints": 88,
+    "textures": 1,
+    "sockets": 9,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ]
+  },
+  "smuggler": {
+    "passed": true,
+    "sampled_poses": 15,
+    "maximum_radius_m": 1.1653273524343322,
+    "joints": 88,
+    "textures": 3,
+    "sockets": 8,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ]
+  },
+  "photographer": {
+    "passed": true,
+    "sampled_poses": 15,
+    "maximum_radius_m": 1.1049898478421376,
+    "joints": 88,
+    "textures": 3,
+    "sockets": 8,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ]
+  },
+  "medium": {
+    "passed": true,
+    "sampled_poses": 15,
+    "maximum_radius_m": 1.04552565982892,
+    "joints": 88,
+    "textures": 3,
+    "sockets": 8,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ]
+  },
+  "sapper": {
+    "passed": true,
+    "sampled_poses": 15,
+    "maximum_radius_m": 1.1279245004906224,
+    "joints": 88,
+    "textures": 3,
+    "sockets": 8,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ]
+  },
+  "gunman": {
+    "passed": true,
+    "sampled_poses": 15,
+    "maximum_radius_m": 1.0303322969590727,
+    "joints": 88,
+    "textures": 1,
+    "sockets": 8,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ]
+  },
+  "bruiser": {
+    "passed": true,
+    "sampled_poses": 15,
+    "maximum_radius_m": 1.182770970281907,
+    "joints": 88,
+    "textures": 1,
+    "sockets": 8,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ]
+  },
+  "gang-boss": {
+    "passed": true,
+    "sampled_poses": 15,
+    "maximum_radius_m": 1.102546335404147,
+    "joints": 88,
+    "textures": 1,
+    "sockets": 8,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ]
+  }
+}
