@@ -1,4 +1,7 @@
 #include "DMInvestigatorComponent.h"
+#include "DMCombatant.h"
+#include "DMCombatGameMode.h"
+#include "Dom/JsonObject.h"
 #include "Net/UnrealNetwork.h"
 
 UDMInvestigatorComponent::UDMInvestigatorComponent() { SetIsReplicatedByDefault(true); }
@@ -8,6 +11,7 @@ void UDMInvestigatorComponent::Initialize(EDMInvestigator Value)
     if (!Authority()) { return; }
     Kind = Value; Charges = Kind == EDMInvestigator::Sapper ? 2 : 0;
     Momentum = 0; Components = 0; Combo = 0; Exposure.Reset(); Spirits.Reset(); SpiritTargets.Reset();
+    Madness = 0; MomentumFloor = 0; bExposureFrozen = false;
     LastPressureTick = -100; LastTarget.Reset();
 }
 FString UDMInvestigatorComponent::DisplayName() const
@@ -77,10 +81,46 @@ void UDMInvestigatorComponent::Step(int32 Tick, const FString& EngagedId)
 {
     if (!Authority()) { return; }
     if (Tick - LastPressureTick > 30) { Momentum = FMath::Max(0.f, Momentum - 1.f); Combo = 0; LastTarget.Reset(); }
+    if (MomentumFloor > 0) { Momentum = FMath::Max(Momentum, FMath::Min(100.f, MomentumFloor)); }
     for (FDMSubjectResource& Subject : Exposure)
     {
         if (!EngagedId.IsEmpty() && Subject.Id == EngagedId) { Subject.LastEngagedTick = Tick; }
+        else if (bExposureFrozen) { Subject.LastEngagedTick = Tick; }
         else if (Tick - Subject.LastEngagedTick > 20) { Subject.Value = FMath::Max(0.f, Subject.Value - .5f); }
+    }
+}
+float UDMInvestigatorComponent::PeekExposure(const FString& TargetId) const
+{
+    for (const auto& Subject : Exposure) { if (Subject.Id == TargetId) { return Subject.Value; } }
+    return 0.f;
+}
+float UDMInvestigatorComponent::ConsumeExposure(const FString& TargetId)
+{
+    if (!Authority()) { return 0.f; }
+    for (auto& Subject : Exposure)
+    {
+        if (Subject.Id != TargetId) { continue; }
+        const float Value = Subject.Value;
+        if (!bExposureFrozen) { Subject.Value = 0; }
+        return Value;
+    }
+    return 0.f;
+}
+void UDMInvestigatorComponent::UpdateSpiritLocationById(const FString& SpiritId, FVector Location)
+{
+    if (!Authority()) { return; }
+    for (auto& Spirit : Spirits) { if (Spirit.Id == SpiritId) { Spirit.Location = Location; } }
+}
+void UDMInvestigatorComponent::AddMadness(float Amount, const FString& Reason)
+{
+    if (!Authority() || Kind == EDMInvestigator::None || !FMath::IsFinite(Amount) || Amount <= 0) { return; }
+    Madness = FMath::Min(100.f, Madness + Amount);
+    if (auto* Mode = GetWorld()->GetAuthGameMode<ADMCombatGameMode>())
+    {
+        auto Data = MakeShared<FJsonObject>();
+        Data->SetStringField(TEXT("entity_id"), GetOwner() ? Cast<ADMCombatant>(GetOwner())->EntityId : FString());
+        Data->SetNumberField(TEXT("amount"), Amount); Data->SetNumberField(TEXT("value"), Madness); Data->SetStringField(TEXT("reason"), Reason);
+        Mode->Emit(TEXT("investigator.madness"), Data);
     }
 }
 bool UDMInvestigatorComponent::OnHit(const FString& TargetId, int32 Tick)
@@ -138,18 +178,22 @@ void UDMInvestigatorComponent::ThinPlace(FVector Location, float Strength)
 }
 FString UDMInvestigatorComponent::ResourceSummary(const FString& TargetId) const
 {
+    FString Result;
     switch (Kind) {
-    case EDMInvestigator::Sapper: return FString::Printf(TEXT("Charges %d/%d | Components %d/2"), Charges, ChargeCapacity, Components);
-    case EDMInvestigator::Photographer:
-        for (const auto& S : Exposure) { if (S.Id == TargetId) { return FString::Printf(TEXT("Target Exposure %.0f/100"), S.Value); } }
-        return TEXT("Target Exposure 0/100 | Q: Frame");
+    case EDMInvestigator::Sapper: Result = FString::Printf(TEXT("Charges %d/%d | Components %d/2"), Charges, ChargeCapacity, Components); break;
+    case EDMInvestigator::Photographer: {
+        Result = TEXT("Target Exposure 0/100 | Q: Frame");
+        for (const auto& S : Exposure) { if (S.Id == TargetId) { Result = FString::Printf(TEXT("Target Exposure %.0f/100"), S.Value); break; } }
+        break; }
     case EDMInvestigator::Medium: {
-        if (Spirits.IsEmpty()) { return TEXT("Attention: no bound spirits"); }
-        FString Result = TEXT("Attention ");
+        if (Spirits.IsEmpty()) { Result = TEXT("Attention: no bound spirits"); break; }
+        Result = TEXT("Attention ");
         for (const auto& S : Spirits) { Result += FString::Printf(TEXT("%s %.0f/100 "), *S.Id, S.Value); }
-        return Result; }
-    case EDMInvestigator::Smuggler: return FString::Printf(TEXT("Momentum %.0f/100 | Combo %d/3 | Resistance %.0f%%"), Momentum, Combo, Resistance() * 100);
+        break; }
+    case EDMInvestigator::Smuggler: Result = FString::Printf(TEXT("Momentum %.0f/100 | Combo %d/3 | Resistance %.0f%%"), Momentum, Combo, Resistance() * 100); break;
     default: return TEXT(""); }
+    if (Madness > 0) { Result += FString::Printf(TEXT(" | Madness %.0f"), Madness); }
+    return Result;
 }
 void UDMInvestigatorComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -158,4 +202,5 @@ void UDMInvestigatorComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProper
     DOREPLIFETIME(UDMInvestigatorComponent, Charges); DOREPLIFETIME(UDMInvestigatorComponent, Components);
     DOREPLIFETIME(UDMInvestigatorComponent, Combo); DOREPLIFETIME(UDMInvestigatorComponent, Exposure);
     DOREPLIFETIME(UDMInvestigatorComponent, Spirits); DOREPLIFETIME(UDMInvestigatorComponent, SpiritTargets);
+    DOREPLIFETIME(UDMInvestigatorComponent, Madness);
 }

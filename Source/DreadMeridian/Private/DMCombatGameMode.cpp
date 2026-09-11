@@ -43,13 +43,14 @@ void ADMCombatGameMode::ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& 
     Metadata->SetStringField(TEXT("run_kind"), TEXT("combat_sandbox"));
     Metadata->SetStringField(TEXT("capture_version"), TEXT("0.3.0"));
     if (UsesEncounterLayout()) { Metadata->SetStringField(TEXT("native_faction"), TEXT("smugglers")); }
-    Metadata->SetStringField(TEXT("bot_policy"), TEXT("squad-utility-v3"));
+    Metadata->SetStringField(TEXT("bot_policy"), TEXT("squad-utility-v4"));
     Metadata->SetStringField(TEXT("test_profile"), bNetworkTest ? TEXT("network_probe") : (SmokeOutcome.IsEmpty() ? TEXT("interactive") : SmokeOutcome));
     Metadata->SetNumberField(TEXT("initial_bot_count"), 4);
     Metadata->RemoveField(TEXT("production_bots"));
     Metadata->SetNumberField(TEXT("logical_step_seconds"), .1);
     TArray<TSharedPtr<FJsonValue>> Omissions;
-    for (const TCHAR* Missing : { TEXT("full_investigator_kits"), TEXT("objectives_htn"), TEXT("madness"),
+    // Madness and Break exist only as stub meters (see docs/kits.md); they stay declared as omissions.
+    for (const TCHAR* Missing : { TEXT("ability_evolutions"), TEXT("objectives_htn"), TEXT("madness"),
         TEXT("mythos_boss_encounters"), TEXT("break_cc"), TEXT("named_injury_effects"), TEXT("burst_injury_window"),
         TEXT("host_migration"), TEXT("deterministic_physics_navigation") })
     { Omissions.Add(MakeShared<FJsonValueString>(Missing)); }
@@ -159,6 +160,8 @@ void ADMCombatGameMode::AttachBot(ADMCombatant* Actor)
     Bot->SetProfile(ProfileFor(*Actor));
     Bot->Possess(Actor);
     Actor->SetAttackHold(false);
+    // A handoff never inherits a half-placed wire or an in-flight charge; zones, wires and windows persist like satchels.
+    Actor->Kit->CancelWire();
     if (UsesEncounterLayout() && Actor->bIsEnemy)
     {
         const int32 EnemyIndex = Combatants.IndexOfByKey(Actor) - 4;
@@ -220,7 +223,7 @@ void ADMCombatGameMode::ReleaseInvestigator(AController* Exiting)
 {
     ADMCombatant* Actor = Cast<ADMCombatant>(Exiting->GetPawn());
     // Unpossess before Super so PlayerController teardown does not destroy the shared investigator.
-    if (Actor) { Exiting->UnPossess(); Actor->StopGoal(); Actor->Primary->CancelChannel(); Actor->Primary->ReleaseClinch(); Actor->SetAttackTarget(nullptr); Actor->SetAttackHold(false); }
+    if (Actor) { Exiting->UnPossess(); Actor->StopGoal(); Actor->Primary->CancelChannel(); Actor->Primary->ReleaseClinch(); Actor->Kit->CancelWire(); Actor->SetAttackTarget(nullptr); Actor->SetAttackHold(false); }
     if (Actor && bCombatActive)
     {
         AttachBot(Actor);
@@ -377,6 +380,16 @@ void ADMCombatGameMode::NoteDowned(const ADMCombatant& Target) { if (Target.bIsE
 void ADMCombatGameMode::NoteRevive() { ++Metrics.Revives; }
 void ADMCombatGameMode::NoteSignature() { ++Metrics.SignatureActivations; }
 void ADMCombatGameMode::NoteQCast() { ++Metrics.QCasts; }
+void ADMCombatGameMode::NoteKitCast(EDMKitSlot Slot)
+{
+    switch (Slot)
+    {
+    case EDMKitSlot::W: ++Metrics.WCasts; break;
+    case EDMKitSlot::E: ++Metrics.ECasts; break;
+    case EDMKitSlot::R: ++Metrics.RCasts; break;
+    default: break;
+    }
+}
 
 void ADMCombatGameMode::LogResult(const FString& Outcome)
 {
@@ -401,6 +414,9 @@ void ADMCombatGameMode::LogResult(const FString& Outcome)
     Data->SetNumberField(TEXT("revives"), Metrics.Revives);
     Data->SetNumberField(TEXT("signatures"), Metrics.SignatureActivations);
     Data->SetNumberField(TEXT("q_casts"), Metrics.QCasts);
+    Data->SetNumberField(TEXT("w_casts"), Metrics.WCasts);
+    Data->SetNumberField(TEXT("e_casts"), Metrics.ECasts);
+    Data->SetNumberField(TEXT("r_casts"), Metrics.RCasts);
     Data->SetNumberField(TEXT("pings"), Metrics.PingsCreated);
     TSharedPtr<FJsonObject> By = MakeShared<FJsonObject>();
     TArray<FString> Keys;
@@ -431,7 +447,7 @@ void ADMCombatGameMode::StepCombat()
     for (ADMCombatant* Actor : Combatants) { Actor->SpiritProtection = 0; Actor->SpiritSlow = 0; }
     // Settle the ping board before any bot reads it this tick.
     StepPings();
-    for (ADMCombatant* Actor : Combatants) { Actor->Primary->Step(CombatTick); Actor->Smuggler->Step(*this); }
+    for (ADMCombatant* Actor : Combatants) { Actor->Primary->Step(CombatTick); Actor->Kit->Step(CombatTick); Actor->Smuggler->Step(*this); }
     if (ADMGameState* Projection = GetGameState<ADMGameState>()) { Projection->SetCombatTick(CombatTick); }
     for (ADMCombatant* Actor : Combatants)
     {
@@ -497,7 +513,7 @@ void ADMCombatGameMode::CompleteCombat(bool bVictory)
 {
     bCombatActive = false;
     GetWorldTimerManager().ClearTimer(CombatTimer);
-    for (ADMCombatant* Actor : Combatants) { Actor->Smuggler->Cancel(); Actor->StopGoal(); Actor->Primary->CancelChannel(); Actor->Primary->ReleaseClinch(); Actor->GetCharacterMovement()->StopMovementImmediately(); }
+    for (ADMCombatant* Actor : Combatants) { Actor->Smuggler->Cancel(); Actor->StopGoal(); Actor->Primary->CancelChannel(); Actor->Primary->ReleaseClinch(); Actor->Kit->Cancel(true); Actor->GetCharacterMovement()->StopMovementImmediately(); }
     FinishRun(bVictory);
     LogResult(bVictory ? TEXT("victory") : TEXT("defeat"));
 #if !UE_BUILD_SHIPPING
@@ -514,6 +530,7 @@ void ADMCombatGameMode::CompleteCombat(bool bVictory)
             Expected->SetStringField(Actor->EntityId + TEXT(".name"), Actor->DisplayName());
             Expected->SetStringField(Actor->EntityId + TEXT(".resources"), Actor->Investigator->ResourceSummary());
             Expected->SetStringField(Actor->EntityId + TEXT(".primary"), Actor->Primary->ReplicationSummary());
+            Expected->SetStringField(Actor->EntityId + TEXT(".kit"), Actor->Kit->ReplicationSummary());
         }
         Expected->SetStringField(TEXT("phase"), bVictory ? TEXT("Victory") : TEXT("Defeat"));
         FString Json;

@@ -96,6 +96,17 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
     S.QCooldownRemaining = Self->Primary->CooldownRemaining(Tick);
     S.FrameTarget = IndexOf(Self->Primary->FrameTarget.Get());
     S.HeldTarget = IndexOf(Self->Primary->HeldTarget.Get());
+    const UDMKitComponent* Kit = Self->Kit;
+    S.bWReady = Kit->IsReady(EDMKitSlot::W); S.bEReady = Kit->IsReady(EDMKitSlot::E); S.bRReady = Kit->IsReady(EDMKitSlot::R);
+    S.WCooldownRemaining = Kit->CooldownRemaining(EDMKitSlot::W, Tick);
+    S.ECooldownRemaining = Kit->CooldownRemaining(EDMKitSlot::E, Tick);
+    S.RCooldownRemaining = Kit->CooldownRemaining(EDMKitSlot::R, Tick);
+    S.bRActive = Kit->IsRActive(); S.bBraced = Kit->IsBraced(); S.bCharging = Kit->IsCharging(); S.bWirePending = Kit->bWirePending;
+    S.Zones = 0; for (ADMAbilityMarker* M : Kit->Zones) { if (IsValid(M)) { ++S.Zones; } }
+    S.Wires = 0; for (ADMAbilityMarker* M : Kit->Wires) { if (IsValid(M)) { ++S.Wires; } }
+    S.MaxAttention = 0;
+    for (const FDMSubjectResource& Spirit : Self->Investigator->Spirits) { S.MaxAttention = FMath::Max(S.MaxAttention, Spirit.Value); }
+    S.Madness = Self->Investigator->Madness;
     S.bSignatureReady = Self->Smuggler->IsSignatureReady(Tick);
     S.bSignatureSight = false;
 
@@ -131,7 +142,10 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
         V.AttackDamage = C->AttackDamage; V.AttackInterval = C->AttackIntervalTicks;
         V.NextAttackIn = FMath::Max(0, C->NextAttackTick - Tick);
         V.Speed2D = C->GetVelocity().Size2D();
+        V.Velocity2D = C->GetVelocity() * FVector(1, 1, 0);
         V.Location = Loc;
+        V.Exposure = Self->Investigator->PeekExposure(C->EntityId);
+        V.bSuppressed = C->bSuppressed; V.bCommitted = C->bTelegraphActive; V.Break = C->Break;
         V.bGroupEngaged = false; V.bVisible = true;
         const bool bHostile = C->bIsEnemy != Self->bIsEnemy && !V.bDown;
         if (S.bLocalEnemy && bHostile)
@@ -148,6 +162,22 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
             if (!bAlerted && V.Distance2D <= W.SightRange) { V.bVisible = LineOfSightTo(C); Traced[I] = true; }
         }
     }
+
+    // The bot's own persistent markers, so kit options can reason about where its traps, zones and spirits are.
+    // Only its own: another Sapper's wire is not this one's to plan around.
+    auto AddMarker = [&](const ADMAbilityMarker* M, FDMAIMarkerView::EKind Kind)
+    {
+        if (!IsValid(M)) { return; }
+        FDMAIMarkerView& MV = Out.Markers.AddDefaulted_GetRef();
+        MV.Kind = Kind; MV.Location = M->GetActorLocation(); MV.WireEnd = M->WireEnd;
+        MV.Direction = M->Direction; MV.HalfAngle = M->HalfAngle; MV.Length = M->Length; MV.Radius = M->Radius;
+        MV.bArmed = M->IsArmed(); MV.bTravelling = M->bTravelling; MV.BoundIndex = IndexOf(M->BoundTarget.Get());
+        MV.Attention = M->Attention; MV.Serial = M->Serial; MV.SpiritId = M->SpiritId;
+    };
+    for (const ADMAbilityMarker* M : Self->Primary->Satchels) { AddMarker(M, FDMAIMarkerView::Satchel); }
+    for (const ADMAbilityMarker* M : Self->Primary->Bindings) { AddMarker(M, FDMAIMarkerView::Spirit); }
+    for (const ADMAbilityMarker* M : Self->Kit->Wires) { AddMarker(M, FDMAIMarkerView::Wire); }
+    for (const ADMAbilityMarker* M : Self->Kit->Zones) { AddMarker(M, FDMAIMarkerView::Zone); }
 
     for (TActorIterator<ADMScroungePickup> It(GetWorld()); It; ++It) { Out.Pickups.Add(It->GetActorLocation()); }
     for (TActorIterator<ADMAbilityMarker> It(GetWorld()); It; ++It)

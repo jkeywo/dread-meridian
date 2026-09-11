@@ -18,10 +18,32 @@ existing enemy threat to one quarter. These values and the nonlinear Grievous
 duration curve are AI-origin provisional tuning. Named/burst Injury effects,
 treatment, Break and CC remain unsupported.
 
-`ADMCombatPlayerController` creates Enhanced Input mappings. Attack/revive RPCs
-act through the caller's possessed investigator. CharacterMovement handles
-prediction/server correction. The open arena uses direct destinations; general
-obstacle navigation remains future work.
+`UDMKitComponent` owns the W/E/R slots beside `UDMPrimaryComponent`'s Q, with the
+same shape: `Request` validates and activates a server-only GAS shim, `Resolve`
+applies the ability, and `Step` advances persistent effects inside the combat
+tick. `Validate` never touches the game mode, so a client can preview the same
+rejection the server would give; combat-active is checked only in Request and
+Resolve. Cooldowns, ability windows and placed markers are replicated
+projections. `Cancel` runs wherever Q's channel and clinch are already cancelled
+(downed, combat complete, control handover, EndPlay) so no stance, floor or
+half-placed wire outlives its owner. Pure geometry, Break/Resolve conversion,
+slow stacking and the deferred-trap ledger live in `DMKitRules` with no UObjects.
+
+Break and Madness exist only as declared stub meters: Madness is a value the
+ultimates spike with no symptoms or floor, and Break is an elite-only Resolve
+meter that sets the existing vulnerability flag for a window, then recovers with
+temporary resistance. Control effects convert through that layer (GDD O.6):
+common enemies take the full effect, unbroken elites take the damage and half
+the slow and bank the pressure. Neither is the GDD system, and both remain
+declared omissions in capture metadata.
+
+`ADMCombatPlayerController` creates Enhanced Input mappings. Q/W/E/R take the
+conventional MOBA keys, so keyboard movement is right-click only and revive moved
+to V. One aiming state serves all four slots: self-cast abilities fire on press,
+targeted ones enter a preview, and the Sapper's two-point Tripwire keeps aiming
+between its two ends. Attack/revive RPCs act through the caller's possessed
+investigator. CharacterMovement handles prediction/server correction. The open
+arena uses direct destinations; general obstacle navigation remains future work.
 
 `ADMSquadController` is a thin shell over the pure utility brain in `DMUtilityAI`
 (no world, no UObjects, no RNG). Each logical tick it builds a context from

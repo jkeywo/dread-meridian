@@ -39,13 +39,24 @@ public:
     float Resistance() const;
     float Stickiness() const;
     bool CollectComponent();
-    // Server-only integration points for the deferred abilities and authored phenomena.
+    // Server-only integration points for the kit abilities and authored phenomena.
     void AddExposure(const FString& TargetId, float Amount, bool bVisibleCommitment, int32 Tick);
+    float PeekExposure(const FString& TargetId) const;
+    /** Returns the stored Exposure and zeroes it, unless bExposureFrozen (Impossible Photograph) keeps it. */
+    float ConsumeExposure(const FString& TargetId);
     void BindSpirit(const FString& SpiritId, const FString& TargetId, FVector Location);
     void ThinPlace(FVector Location, float Strength);
     void UpdateSpiritLocation(const FString& TargetId, FVector Location);
+    void UpdateSpiritLocationById(const FString& SpiritId, FVector Location);
+    /** Madness stub: a clamped meter the ultimates spike (GDD 4.6). No symptoms, no floor, no decay; emits investigator.madness. */
+    void AddMadness(float Amount, const FString& Reason);
     UPROPERTY(Replicated, BlueprintReadOnly) EDMInvestigator Kind = EDMInvestigator::None;
     UPROPERTY(Replicated, BlueprintReadOnly) float Momentum = 0;
+    UPROPERTY(Replicated, BlueprintReadOnly) float Madness = 0;
+    /** Smuggler R: Momentum never falls below this while it is set. */
+    float MomentumFloor = 0;
+    /** Photographer R: Exposure decay paused and Develop does not consume. */
+    bool bExposureFrozen = false;
     UPROPERTY(Replicated, BlueprintReadOnly) int32 Charges = 0;
     UPROPERTY(Replicated, BlueprintReadOnly) int32 Components = 0;
     UPROPERTY(Replicated, BlueprintReadOnly) int32 Combo = 0;

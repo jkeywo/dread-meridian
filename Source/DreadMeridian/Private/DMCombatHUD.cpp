@@ -134,6 +134,35 @@ void ADMCombatHUD::DrawRing(const FVector& Feet, float Radius, FLinearColor Colo
     }
 }
 
+void ADMCombatHUD::DrawSegment(const FVector& From, const FVector& To, FLinearColor Color)
+{
+    FVector2D A, B;
+    if (ProjectPoint(From, A) && ProjectPoint(To, B)) { DrawLine(A.X, A.Y, B.X, B.Y, Color, 2.f * S); }
+}
+
+void ADMCombatHUD::DrawCone(const FVector& Origin, const FVector& Dir, float HalfAngleDeg, float Length, FLinearColor Color)
+{
+    if (Dir.IsNearlyZero()) { return; }
+    const float Base = FMath::Atan2(Dir.Y, Dir.X);
+    const float Half = FMath::DegreesToRadians(HalfAngleDeg);
+    constexpr int32 Segments = 16;
+    FVector2D Previous = FVector2D::ZeroVector;
+    bool bHavePrevious = false;
+    for (int32 Index = 0; Index <= Segments; ++Index)
+    {
+        const float Angle = Base - Half + 2 * Half * Index / Segments;
+        FVector2D Point;
+        const bool bOk = ProjectPoint(Origin + FVector(FMath::Cos(Angle) * Length, FMath::Sin(Angle) * Length, 0), Point);
+        if (bOk && bHavePrevious && Index % 2 == 0) { DrawLine(Previous.X, Previous.Y, Point.X, Point.Y, Color, 2.f * S); }
+        Previous = Point; bHavePrevious = bOk;
+    }
+    for (int32 Side = 0; Side < 2; ++Side)
+    {
+        const float Angle = Base + (Side ? Half : -Half);
+        DrawSegment(Origin, Origin + FVector(FMath::Cos(Angle) * Length, FMath::Sin(Angle) * Length, 0), Color);
+    }
+}
+
 void ADMCombatHUD::DrawUnitWorld(const FDMHudUnit& Unit, bool bSelected)
 {
     const FVector Feet = Unit.Location - FVector(0, 0, DMHud::CapsuleHalfHeight);
@@ -423,6 +452,13 @@ void ADMCombatHUD::DrawTarget(const FDMHudModel& Model)
     if (Unit.bTargetingLocal)
     { Label(TEXT("FIXED ON YOU"), DMHud::Brass, X + W - TextWidth(TEXT("FIXED ON YOU"), .85f) - 12 * S, Y + 43 * S, .85f); }
     if (Unit.bEnemy) { Label(Unit.Resources, DMHud::Brass, X + 84*S,Y + 61*S,FMath::Min(.8f, (W - 96*S) / FMath::Max(1.f, TextWidth(Unit.Resources, 1.f)))); }
+    // Elites carry a visible Resolve layer; common enemies never do (GDD 4.4).
+    if (Unit.bElite)
+    {
+        Label(Unit.bBroken ? TEXT("BROKEN") : TEXT("RESOLVE"), Unit.bBroken ? DMHud::Brass : DMHud::Muted, X + W - 96 * S, Y + 26 * S, .75f);
+        Bar(X + W - 96 * S, Y + 38 * S, 84 * S, 8 * S, Unit.bBroken ? 1.f : Unit.BreakFraction, Unit.bBroken ? DMHud::Brass : DMHud::Shield);
+    }
+    if (Unit.bSuppressed) { Label(TEXT("SUPPRESSED"), DMHud::Shield, X + 84 * S, Y + 43 * S, .8f); }
 }
 
 void ADMCombatHUD::DrawEncounter(const FDMHudModel& Model)
@@ -448,7 +484,9 @@ void ADMCombatHUD::DrawCondition(const FDMHudModel& Model)
     Label(FString::Printf(TEXT("Injuries %d"), Model.Self.Injuries), DMHud::Bone, X + 10 * S, Y + 26 * S, 1.f);
     Label(FString::Printf(TEXT("Grievous %d"), Model.Self.Grievous),
         Model.Self.Grievous > 0 ? DMHud::Danger : DMHud::Bone, X + 120 * S, Y + 26 * S, 1.f);
-    Label(TEXT("Madness not implemented"), DMHud::Gap, X + 10 * S, Y + 48 * S, .85f);
+    // The meter is real but the system is not: the label keeps the gap explicit rather than reading as finished data.
+    Bar(X + 10 * S, Y + 48 * S, 110 * S, 8 * S, Model.Self.Madness / 100.f, DMHud::Gap);
+    Label(FString::Printf(TEXT("Madness %.0f (stub: R spikes only)"), Model.Self.Madness), DMHud::Gap, X + 10 * S, Y + 58 * S, .75f);
 }
 
 void ADMCombatHUD::DrawInvestigator(const FDMHudModel& Model)
@@ -498,21 +536,31 @@ void ADMCombatHUD::DrawInvestigator(const FDMHudModel& Model)
         }
     }
 
-    // Basic and base Q are implemented; W/E/R remain empty ability slots.
+    // Basic plus the four named abilities. Evolution nodes are not implemented, so no slot advertises one.
     const float SlotY = Y + 78 * S;
     const float Size = 44 * S;
     Slot(X + 24 * S, SlotY, Size, TEXT("LMB"), TEXT("basic"), DMHud::Brass, Model.BasicCooldown);
     if (Model.BasicCooldownSeconds > 0)
     { Label(FString::Printf(TEXT("%.1f"), Model.BasicCooldownSeconds), DMHud::Bone, X + 30 * S, SlotY + Size * .3f, 1.1f); }
-    const TCHAR* Keys[] = { TEXT("Q"), TEXT("W"), TEXT("E"), TEXT("R") };
-    for (int32 Index = 0; Index < 4; ++Index)
+    const auto* Player = Cast<ADMCombatPlayerController>(GetOwningPlayerController());
+    const int32 AimingSlot = Player && Player->IsAiming() ? Player->GetAimSlot() : INDEX_NONE;
+    for (int32 Index = 0; Index < Model.Abilities.Num(); ++Index)
     {
-        const bool bPrimary = Index == 0 && Actor;
-        Slot(X + (84 + Index * 52) * S, SlotY, Size, Keys[Index], bPrimary ? TEXT("base") : TEXT("--"),
-            bPrimary ? DMHud::Brass : FLinearColor(.35f, .37f, .36f, .6f), bPrimary ? FMath::Clamp(Actor->Primary->Cooldown / 4.f, 0.f, 1.f) : 0);
+        const FDMHudAbility& Ability = Model.Abilities[Index];
+        const float SlotX = X + (84 + Index * 52) * S;
+        const FLinearColor Border = !Ability.bImplemented ? FLinearColor(.35f, .37f, .36f, .6f)
+            : Index == AimingSlot ? DMHud::Bone : Ability.bActive ? DMHud::Ally : DMHud::Brass;
+        // The caption is the ability's own short name, so the player reads the kit rather than a slot letter.
+        FString Caption = Ability.bImplemented ? Ability.Name : TEXT("--");
+        if (Caption.Len() > 10) { Caption = Caption.Left(9) + TEXT("."); }
+        Slot(SlotX, SlotY, Size, Ability.Key, Caption, Border, Ability.Cooldown);
+        if (Ability.CooldownSeconds > 0)
+        { Label(FString::Printf(TEXT("%.1f"), Ability.CooldownSeconds), DMHud::Bone, SlotX + 6 * S, SlotY + Size * .3f, 1.f); }
+        if (Ability.bActive) { Label(TEXT("ON"), DMHud::Ally, SlotX + 4 * S, SlotY + 2 * S, .7f); }
     }
-    Label(Actor ? Actor->Primary->Status() : TEXT(""), DMHud::Brass, X + 300 * S, SlotY + 6 * S, .8f);
-    Label(FString::Printf(TEXT("revive nearby ally  E     tick %d"), Model.CombatTick),
+    const int32 StatusSlot = AimingSlot != INDEX_NONE ? AimingSlot : 0;
+    Label(Model.Abilities.IsValidIndex(StatusSlot) ? Model.Abilities[StatusSlot].Status : TEXT(""), DMHud::Brass, X + 300 * S, SlotY + 6 * S, .8f);
+    Label(FString::Printf(TEXT("revive nearby ally  V     tick %d"), Model.CombatTick),
         DMHud::Muted, X + 300 * S, SlotY + 24 * S, .85f);
 }
 
@@ -563,8 +611,8 @@ void ADMCombatHUD::DrawControls()
     const float X = 20 * S;
     const float Y = Canvas->ClipY - 170 * S;
     Label(TEXT("DREAD MERIDIAN  |  combat sandbox"), DMHud::Brass, X, Y, 1.f);
-    Label(TEXT("right-click move/attack   WASD move   Tab target"), DMHud::Muted, X, Y + 18 * S, .85f);
-    Label(TEXT("LMB / Space attack   E revive ally"), DMHud::Muted, X, Y + 34 * S, .85f);
+    Label(TEXT("right-click move/attack   left stick move   Tab target"), DMHud::Muted, X, Y + 18 * S, .85f);
+    Label(TEXT("Q / W / E / R abilities   LMB / Space attack   V revive ally"), DMHud::Muted, X, Y + 34 * S, .85f);
     Label(TEXT("G ping (hold: radial)"), DMHud::Muted, X, Y + 50 * S, .85f);
 }
 
@@ -574,16 +622,34 @@ void ADMCombatHUD::DrawPrimaryFeedback()
     const auto* Actor = Player ? Cast<ADMCombatant>(Player->GetPawn()) : nullptr;
     if (!Actor) { return; }
     const float X = Canvas->ClipX * .5f, Y = Canvas->ClipY - 190 * S;
-    Label(TEXT("Q / LB aim | LMB / A confirm | RMB / B cancel | F / Y detonate"), DMHud::Muted, X - 220 * S, Y, .85f);
-    if (Player->IsQAiming())
+    Label(TEXT("Q W E R aim | LMB / A confirm | RMB / B cancel | F / Y detonate"), DMHud::Muted, X - 220 * S, Y, .85f);
+    if (Player->IsAiming())
     {
-        ADMCombatant* Target; FVector Point; Player->GetQAim(Target, Point);
-        const FString Failure = Actor->Primary->Validate(Target, Point);
+        ADMCombatant* Target; FVector Point; Player->GetAim(Target, Point);
+        const FString Failure = Player->AimFailure(Target, Point);
         const FLinearColor Color = Failure.IsEmpty() ? DMHud::Ally : DMHud::Danger;
-        DrawRing(Actor->GetActorLocation() - FVector(0, 0, 80), Actor->Primary->Range(), DMHud::Brass, true);
-        DrawRing((Target ? Target->GetActorLocation() - FVector(0, 0, 80) : Point) + FVector(0, 0, 5),
-            Actor->Investigator->Kind == EDMInvestigator::Sapper ? 220 : 45, Color, false);
-        Label(Failure.IsEmpty() ? TEXT("Confirm: ") + Actor->Primary->Name() : Failure, Color, X - 120 * S, Y - 22 * S, 1.f);
+        const FVector Feet = Actor->GetActorLocation() - FVector(0, 0, 80);
+        DrawRing(Feet, Player->AimRange(), DMHud::Brass, true);
+        const int32 Slot = Player->GetAimSlot();
+        const EDMInvestigator Kind = Actor->Investigator->Kind;
+        const bool bCone = Slot == 1 && (Kind == EDMInvestigator::Sapper || Kind == EDMInvestigator::Photographer);
+        const bool bWire = Slot == 2 && Kind == EDMInvestigator::Sapper;
+        if (bCone)
+        {
+            const FVector Dir = (Point - Actor->GetActorLocation()).GetSafeNormal2D();
+            const float Half = Kind == EDMInvestigator::Sapper ? 25.f : 35.f;
+            const float Length = Kind == EDMInvestigator::Sapper ? 600.f : 350.f;
+            DrawCone(Feet, Dir, Half, Length, Color);
+        }
+        else if (bWire && Actor->Kit->bWirePending) { DrawSegment(Actor->Kit->PendingWireStart + FVector(0, 0, 5), Point + FVector(0, 0, 5), Color); }
+        else if (bWire) { DrawRing(Point + FVector(0, 0, 5), 45, Color, false); }
+        else if (Slot == 0)
+        {
+            DrawRing((Target ? Target->GetActorLocation() - FVector(0, 0, 80) : Point) + FVector(0, 0, 5),
+                Kind == EDMInvestigator::Sapper ? 220 : 45, Color, false);
+        }
+        else { DrawRing((Target ? Target->GetActorLocation() - FVector(0, 0, 80) : Point) + FVector(0, 0, 5), 180, Color, false); }
+        Label(Failure.IsEmpty() ? TEXT("Confirm: ") + Player->AimName() : Failure, Color, X - 120 * S, Y - 22 * S, 1.f);
     }
     else { Label(Player->QFeedback(), DMHud::Brass, X - 120 * S, Y - 22 * S, 1.f); }
     for (const FDMHudUnit& Unit : FDMHudModel::Build(GetWorld(), Actor, nullptr).Enemies)

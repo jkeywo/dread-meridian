@@ -30,6 +30,13 @@ struct DREADMERIDIAN_API FDMHudUnit
     /** This unit is currently attacking the locally controlled investigator. */
     bool bTargetingLocal = false;
     FVector Location = FVector::ZeroVector;
+    /** Provisional stub meters (see docs/kits.md); Madness has no symptoms and Break only gates elite control. */
+    float Madness = 0;
+    /** 0..1 of the elite Resolve threshold; meaningless for common enemies. */
+    float BreakFraction = 0;
+    bool bElite = false;
+    bool bBroken = false;
+    bool bSuppressed = false;
 
     float HealthFraction() const { return MaxHealth > 0 ? FMath::Clamp(Health / MaxHealth, 0.f, 1.f) : 0.f; }
     float ShieldFraction() const { return MaxHealth > 0 ? FMath::Clamp(Shield / MaxHealth, 0.f, 1.f) : 0.f; }
@@ -57,9 +64,25 @@ struct DREADMERIDIAN_API FDMHudPing
     int32 Acknowledged = 0;
 };
 
+/** One ability slot as the HUD draws it: key glyph, name, cooldown and whether its window is running. */
+struct DREADMERIDIAN_API FDMHudAbility
+{
+    FString Key;
+    FString Name;
+    FString Status;
+    /** 0 when ready, else the fraction of the slot's own cooldown still to wait. */
+    float Cooldown = 0;
+    float CooldownSeconds = 0;
+    bool bReady = false;
+    /** A persistent window (R, Dig In) is currently running. */
+    bool bActive = false;
+    bool bImplemented = false;
+};
+
 /**
  * Everything the combat HUD draws, assembled once per frame from replicated state.
- * It reports only what the sandbox actually simulates: no kits, Madness, objectives or Break.
+ * It reports only what the sandbox actually simulates: evolutions, objectives and the full
+ * Madness and Break systems remain gaps. Madness and Break appear as declared stub meters.
  */
 struct DREADMERIDIAN_API FDMHudModel
 {
@@ -70,6 +93,8 @@ struct DREADMERIDIAN_API FDMHudModel
     TArray<FDMHudUnit> Allies;
     TArray<FDMHudUnit> Enemies;
     TArray<FDMHudPing> Pings;
+    /** Q, W, E, R for the local investigator, in that order. */
+    TArray<FDMHudAbility> Abilities;
 
     EDMRunPhase Phase = EDMRunPhase::Briefing;
     EDMRitualStage RitualStage = EDMRitualStage::Incipient;

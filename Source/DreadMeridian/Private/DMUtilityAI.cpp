@@ -70,7 +70,9 @@ namespace
         TEXT("None"), TEXT("HoldCast"), TEXT("Rescue"), TEXT("ReturnHome"), TEXT("EvadeHazard"), TEXT("Flee"), TEXT("RetreatToPing"),
         TEXT("KeepDistance"), TEXT("SeekPickup"), TEXT("SeekPingedPickup"), TEXT("RallyToPing"), TEXT("DefendPing"), TEXT("HelpPing"),
         TEXT("Strafe"), TEXT("Engage"), TEXT("InvestigatePing"), TEXT("Anchor"), TEXT("Patrol"), TEXT("FollowLeader"), TEXT("Hold"),
-        TEXT("BasicAttack"), TEXT("Signature"), TEXT("Throw"), TEXT("HoldFrame"), TEXT("Frame"), TEXT("PlaceSatchel"), TEXT("BindSpirit"), TEXT("Clinch") };
+        TEXT("BasicAttack"), TEXT("Signature"), TEXT("Throw"), TEXT("HoldFrame"), TEXT("Frame"), TEXT("PlaceSatchel"), TEXT("BindSpirit"), TEXT("Clinch"),
+        TEXT("SuppressingFire"), TEXT("Tripwire"), TEXT("DeadGround"), TEXT("Flashbulb"), TEXT("Develop"), TEXT("ImpossiblePhotograph"),
+        TEXT("Beckon"), TEXT("Intercession"), TEXT("OpenSeance"), TEXT("ShoulderThrough"), TEXT("DigIn"), TEXT("DrownedMan") };
     static_assert(static_cast<int32>(UE_ARRAY_COUNT(ActionNames)) == static_cast<int32>(EDMAIAction::Count), "ActionNames out of sync with EDMAIAction");
 
     const TCHAR* const InputNames[] = {
@@ -81,7 +83,35 @@ namespace
     static_assert(static_cast<int32>(UE_ARRAY_COUNT(InputNames)) == static_cast<int32>(EDMAIInput::Count), "InputNames out of sync with EDMAIInput");
 
     bool IsAbility(EDMAIAction A)
-    { return A == EDMAIAction::Signature || A == EDMAIAction::PlaceSatchel || A == EDMAIAction::BindSpirit || A == EDMAIAction::Frame || A == EDMAIAction::Clinch; }
+    {
+        switch (A)
+        {
+        case EDMAIAction::Signature: case EDMAIAction::PlaceSatchel: case EDMAIAction::BindSpirit:
+        case EDMAIAction::Frame: case EDMAIAction::Clinch:
+        case EDMAIAction::SuppressingFire: case EDMAIAction::Tripwire: case EDMAIAction::DeadGround:
+        case EDMAIAction::Flashbulb: case EDMAIAction::Develop: case EDMAIAction::ImpossiblePhotograph:
+        case EDMAIAction::Beckon: case EDMAIAction::Intercession: case EDMAIAction::OpenSeance:
+        case EDMAIAction::ShoulderThrough: case EDMAIAction::DigIn: case EDMAIAction::DrownedMan:
+            return true;
+        default: return false;
+        }
+    }
+
+    /**
+     * Only these pull Engage toward a cast that is out of range. A self-cast has no range to close, and walking a
+     * Photographer from rifle range into a 350-unit Flashbulb, or a Smuggler across the map for a charge, is worse
+     * than not casting at all.
+     */
+    bool DrivesApproach(EDMAIAction A)
+    {
+        switch (A)
+        {
+        case EDMAIAction::Signature: case EDMAIAction::PlaceSatchel: case EDMAIAction::BindSpirit:
+        case EDMAIAction::Frame: case EDMAIAction::Clinch: case EDMAIAction::Develop: case EDMAIAction::SuppressingFire:
+            return true;
+        default: return false;
+        }
+    }
 
     /** Strongest live ping of a kind (weight, then youngest, then lowest id). */
     const FDMAIPingView* BestPing(const FDMAIContext& C, EDMPingKind Kind)
@@ -120,6 +150,7 @@ namespace
         EDMAIAction Action = EDMAIAction::None;
         const FDMAIActorView* Target = nullptr;
         FVector Point = FVector::ZeroVector;
+        FVector Point2 = FVector::ZeroVector;
         const FDMAIAbilityTemplate* Tmpl = nullptr;
         const FDMAIPingView* Ping = nullptr;
         const TCHAR* Veto = nullptr;
@@ -232,12 +263,13 @@ namespace
             O.Action = E.Action;
             O.Target = E.Target ? E.Target->Index : INDEX_NONE;
             O.Point = E.Point.IsNearlyZero() && E.Target ? E.Target->Location : E.Point;
+            O.Point2 = E.Point2;
             O.Channels = Spec->Channels() | E.Extra;
             O.Rank = Spec->Rank;
             O.PingId = E.Ping ? E.Ping->Id : INDEX_NONE;
             O.bClearsFocus = E.bClearsFocus;
             O.Value = E.Value; O.PHit = E.PHit;
-            if (E.bConserved && E.Tmpl) { O.Threshold = DMUtilityAI::Threshold(E.Tmpl->Base, E.Stock, E.Capacity, E.Tmpl->CooldownTicks, W.KStock, W.KCooldown); }
+            if (E.bConserved && E.Tmpl) { O.Threshold = DMUtilityAI::Threshold(E.Tmpl->Base, E.Stock, E.Capacity, E.Tmpl->ThresholdCooldown(), W.KStock, W.KCooldown); }
             if (E.Veto) { O.Veto = E.Veto; O.Score = 0; return &O; }
 
             TArray<float, TInlineAllocator<8>> Scores;
@@ -280,11 +312,11 @@ namespace
             return Emit(W.FindAction(A), E);
         }
 
-        void Ability(EDMAIAction A, const FDMAIActorView* T, FVector Point, const TCHAR* Veto, float Value, int32 Stock, int32 Capacity)
+        void Ability(EDMAIAction A, const FDMAIActorView* T, FVector Point, const TCHAR* Veto, float Value, int32 Stock, int32 Capacity, FVector Point2 = FVector::ZeroVector)
         {
             const FDMAIAbilityTemplate* Tmpl = W.FindAbility(A);
             if (!Tmpl) { return; }
-            FEmit E; E.Action = A; E.Target = T; E.Point = Point; E.Tmpl = Tmpl; E.Veto = Veto; E.bConserved = true; E.bPingAct = T && Hostile(*T);
+            FEmit E; E.Action = A; E.Target = T; E.Point = Point; E.Point2 = Point2; E.Tmpl = Tmpl; E.Veto = Veto; E.bConserved = true; E.bPingAct = T && Hostile(*T);
             E.Value = Value; E.PHit = PHitFor(Tmpl, T); E.Stock = Stock; E.Capacity = Capacity;
             E.Extra = Tmpl->bRoots ? (EDMAIChannel::Move | EDMAIChannel::Attack) : EDMAIChannel::None;
             Emit(W.FindAction(A), E);
@@ -292,7 +324,9 @@ namespace
 
         void Run()
         {
-            if (S.bCasting)
+            // A charge owns every channel until it ends: the world refuses other casts anyway, and a rejected one
+            // would pick up a decision cooldown that outlives the charge.
+            if (S.bCasting || S.bCharging)
             {
                 static const FDMAIActionSpec Fallback = [] { FDMAIActionSpec Sp; Sp.Action = EDMAIAction::HoldCast; Sp.Rank = EDMAIRank::Locked; Sp.ChannelMask = static_cast<uint8>(EDMAIChannel::All); return Sp; }();
                 const FDMAIActionSpec* Spec = W.FindAction(EDMAIAction::HoldCast);
@@ -496,7 +530,9 @@ namespace
                 float Stop = S.AttackRange - W.ApproachBand; bool bBonus = false;
                 for (const FDMAIOption& O : Out)
                 {
-                    if (!IsAbility(O.Action) || O.Target != Focus || O.Veto != VetoOutOfRange) { continue; }
+                    if (!DrivesApproach(O.Action) || O.Target != Focus || O.Veto != VetoOutOfRange) { continue; }
+                    // Only close in for a cast that would actually be worth making once in range.
+                    if (O.Threshold > 0 && O.Value * O.PHit <= O.Threshold) { continue; }
                     const FDMAIAbilityTemplate* T = W.FindAbility(O.Action);
                     if (T && T->Range - 20 < Stop) { Stop = T->Range - 20; bBonus = true; }
                 }

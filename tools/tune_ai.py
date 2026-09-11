@@ -37,7 +37,7 @@ BOT_PROFILES = ["Sapper", "Photographer", "Medium", "Smuggler"]
 RESULT_RE = re.compile(r"DREAD_AI_RESULT (\{.*\})")
 METRICS = ["tick", "investigators_standing", "enemies_standing", "enemy_total", "investigator_total",
            "damage_to_investigators", "damage_to_enemies", "investigator_downs", "enemy_kills", "revives",
-           "signatures", "q_casts", "pings"]
+           "signatures", "q_casts", "w_casts", "e_casts", "r_casts", "pings"]
 RUN_TIMEOUT_SECONDS = 900
 MUTATION_SIGMA = 0.15  # default for --sigma: gaussian step as a fraction of the knob range
 STALE_GENERATIONS = 2  # default for --stale: stop a phase after this many generations without improvement

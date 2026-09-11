@@ -5,6 +5,7 @@
 #include "DMPing.h"
 #include "DMSmugglerComponent.h"
 #include "DMInvestigatorComponent.h"
+#include "DMKitComponent.h"
 #include "DMCombatGameMode.generated.h"
 
 class ADMCombatant;
@@ -20,6 +21,9 @@ struct DREADMERIDIAN_API FDMCombatMetrics
     int32 Revives = 0;
     int32 SignatureActivations = 0;
     int32 QCasts = 0;
+    int32 WCasts = 0;
+    int32 ECasts = 0;
+    int32 RCasts = 0;
     int32 PingsCreated = 0;
     /** EntityId -> damage dealt, for per-role insight. */
     TMap<FString, float> DamageDealtBy;
@@ -67,6 +71,7 @@ public:
     void NoteRevive();
     void NoteSignature();
     void NoteQCast();
+    void NoteKitCast(EDMKitSlot Slot);
     const FDMCombatMetrics& GetMetrics() const { return Metrics; }
 protected:
     virtual void ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& Metadata) override;

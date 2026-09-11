@@ -40,15 +40,23 @@ void ADMCombatPlayerController::SetupInputComponent()
     CycleAction = NewObject<UInputAction>(this);
     ReviveAction = NewObject<UInputAction>(this);
     QAction = NewObject<UInputAction>(this); QPadAction = NewObject<UInputAction>(this);
+    WAction = NewObject<UInputAction>(this); EAction = NewObject<UInputAction>(this); RAction = NewObject<UInputAction>(this);
     ConfirmQAction = NewObject<UInputAction>(this); CancelQAction = NewObject<UInputAction>(this);
     DetonateAction = NewObject<UInputAction>(this);
     PingAction = NewObject<UInputAction>(this);
     Mapping->MapKey(QAction, EKeys::Q); Mapping->MapKey(QPadAction, EKeys::Gamepad_LeftShoulder);
+    // GDD 3.2 keeps Q/W/E/R conventional, so movement gives up WASD; right-click and the left stick still move.
+    Mapping->MapKey(WAction, EKeys::W); Mapping->MapKey(WAction, EKeys::Gamepad_RightTrigger);
+    Mapping->MapKey(EAction, EKeys::E); Mapping->MapKey(EAction, EKeys::Gamepad_LeftTrigger);
+    Mapping->MapKey(RAction, EKeys::R); Mapping->MapKey(RAction, EKeys::Gamepad_DPad_Down);
     Mapping->MapKey(ConfirmQAction, EKeys::LeftMouseButton);
     Mapping->MapKey(CancelQAction, EKeys::Escape); Mapping->MapKey(CancelQAction, EKeys::Gamepad_FaceButton_Right);
     Mapping->MapKey(DetonateAction, EKeys::F); Mapping->MapKey(DetonateAction, EKeys::Gamepad_FaceButton_Top);
     Input->BindAction(QAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::BeginQ);
     Input->BindAction(QPadAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::BeginQPad);
+    Input->BindAction(WAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::BeginW);
+    Input->BindAction(EAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::BeginE);
+    Input->BindAction(RAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::BeginR);
     Input->BindAction(ConfirmQAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::ConfirmQ);
     Input->BindAction(CancelQAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::CancelQ);
     Input->BindAction(DetonateAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::Detonate);
@@ -56,18 +64,12 @@ void ADMCombatPlayerController::SetupInputComponent()
     Input->BindAction(PingAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::PingPressed);
     Input->BindAction(PingAction, ETriggerEvent::Completed, this, &ADMCombatPlayerController::PingReleased);
     Mapping->MapKey(MoveAction, EKeys::Gamepad_Left2D);
-    Mapping->MapKey(MoveAction, EKeys::D);
-    Mapping->MapKey(MoveAction, EKeys::A).Modifiers.Add(NewObject<UInputModifierNegate>(Mapping));
-    Mapping->MapKey(MoveAction, EKeys::W).Modifiers.Add(NewObject<UInputModifierSwizzleAxis>(Mapping));
-    auto& South = Mapping->MapKey(MoveAction, EKeys::S);
-    South.Modifiers.Add(NewObject<UInputModifierSwizzleAxis>(Mapping));
-    South.Modifiers.Add(NewObject<UInputModifierNegate>(Mapping));
     Mapping->MapKey(ClickAction, EKeys::RightMouseButton);
     Mapping->MapKey(AttackAction, EKeys::SpaceBar);
     Mapping->MapKey(AttackAction, EKeys::Gamepad_FaceButton_Bottom);
     Mapping->MapKey(CycleAction, EKeys::Tab);
     Mapping->MapKey(CycleAction, EKeys::Gamepad_RightShoulder);
-    Mapping->MapKey(ReviveAction, EKeys::E);
+    Mapping->MapKey(ReviveAction, EKeys::V);
     Mapping->MapKey(ReviveAction, EKeys::Gamepad_FaceButton_Left);
     Input->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ADMCombatPlayerController::Move);
     Input->BindAction(ClickAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::Click);
@@ -88,11 +90,11 @@ void ADMCombatPlayerController::Move(const FInputActionValue& Value)
     }
     const ADMGameState* State = GetWorld()->GetGameState<ADMGameState>();
     if (!Actor || Actor->IsDown() || !State || State->GetRunState().Phase != EDMRunPhase::Apocalypse) { return; }
-    if (Actor->IsRestrained()) { return; }
-    if (bQAiming && bQGamepad)
+    if (Actor->IsRestrained() || Actor->Kit->IsCharging()) { return; }
+    if (bAiming && bQGamepad)
     {
         const FVector2D Axis = Value.Get<FVector2D>();
-        PadAimOffset = FVector(Axis.Y, Axis.X, 0) * Actor->Primary->Range();
+        PadAimOffset = FVector(Axis.Y, Axis.X, 0) * AimRange();
         if (!PadAimOffset.IsNearlyZero()) { SelectedTarget = nullptr; }
         return;
     }
@@ -104,10 +106,10 @@ void ADMCombatPlayerController::Move(const FInputActionValue& Value)
 }
 void ADMCombatPlayerController::Click()
 {
-    if (bQAiming) { CancelQ(); return; }
+    if (bAiming) { CancelQ(); return; }
     ServerCancelFrame();
     ADMCombatant* Actor = Cast<ADMCombatant>(GetPawn());
-    if (!Actor || Actor->IsDown()) { return; }
+    if (!Actor || Actor->IsDown() || Actor->Kit->IsCharging()) { return; }
     FHitResult Hit;
     if (!GetHitResultUnderCursor(ECC_Visibility, false, Hit)) { return; }
     if (ADMCombatant* Target = Cast<ADMCombatant>(Hit.GetActor()); Target && Target->bIsEnemy && !Target->IsDown())
@@ -125,18 +127,18 @@ void ADMCombatPlayerController::Cycle()
     for (TActorIterator<ADMCombatant> It(GetWorld()); It; ++It)
     {
         const auto* Actor = Cast<ADMCombatant>(GetPawn());
-        const bool bBinding = bQAiming && Actor && Actor->Investigator->Kind == EDMInvestigator::Medium;
+        const bool bBinding = bAiming && AimSlot == 0 && Actor && Actor->Investigator->Kind == EDMInvestigator::Medium;
         if ((It->bIsEnemy && !It->IsDown()) || bBinding) { Targets.Add(*It); }
     }
     Targets.Sort([](const ADMCombatant& A, const ADMCombatant& B) { return A.EntityId < B.EntityId; });
     if (Targets.IsEmpty()) { SelectedTarget = nullptr; return; }
     const int32 Index = Targets.IndexOfByKey(SelectedTarget.Get());
     SelectedTarget = Targets[(Index + 1) % Targets.Num()];
-    if (bAutoAttack && !bQAiming) { ServerSelectTarget(SelectedTarget.Get()); }
+    if (bAutoAttack && !bAiming) { ServerSelectTarget(SelectedTarget.Get()); }
 }
 void ADMCombatPlayerController::Attack()
 {
-    if (bQAiming) { ConfirmQ(); return; }
+    if (bAiming) { ConfirmQ(); return; }
     StartAutoAttack(SelectedTarget.Get());
 }
 void ADMCombatPlayerController::StartAutoAttack(ADMCombatant* Target)
@@ -305,7 +307,20 @@ void ADMCombatPlayerController::PlayerTick(float DeltaTime)
         {
             NextProbeQTime = GetWorld()->GetTimeSeconds() + .6f;
             const bool bSapper = Actor->Investigator->Kind == EDMInvestigator::Sapper;
-            ServerCastQ(bSapper ? nullptr : SelectedTarget.Get(), SelectedTarget->GetActorLocation(), bSapper && !Actor->Primary->Satchels.IsEmpty());
+            // Rotate Q, W and E so the probe compares replicated kit state as well as Q state. The Sapper's E is
+            // two-point, so the second press lands the far end and a wire actually exists to compare.
+            switch (ProbeCastIndex++ % 3)
+            {
+            case 0: ServerCastQ(bSapper ? nullptr : SelectedTarget.Get(), SelectedTarget->GetActorLocation(), bSapper && !Actor->Primary->Satchels.IsEmpty()); break;
+            case 1: ServerCastKit(static_cast<uint8>(EDMKitSlot::W), SelectedTarget.Get(), SelectedTarget->GetActorLocation()); break;
+            default:
+            {
+                const FVector Base = Actor->GetActorLocation();
+                const FVector Offset = Actor->Kit->bWirePending ? FVector(200, 180, 0) : FVector(200, -180, 0);
+                ServerCastKit(static_cast<uint8>(EDMKitSlot::E), SelectedTarget.Get(), Base + Offset);
+                break;
+            }
+            }
         }
         if (FParse::Param(FCommandLine::Get(), TEXT("DMDisconnectProbe")) && !bDisconnectScheduled)
         {
@@ -320,7 +335,7 @@ void ADMCombatPlayerController::PlayerTick(float DeltaTime)
 #endif
     if (!Actor || !State || State->GetRunState().Phase != EDMRunPhase::Apocalypse || Actor->IsDown())
     { if (Actor) { Actor->StopGoal(); } return; }
-    if (Actor->Primary->FrameTarget || Actor->IsRestrained()) { Actor->StopGoal(); return; }
+    if (Actor->Primary->FrameTarget || Actor->IsRestrained() || Actor->Kit->IsCharging()) { Actor->StopGoal(); return; }
     if (bAutoAttack && SelectedTarget.IsValid() && !SelectedTarget->IsDown())
     {
         if (FVector::DistSquared2D(Actor->GetActorLocation(), SelectedTarget->GetActorLocation()) > FMath::Square(Actor->GetAttackRange() - 35))
@@ -363,6 +378,7 @@ void ADMCombatPlayerController::ClientVerifyCombatState_Implementation(const FSt
                 Check(TEXT("name"), Expected->GetStringField(It->EntityId + TEXT(".name")) == It->DisplayName(), It->DisplayName(), Expected->GetStringField(It->EntityId + TEXT(".name")));
                 Check(TEXT("resources"), Expected->GetStringField(It->EntityId + TEXT(".resources")) == It->Investigator->ResourceSummary(), It->Investigator->ResourceSummary(), Expected->GetStringField(It->EntityId + TEXT(".resources")));
                 Check(TEXT("primary"), Expected->GetStringField(It->EntityId + TEXT(".primary")) == It->Primary->ReplicationSummary(), It->Primary->ReplicationSummary(), Expected->GetStringField(It->EntityId + TEXT(".primary")));
+                Check(TEXT("kit"), Expected->GetStringField(It->EntityId + TEXT(".kit")) == It->Kit->ReplicationSummary(), It->Kit->ReplicationSummary(), Expected->GetStringField(It->EntityId + TEXT(".kit")));
             }
             const ADMGameState* State = GetWorld()->GetGameState<ADMGameState>();
             bPassed &= State && Expected->GetStringField(TEXT("phase")) == StaticEnum<EDMRunPhase>()->GetNameStringByValue(static_cast<int64>(State->GetRunState().Phase));
@@ -374,19 +390,51 @@ void ADMCombatPlayerController::ClientVerifyCombatState_Implementation(const FSt
 #endif
 }
 
-void ADMCombatPlayerController::BeginQ()
+void ADMCombatPlayerController::BeginQ() { BeginSlot(0); }
+void ADMCombatPlayerController::BeginW() { BeginSlot(1); }
+void ADMCombatPlayerController::BeginE() { BeginSlot(2); }
+void ADMCombatPlayerController::BeginR() { BeginSlot(3); }
+void ADMCombatPlayerController::BeginSlot(int32 Slot)
 {
     auto* Actor = Cast<ADMCombatant>(GetPawn());
     if (!Actor || Actor->IsDown() || Actor->IsRestrained()) { return; }
-    bQAiming = !bQAiming; bQGamepad = false; LastQFeedback.Reset();
+    // Pressing the slot that is already aiming cancels it; pressing a different one switches.
+    if (bAiming && AimSlot == Slot) { CancelQ(); return; }
+    LastQFeedback.Reset();
+    if (Slot > 0)
+    {
+        const EDMKitSlot Kit = static_cast<EDMKitSlot>(Slot - 1);
+        if (Actor->Kit->Name(Kit).IsEmpty()) { return; }
+        // A self-cast has nothing to aim; send it straight to the server.
+        if (Actor->Kit->IsSelfCast(Kit)) { bAiming = false; ServerCastKit(Slot - 1, nullptr, Actor->GetActorLocation()); return; }
+    }
+    bAiming = true; AimSlot = Slot; bQGamepad = false;
 }
 void ADMCombatPlayerController::BeginQPad()
 {
     BeginQ(); bQGamepad = true;
     auto* Actor = Cast<ADMCombatant>(GetPawn());
-    if (Actor) { PadAimOffset = Actor->GetActorForwardVector() * FMath::Min(400.f, Actor->Primary->Range()); }
+    if (Actor) { PadAimOffset = Actor->GetActorForwardVector() * FMath::Min(400.f, AimRange()); }
 }
-void ADMCombatPlayerController::GetQAim(ADMCombatant*& Target, FVector& Point) const
+float ADMCombatPlayerController::AimRange() const
+{
+    const auto* Actor = Cast<ADMCombatant>(GetPawn());
+    if (!Actor) { return 0.f; }
+    return AimSlot == 0 ? Actor->Primary->Range() : Actor->Kit->Range(static_cast<EDMKitSlot>(AimSlot - 1));
+}
+FString ADMCombatPlayerController::AimName() const
+{
+    const auto* Actor = Cast<ADMCombatant>(GetPawn());
+    if (!Actor) { return FString(); }
+    return AimSlot == 0 ? Actor->Primary->Name() : Actor->Kit->Name(static_cast<EDMKitSlot>(AimSlot - 1));
+}
+FString ADMCombatPlayerController::AimFailure(ADMCombatant* Target, FVector Point) const
+{
+    const auto* Actor = Cast<ADMCombatant>(GetPawn());
+    if (!Actor) { return TEXT("No investigator"); }
+    return AimSlot == 0 ? Actor->Primary->Validate(Target, Point) : Actor->Kit->Validate(static_cast<EDMKitSlot>(AimSlot - 1), Target, Point);
+}
+void ADMCombatPlayerController::GetAim(ADMCombatant*& Target, FVector& Point) const
 {
     Target = nullptr; Point = FVector::ZeroVector;
     auto* Actor = Cast<ADMCombatant>(GetPawn()); if (!Actor) { return; }
@@ -401,21 +449,37 @@ void ADMCombatPlayerController::GetQAim(ADMCombatant*& Target, FVector& Point) c
         FHitResult Hit;
         if (GetHitResultUnderCursor(ECC_Visibility, false, Hit)) { Target = Cast<ADMCombatant>(Hit.GetActor()); Point = Hit.Location; }
     }
-    if (Actor->Investigator->Kind == EDMInvestigator::Sapper || Actor->Primary->HeldTarget) { Target = nullptr; }
+    // Ground and direction casts ignore whatever the cursor happened to be over.
+    const bool bGroundCast = AimSlot == 0
+        ? (Actor->Investigator->Kind == EDMInvestigator::Sapper || Actor->Primary->HeldTarget != nullptr)
+        : AimSlot != 2 || Actor->Investigator->Kind != EDMInvestigator::Photographer;
+    if (bGroundCast) { Target = nullptr; }
 }
 void ADMCombatPlayerController::ConfirmQ()
 {
-    if (!bQAiming)
+    if (!bAiming)
     {
         FHitResult Hit;
         if (GetHitResultUnderCursor(ECC_Visibility, false, Hit))
         { if (auto* Enemy = Cast<ADMCombatant>(Hit.GetActor()); Enemy && Enemy->bIsEnemy && !Enemy->IsDown()) { StartAutoAttack(Enemy); } }
         return;
     }
-    ADMCombatant* Target; FVector Point; GetQAim(Target, Point);
-    bQAiming = false; ServerCastQ(Target, Point, false);
+    ADMCombatant* Target; FVector Point; GetAim(Target, Point);
+    const int32 Slot = AimSlot;
+    auto* Actor = Cast<ADMCombatant>(GetPawn());
+    // A two-point cast (Tripwire) keeps aiming after the first end is accepted.
+    const bool bStayAiming = Slot > 0 && Actor && Actor->Kit->IsTwoPoint(static_cast<EDMKitSlot>(Slot - 1)) && !Actor->Kit->bWirePending;
+    bAiming = bStayAiming;
+    if (Slot == 0) { ServerCastQ(Target, Point, false); }
+    else { ServerCastKit(Slot - 1, Target, Point); }
 }
-void ADMCombatPlayerController::CancelQ() { bQAiming = false; }
+void ADMCombatPlayerController::CancelQ()
+{
+    auto* Actor = Cast<ADMCombatant>(GetPawn());
+    // Any client-side cancel must also drop a half-placed wire, or the next E press would use the stale first end.
+    if (Actor && Actor->Kit->bWirePending) { ServerCancelWire(); }
+    bAiming = false;
+}
 void ADMCombatPlayerController::Detonate()
 { if (GetPawn()) { ServerCastQ(nullptr, GetPawn()->GetActorLocation(), true); } }
 void ADMCombatPlayerController::ServerCastQ_Implementation(ADMCombatant* Target, FVector Point, bool bDetonate)
@@ -425,6 +489,16 @@ void ADMCombatPlayerController::ServerCastQ_Implementation(ADMCombatant* Target,
     const bool bCast = Actor->Primary->Request(Target, Point, bDetonate);
     ClientQFeedback(bCast ? (bDetonate ? TEXT("Satchels detonated") : Actor->Primary->Name()) : Actor->Primary->LastFailure);
 }
+void ADMCombatPlayerController::ServerCastKit_Implementation(uint8 Slot, ADMCombatant* Target, FVector Point)
+{
+    auto* Actor = Cast<ADMCombatant>(GetPawn());
+    if (!Actor || Slot >= static_cast<uint8>(EDMKitSlot::Count)) { return; }
+    const EDMKitSlot Kit = static_cast<EDMKitSlot>(Slot);
+    const bool bCast = Actor->Kit->Request(Kit, Target, Point);
+    ClientQFeedback(bCast ? Actor->Kit->Name(Kit) : Actor->Kit->LastFailure);
+}
+void ADMCombatPlayerController::ServerCancelWire_Implementation()
+{ if (auto* Actor = Cast<ADMCombatant>(GetPawn())) { Actor->Kit->CancelWire(); } }
 void ADMCombatPlayerController::ServerCancelFrame_Implementation()
 { if (auto* Actor = Cast<ADMCombatant>(GetPawn())) { Actor->Primary->CancelChannel(); } }
 void ADMCombatPlayerController::ClientQFeedback_Implementation(const FString& Message)

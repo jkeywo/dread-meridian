@@ -31,6 +31,10 @@ private:
     void DrawWorldLayer(const FDMHudModel& Model);
     void DrawUnitWorld(const FDMHudUnit& Unit, bool bSelected);
     void DrawRing(const FVector& Feet, float Radius, FLinearColor Color, bool bDashed);
+    /** Projected world-space line, for the pending Tripwire span. */
+    void DrawSegment(const FVector& From, const FVector& To, FLinearColor Color);
+    /** Dashed far arc plus the two straight edges: the targeting preview for cone abilities. */
+    void DrawCone(const FVector& Origin, const FVector& Dir, float HalfAngleDeg, float Length, FLinearColor Color);
     bool ProjectPoint(const FVector& Location, FVector2D& Out) const;
     /** Projected ping marker: diamond, label, age bar, responder pips; dashed ground ring for subjective pings. */
     void DrawPing(const FDMHudPing& Ping);

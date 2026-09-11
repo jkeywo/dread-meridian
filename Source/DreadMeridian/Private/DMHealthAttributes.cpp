@@ -7,7 +7,8 @@ void UDMHealthAttributes::PostGameplayEffectExecute(const FGameplayEffectModCall
 {
     Super::PostGameplayEffectExecute(Data);
     SetHealth(FMath::Clamp(GetHealth(), 0.f, GetMaxHealth()));
-    SetShield(FMath::Max(0.f, GetShield()));
+    // Shield gains from spirits cap at half MaxHealth so a long fight cannot stack an unbounded buffer.
+    SetShield(FMath::Clamp(GetShield(), 0.f, FMath::Max(GetMaxHealth() * .5f, 20.f)));
 }
 void UDMHealthAttributes::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

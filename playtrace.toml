@@ -53,3 +53,15 @@ id = "pings"
 path = "Source/DreadMeridian/Private/DMPing.cpp"
 kind = "text"
 role = "implementation"
+
+[[sources]]
+id = "investigator-kits"
+path = "Source/DreadMeridian/Private/DMKitComponent.cpp"
+kind = "text"
+role = "implementation"
+
+[[sources]]
+id = "kit-rules"
+path = "Source/DreadMeridian/Private/DMKitRules.cpp"
+kind = "text"
+role = "implementation"

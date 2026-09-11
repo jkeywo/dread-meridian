@@ -39,6 +39,9 @@ enum class EDMAIAction : uint8
     None, HoldCast, Rescue, ReturnHome, EvadeHazard, Flee, RetreatToPing, KeepDistance, SeekPickup, SeekPingedPickup,
     RallyToPing, DefendPing, HelpPing, Strafe, Engage, InvestigatePing, Anchor, Patrol, FollowLeader, Hold,
     BasicAttack, Signature, Throw, HoldFrame, Frame, PlaceSatchel, BindSpirit, Clinch,
+    // Named kits (GDD Appendix K, A nodes), in W/E/R order per investigator.
+    SuppressingFire, Tripwire, DeadGround, Flashbulb, Develop, ImpossiblePhotograph,
+    Beckon, Intercession, OpenSeance, ShoulderThrough, DigIn, DrownedMan,
     Count UMETA(Hidden)
 };
 
@@ -159,6 +162,14 @@ struct DREADMERIDIAN_API FDMAIAbilityTemplate
     UPROPERTY(EditAnywhere) int32 CastDelayTicks = 0;
     /** Rooted casts reserve Move and Attack as well as Cast. */
     UPROPERTY(EditAnywhere) bool bRoots = false;
+    /**
+     * Caps the cooldown term of the conservation threshold (0 = uncapped). An ultimate's 600-tick cooldown would
+     * otherwise multiply its threshold by 6-11x through the shared KCooldown, which no reachable fight can clear,
+     * and lowering KCooldown to compensate would loosen every Q on the same profile.
+     */
+    UPROPERTY(EditAnywhere) int32 ThresholdCooldownCap = 0;
+    /** Cooldown the threshold actually uses. */
+    int32 ThresholdCooldown() const { return ThresholdCooldownCap > 0 ? FMath::Min(CooldownTicks, ThresholdCooldownCap) : CooldownTicks; }
 };
 
 /**
@@ -263,7 +274,37 @@ struct DREADMERIDIAN_API FDMAIActorView
     int32 AttackInterval = 10;
     int32 NextAttackIn = 0;      // ticks until this actor's next basic attack is ready (0 = ready)
     float Speed2D = 0;
+    /** Full 2D velocity; Speed2D stays for PHit. Needed to tell an approaching focus from a retreating one. */
+    FVector Velocity2D = FVector::ZeroVector;
     FVector Location = FVector::ZeroVector;
+    /** Raw Exposure this Photographer has stored on the actor (0..100). */
+    float Exposure = 0;
+    bool bSuppressed = false;
+    /** Mid-telegraph: Perfect Moment and Flashbulb value these higher. */
+    bool bCommitted = false;
+    /** Elite Resolve damage banked so far (0..FDMBreakMeter::Threshold). */
+    float Break = 0;
+};
+
+/** One of the deciding bot's own persistent markers. Enemy hazards stay in FDMAIHazard. */
+struct DREADMERIDIAN_API FDMAIMarkerView
+{
+    enum EKind : uint8 { Satchel, Wire, Zone, Spirit };
+    EKind Kind = Satchel;
+    FVector Location = FVector::ZeroVector;
+    /** Wire: the far end. Zone: unused (see Direction/HalfAngle/Length). */
+    FVector WireEnd = FVector::ZeroVector;
+    FVector Direction = FVector::ZeroVector;
+    float HalfAngle = 0;
+    float Length = 0;
+    float Radius = 0;
+    bool bArmed = false;
+    bool bTravelling = false;
+    /** Roster index this marker is bound to, or INDEX_NONE for a ground binding. */
+    int32 BoundIndex = INDEX_NONE;
+    float Attention = 0;
+    int32 Serial = 0;
+    FString SpiritId;
 };
 
 struct DREADMERIDIAN_API FDMAIHazard
@@ -304,6 +345,14 @@ struct DREADMERIDIAN_API FDMAISelfView
     bool bQReady = false;
     int32 QCooldownRemaining = 0;
     int32 FrameTarget = INDEX_NONE, HeldTarget = INDEX_NONE;
+    // Named kits. Ready flags mirror UDMKitComponent::IsReady; the windows mirror its replicated *UntilTick fields.
+    bool bWReady = false, bEReady = false, bRReady = false;
+    int32 WCooldownRemaining = 0, ECooldownRemaining = 0, RCooldownRemaining = 0;
+    bool bRActive = false, bBraced = false, bCharging = false, bWirePending = false;
+    int32 Zones = 0, Wires = 0;
+    /** Highest Attention across this Medium's bound spirits. */
+    float MaxAttention = 0;
+    float Madness = 0;
     bool bSignatureReady = false;
     /** Sight to the focus for the signature; the builder evaluates it only when bSignatureReady and a focus exists. */
     bool bSignatureSight = false;
@@ -332,6 +381,8 @@ struct DREADMERIDIAN_API FDMAIContext
     TArray<FVector> Pickups;
     TArray<FDMAIHazard> Hazards;
     TArray<FDMAIPingView> Pings;
+    /** The deciding bot's own satchels, wires, zones and spirits, so kit options can reason about their geometry. */
+    TArray<FDMAIMarkerView> Markers;
     FVector PlayableExtent = FVector(2900, 2400, 0);
     const FDMAIWeights* W = nullptr;
     FDMAIMemory Memory;
@@ -351,6 +402,8 @@ struct DREADMERIDIAN_API FDMAIOption
     EDMAIAction Action = EDMAIAction::None;
     int32 Target = INDEX_NONE;
     FVector Point = FVector::ZeroVector;
+    /** Second point for two-point casts (Tripwire); zero otherwise. */
+    FVector Point2 = FVector::ZeroVector;
     EDMAIChannel Channels = EDMAIChannel::None;
     EDMAIRank Rank = EDMAIRank::Routine;
     /** Nominally [0,1]; commitment can push slightly above 1. 0 means not viable. */

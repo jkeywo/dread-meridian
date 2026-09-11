@@ -22,11 +22,17 @@ Use `-Action Editor` to edit the map and press Play inside Unreal.
 
 | Action | Mouse/keyboard | Controller |
 |---|---|---|
-| Move | Right-click ground or WASD | Left stick |
+| Move | Right-click ground | Left stick |
 | Select enemy | Right-click enemy or Tab | Right shoulder |
 | Auto-attack/chase | Left/right-click enemy or Space | Bottom face button (A) |
-| Revive nearby downed ally | E | Left face button (X) |
+| Aim an ability | Q / W / E / R | Left shoulder, triggers, D-pad down |
+| Confirm / cancel an aimed ability | Left-click / right-click or Escape | A / B |
+| Detonate placed satchels | F | Top face button (Y) |
+| Revive nearby downed ally | V | Left face button (X) |
 | Ping (tap for context, hold for the radial) | G | D-pad up |
+
+Q/W/E/R take the conventional MOBA keys (GDD 3.2), so keyboard movement is
+right-click only and revive moved to V.
 
 Move to cancel auto-attack. Revival requires staying close and is interrupted by
 damage; repeated Grievous Injuries lengthen the channel. Defeat occurs when all

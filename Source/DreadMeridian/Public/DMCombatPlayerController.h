@@ -19,10 +19,20 @@ public:
     virtual void PlayerTick(float DeltaTime) override;
     virtual void PawnLeavingGame() override;
     void StartAutoAttack(ADMCombatant* Target = nullptr);
-    bool IsQAiming() const { return bQAiming; }
-    void GetQAim(ADMCombatant*& Target, FVector& Point) const;
+    /** True while any ability is in targeting mode. Slot 0 is Q; 1..3 are W/E/R. */
+    bool IsAiming() const { return bAiming; }
+    int32 GetAimSlot() const { return AimSlot; }
+    /** Range ring for whichever slot is aiming. */
+    float AimRange() const;
+    void GetAim(ADMCombatant*& Target, FVector& Point) const;
+    /** Empty when the aimed cast would be accepted, else the rejection reason. Client-safe. */
+    FString AimFailure(ADMCombatant* Target, FVector Point) const;
+    FString AimName() const;
     FString QFeedback() const;
     UFUNCTION(Server, Reliable) void ServerCastQ(ADMCombatant* Target, FVector Point, bool bDetonate);
+    /** Slot is an EDMKitSlot. Every check happens server-side in UDMKitComponent::Validate. */
+    UFUNCTION(Server, Reliable) void ServerCastKit(uint8 Slot, ADMCombatant* Target, FVector Point);
+    UFUNCTION(Server, Reliable) void ServerCancelWire();
     UFUNCTION(Server, Reliable) void ServerCancelFrame();
     UFUNCTION(Client, Reliable) void ClientQFeedback(const FString& Message);
     ADMCombatant* GetSelectedTarget() const { return SelectedTarget.Get(); }
@@ -57,16 +67,22 @@ private:
     UPROPERTY() TObjectPtr<UInputAction> ReviveAction;
     UPROPERTY() TObjectPtr<UInputAction> QAction;
     UPROPERTY() TObjectPtr<UInputAction> QPadAction;
+    UPROPERTY() TObjectPtr<UInputAction> WAction;
+    UPROPERTY() TObjectPtr<UInputAction> EAction;
+    UPROPERTY() TObjectPtr<UInputAction> RAction;
     UPROPERTY() TObjectPtr<UInputAction> ConfirmQAction;
     UPROPERTY() TObjectPtr<UInputAction> CancelQAction;
     UPROPERTY() TObjectPtr<UInputAction> DetonateAction;
     UPROPERTY() TObjectPtr<UInputAction> PingAction;
-    bool bQAiming = false;
+    bool bAiming = false;
+    /** 0 = Q (UDMPrimaryComponent), 1..3 = W/E/R (UDMKitComponent). */
+    int32 AimSlot = 0;
     bool bQGamepad = false;
     FVector PadAimOffset = FVector::ZeroVector;
     FString LastQFeedback;
     float FeedbackUntil = 0;
     float NextProbeQTime = 0;
+    int32 ProbeCastIndex = 0;
     // Ping gesture state (client side)
     bool bPingHeld = false;
     bool bPingRadialOpen = false;
@@ -80,6 +96,9 @@ private:
     int32 PingUnderCursor() const;
     void BeginQ();
     void BeginQPad();
+    /** Self-cast slots fire immediately; the rest enter targeting. Recasting the same slot cancels. */
+    void BeginSlot(int32 Slot);
+    void BeginW(); void BeginE(); void BeginR();
     void ConfirmQ();
     void CancelQ();
     void Detonate();

@@ -38,6 +38,10 @@ public:
     bool IsReady(int32 Tick) const;
     static constexpr float SatchelRadius = 220;
     static constexpr float SpiritRadius = 180;
+    /** Valid arena ground under Point (with clearance above it); shared with the kit abilities. */
+    bool Ground(FVector Point, FVector& Out) const;
+    /** Line of sight from self to Point ignoring combatant bodies. */
+    bool Sight(FVector Point, ADMCombatant* Target = nullptr) const;
     UPROPERTY(Replicated) float Cooldown = 0;
     UPROPERTY(Replicated) TObjectPtr<ADMCombatant> FrameTarget;
     UPROPERTY(Replicated) TObjectPtr<ADMCombatant> HeldTarget;
@@ -48,8 +52,6 @@ private:
     bool SatchelCanHit(const ADMAbilityMarker* Charge, ADMCombatant* Enemy) const;
     bool DetonateSatchel(int32 Index);
     ADMCombatant* Self() const;
-    bool Ground(FVector Point, FVector& Out) const;
-    bool Sight(FVector Point, ADMCombatant* Target = nullptr) const;
     void Emit(const FString& Action, ADMCombatant* Target = nullptr);
     int32 Now() const;
     int32 NextCastTick = 0;

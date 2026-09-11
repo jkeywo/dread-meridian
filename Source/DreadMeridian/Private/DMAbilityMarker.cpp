@@ -1,5 +1,7 @@
 #include "DMAbilityMarker.h"
 #include "DMCombatant.h"
+#include "DMCombatGameMode.h"
+#include "DMGameState.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
@@ -8,6 +10,14 @@
 #include "Camera/PlayerCameraManager.h"
 #include "Net/UnrealNetwork.h"
 #include "UObject/ConstructorHelpers.h"
+
+namespace
+{
+    // 0..23 outline the shape, 24..47 are embers/detail. Both pools are reused by every shape.
+    constexpr int32 OutlineCount = 24;
+    constexpr int32 InstanceCount = 48;
+}
+
 ADMAbilityMarker::ADMAbilityMarker()
 {
     bReplicates = true; SetReplicateMovement(true); PrimaryActorTick.bCanEverTick = true;
@@ -28,34 +38,97 @@ void ADMAbilityMarker::BeginPlay()
     Super::BeginPlay();
     if (GetNetMode() == NM_DedicatedServer) { return; }
     Glow = Orb->CreateDynamicMaterialInstance(0); Ring->SetMaterial(0, Glow);
-    for (int32 I = 0; I < 48; ++I) { Ring->AddInstance(FTransform::Identity); }
+    for (int32 I = 0; I < InstanceCount; ++I) { Ring->AddInstance(FTransform::Identity); }
+}
+int32 ADMAbilityMarker::CurrentTick() const
+{
+    if (const auto* Mode = GetWorld() ? GetWorld()->GetAuthGameMode<ADMCombatGameMode>() : nullptr) { return Mode->GetCombatTick(); }
+    const auto* State = GetWorld() ? GetWorld()->GetGameState<ADMGameState>() : nullptr;
+    return State ? State->GetCombatTick() : 0;
 }
 void ADMAbilityMarker::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
-    if (HasAuthority() && (bSpirit || bHostile) && IsValid(BoundTarget))
+    if (HasAuthority() && (bSpirit || bHostile) && !bTravelling && IsValid(BoundTarget))
     { SetActorLocation(BoundTarget->GetActorLocation() - FVector(0, 0, 70)); }
     if (GetNetMode() == NM_DedicatedServer) { return; }
-    const FLinearColor Color = bHostile ? FLinearColor(1,.08f,.03f) : bSpirit ? FLinearColor(.7f, .25f, 1) : FLinearColor(1, .5f, .05f);
-    if (Glow) { Glow->SetVectorParameterValue(TEXT("Tint"), Color * 3); }
+    const FLinearColor Color = bHostile ? FLinearColor(1,.08f,.03f) : bSpirit ? FLinearColor(.7f, .25f, 1)
+        : Shape == EDMMarkerShape::Cone ? FLinearColor(1, .7f, .2f) : FLinearColor(1, .5f, .05f);
+    const bool bArmed = IsArmed();
+    if (Glow) { Glow->SetVectorParameterValue(TEXT("Tint"), Color * (bArmed ? 3 : 1.2f)); }
     Orb->SetRelativeLocation(FVector(0, 0, bSpirit ? 60 + FMath::Sin(GetWorld()->GetTimeSeconds() * 3) * 10 : 0));
-    Label->SetText(FText::FromString(!CustomLabel.IsEmpty() ? CustomLabel : bSpirit ? FString::Printf(TEXT("Spirit %.0f"), Attention) : TEXT("Satchel")));
+    Orb->SetVisibility(Shape != EDMMarkerShape::Cone);
+    FString Text = CustomLabel;
+    if (Text.IsEmpty())
+    {
+        Text = bSpirit ? FString::Printf(TEXT("Spirit %.0f"), Attention)
+            : Shape == EDMMarkerShape::Cone ? TEXT("SUPPRESSING")
+            : Shape == EDMMarkerShape::Wire ? (bArmed ? TEXT("TRIPWIRE") : TEXT("ARMING"))
+            : TEXT("Satchel");
+    }
+    Label->SetText(FText::FromString(Text));
     Label->SetTextRenderColor(Color.ToFColor(true));
     if (auto* PC = UGameplayStatics::GetPlayerController(this, 0))
     { if (PC->PlayerCameraManager) { Label->SetWorldRotation((PC->PlayerCameraManager->GetCameraLocation() - Label->GetComponentLocation()).Rotation()); } }
+    switch (Shape)
+    {
+    case EDMMarkerShape::Cone: UpdateCone(); break;
+    case EDMMarkerShape::Wire: UpdateWire(); break;
+    default: UpdateCircle(); break;
+    }
+}
+void ADMAbilityMarker::UpdateCircle()
+{
     for (int32 I = 0; I < Ring->GetInstanceCount(); ++I)
     {
-        if (I >= 24)
+        if (I >= OutlineCount)
         {
             const bool bBurning = bHostile && CustomLabel == TEXT("BURNING GROUND");
             const float Phase = FMath::Frac(GetWorld()->GetTimeSeconds()*1.5f + I*.618f);
             const float Angle = I*2.39996f;
-            const FVector Ember(FMath::Cos(Angle)*Radius*.8f*FMath::Sqrt((I-23)/24.f), FMath::Sin(Angle)*Radius*.8f*FMath::Sqrt((I-23)/24.f), Phase*65);
-            Ring->UpdateInstanceTransform(I,FTransform(FQuat::Identity,Ember,bBurning ? FVector(.035f,.035f,.12f)*(1-Phase) : FVector::ZeroVector),false,I==47);
+            const FVector Ember(FMath::Cos(Angle)*Radius*.8f*FMath::Sqrt((I-OutlineCount+1)/24.f), FMath::Sin(Angle)*Radius*.8f*FMath::Sqrt((I-OutlineCount+1)/24.f), Phase*65);
+            Ring->UpdateInstanceTransform(I,FTransform(FQuat::Identity,Ember,bBurning ? FVector(.035f,.035f,.12f)*(1-Phase) : FVector::ZeroVector),false,I==InstanceCount-1);
             continue;
         }
-        const float A = I * UE_TWO_PI / 24;
-        Ring->UpdateInstanceTransform(I, FTransform(FQuat::Identity, FVector(FMath::Cos(A) * Radius, FMath::Sin(A) * Radius, -10), FVector(.06f)), false, I == 23);
+        const float A = I * UE_TWO_PI / OutlineCount;
+        Ring->UpdateInstanceTransform(I, FTransform(FQuat::Identity, FVector(FMath::Cos(A) * Radius, FMath::Sin(A) * Radius, -10), FVector(.06f)), false, I == InstanceCount-1);
+    }
+}
+void ADMAbilityMarker::UpdateCone()
+{
+    // 0..15 sweep the far arc, 16..47 run the two straight edges out to Length.
+    const FVector Dir = Direction.GetSafeNormal2D();
+    const float Base = FMath::Atan2(Dir.Y, Dir.X);
+    const float Half = FMath::DegreesToRadians(HalfAngle);
+    constexpr int32 ArcCount = 16;
+    const float Fade = ExpiresTick > 0 ? FMath::Clamp((ExpiresTick - CurrentTick()) / 10.f, .25f, 1.f) : 1.f;
+    for (int32 I = 0; I < Ring->GetInstanceCount(); ++I)
+    {
+        FVector At = FVector::ZeroVector;
+        if (I < ArcCount)
+        {
+            const float A = Base - Half + 2 * Half * I / (ArcCount - 1);
+            At = FVector(FMath::Cos(A) * Length, FMath::Sin(A) * Length, -10);
+        }
+        else
+        {
+            const int32 Step = (I - ArcCount) / 2;
+            const float A = Base + ((I - ArcCount) % 2 ? Half : -Half);
+            const float D = Length * (Step + 1) / 16.f;
+            At = FVector(FMath::Cos(A) * D, FMath::Sin(A) * D, -10);
+        }
+        Ring->UpdateInstanceTransform(I, FTransform(FQuat::Identity, At, FVector(.06f * Fade)), false, I == InstanceCount-1);
+    }
+}
+void ADMAbilityMarker::UpdateWire()
+{
+    const FVector Span = WireEnd - GetActorLocation();
+    const bool bArmed = IsArmed();
+    const float Pulse = bArmed ? .05f + .02f * FMath::Sin(GetWorld()->GetTimeSeconds() * 6) : .03f;
+    for (int32 I = 0; I < Ring->GetInstanceCount(); ++I)
+    {
+        const FVector At = Span * (static_cast<float>(I) / (InstanceCount - 1)) + FVector(0, 0, -10);
+        Ring->UpdateInstanceTransform(I, FTransform(FQuat::Identity, At, FVector(Pulse)), false, I == InstanceCount-1);
     }
 }
 void ADMAbilityMarker::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -64,4 +137,8 @@ void ADMAbilityMarker::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
     DOREPLIFETIME(ADMAbilityMarker, bHostile); DOREPLIFETIME(ADMAbilityMarker, CustomLabel);
     DOREPLIFETIME(ADMAbilityMarker, bSpirit); DOREPLIFETIME(ADMAbilityMarker, BoundTarget);
     DOREPLIFETIME(ADMAbilityMarker, SpiritId); DOREPLIFETIME(ADMAbilityMarker, Radius); DOREPLIFETIME(ADMAbilityMarker, Attention);
+    DOREPLIFETIME(ADMAbilityMarker, Shape); DOREPLIFETIME(ADMAbilityMarker, Direction); DOREPLIFETIME(ADMAbilityMarker, HalfAngle);
+    DOREPLIFETIME(ADMAbilityMarker, Length); DOREPLIFETIME(ADMAbilityMarker, WireEnd);
+    DOREPLIFETIME(ADMAbilityMarker, bTravelling); DOREPLIFETIME(ADMAbilityMarker, TravelGoal);
+    DOREPLIFETIME(ADMAbilityMarker, ArmedTick); DOREPLIFETIME(ADMAbilityMarker, ExpiresTick); DOREPLIFETIME(ADMAbilityMarker, Serial);
 }

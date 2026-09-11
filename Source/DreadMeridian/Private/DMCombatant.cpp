@@ -38,6 +38,7 @@ ADMCombatant::ADMCombatant()
     Attributes = CreateDefaultSubobject<UDMHealthAttributes>(TEXT("Attributes"));
     Smuggler = CreateDefaultSubobject<UDMSmugglerComponent>(TEXT("SmugglerFaction"));
     Primary = CreateDefaultSubobject<UDMPrimaryComponent>(TEXT("Primary"));
+    Kit = CreateDefaultSubobject<UDMKitComponent>(TEXT("Kit"));
     Presentation = CreateDefaultSubobject<UDMCombatPresentation>(TEXT("Presentation"));
     Investigator = CreateDefaultSubobject<UDMInvestigatorComponent>(TEXT("Investigator"));
     static ConstructorHelpers::FObjectFinder<USkeletalMesh> Manny(TEXT("/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple"));
@@ -77,6 +78,7 @@ void ADMCombatant::BeginPlay()
     AbilitySystem->InitAbilityActorInfo(this, this);
     GetMesh()->PlayAnimation(IdleAnimation, true);
     Primary->Initialize();
+    Kit->Initialize();
     if (HasAuthority()) { BasicAttackHandle = AbilitySystem->GiveAbility(FGameplayAbilitySpec(UDMBasicAttackAbility::StaticClass(), 1)); }
 }
 
@@ -104,6 +106,7 @@ void ADMCombatant::Tick(float DeltaSeconds)
     Super::Tick(DeltaSeconds);
     GetCharacterMovement()->MaxWalkSpeed = ReplicatedMoveSpeed;
     if (IsDown() || IsRestrained()) { GetCharacterMovement()->StopMovementImmediately(); }
+    else if (Kit->IsCharging()) { /* the server drives the charge; the owning client must not predict against it */ }
     else if (bHasMoveGoal && IsLocallyControlled())
     {
         const FVector Direction = (MoveGoal - GetActorLocation()).GetSafeNormal2D();
@@ -180,7 +183,8 @@ bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FS
         || Target->bIsEnemy == bIsEnemy || !FMath::IsFinite(Damage) || Damage <= 0) { return false; }
     const float Before = Target->Health();
     const float ShieldBefore = Target->Shield();
-    const float ResolvedDamage = Damage * (1 - FMath::Clamp(Target->SpiritProtection, 0.f, .5f));
+    const float Incoming = Target->IncomingUntilTick > Mode->GetCombatTick() ? FMath::Clamp(Target->IncomingMultiplier, 0.f, 2.f) : 1.f;
+    const float ResolvedDamage = Damage * (1 - FMath::Clamp(Target->SpiritProtection, 0.f, .5f)) * Incoming;
     const float Absorbed = FMath::Min(ShieldBefore, ResolvedDamage);
     if (Absorbed > 0) { Target->ApplyAttributeDelta(UDMHealthAttributes::GetShieldAttribute(), -Absorbed); }
     Target->ApplyAttributeDelta(UDMHealthAttributes::GetHealthAttribute(), -(ResolvedDamage - Absorbed));
@@ -199,6 +203,8 @@ bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FS
     Mode->Emit(TEXT("combat.damage"), Data);
     const bool bFinisher = bBasic && Investigator->OnHit(Target->EntityId, Mode->GetCombatTick());
     Target->Investigator->Pressure(Mode->GetCombatTick(), Before - Target->Health() + Absorbed);
+    // Dig In converts absorbed pressure into extra Momentum (doubled while Drowned Man Walking holds the floor).
+    if (Target->IsBraced()) { Target->Investigator->Pressure(Mode->GetCombatTick(), ResolvedDamage * .5f * (Target->Investigator->MomentumFloor > 0 ? 2.f : 1.f)); }
     if (bBasic) { MulticastPresentation(0, Target->GetActorLocation() + FVector(0, 0, 15)); }
     Target->MulticastPresentation(2, Target->GetActorLocation() + FVector(0, 0, 15));
     RecordResources(TEXT("basic_hit")); Target->RecordResources(TEXT("incoming_pressure"));
@@ -207,7 +213,7 @@ bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FS
     if (Target->IsDown())
     {
         Mode->NoteDowned(*Target);
-        Target->Smuggler->Cancel(); Target->StopGoal(); Target->Primary->CancelChannel(); Target->Primary->ReleaseClinch();
+        Target->Smuggler->Cancel(); Target->StopGoal(); Target->Primary->CancelChannel(); Target->Primary->ReleaseClinch(); Target->Kit->Cancel(false);
         if (Target->HeldBy) { Target->HeldBy->Primary->ReleaseClinch(); }
         Target->bTelegraphActive = false;
         if (Target->bIsEnemy && Target->bHumanEnemy)
@@ -256,6 +262,8 @@ void ADMCombatant::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
     DOREPLIFETIME(ADMCombatant, HeldBy); DOREPLIFETIME(ADMCombatant, bBreakVulnerable);
     DOREPLIFETIME(ADMCombatant, bTelegraphActive); DOREPLIFETIME(ADMCombatant, SpiritProtection); DOREPLIFETIME(ADMCombatant, SpiritSlow);
     DOREPLIFETIME(ADMCombatant, ReplicatedMoveSpeed);
+    DOREPLIFETIME(ADMCombatant, Break); DOREPLIFETIME(ADMCombatant, BrokenUntilTick); DOREPLIFETIME(ADMCombatant, SuppressedUntilTick);
+    DOREPLIFETIME(ADMCombatant, IncomingMultiplier); DOREPLIFETIME(ADMCombatant, ReachBonus);
     DOREPLIFETIME(ADMCombatant, bHumanEnemy);
     DOREPLIFETIME(ADMCombatant, bCommonEnemy);
     DOREPLIFETIME(ADMCombatant, bSuppressed);
@@ -279,15 +287,77 @@ void ADMCombatant::InitializeInvestigator(EDMInvestigator Kind, bool bUseProfile
 FString ADMCombatant::DisplayName() const
 { return bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Name() : bIsEnemy ? Investigator->DisplayName() + TEXT(" ") + EntityId.Mid(EntityId.Find(TEXT(".")) + 1) : Investigator->DisplayName(); }
 float ADMCombatant::GetAttackRange() const
-{ return bProfileRange ? 420 : bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Range() : Investigator->Range(); }
+{ return (bProfileRange ? 420 : bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Range() : Investigator->Range()) + ReachBonus; }
+float ADMCombatant::EffectiveResistance() const { return FMath::Max(Investigator->Resistance(), BraceResistance); }
 void ADMCombatant::StepInvestigator(int32 Tick)
 {
     if (!HasAuthority()) { return; }
     Investigator->Step(Tick, !IsDown() && AttackTarget.IsValid() && !AttackTarget->IsDown() ? AttackTarget->EntityId : TEXT(""));
     RecordResources(TEXT("resource_step"));
     if (IsDown() || IsRestrained()) { bTelegraphActive = false; }
-    if (Tick >= SlowUntilTick) { SlowFraction = 0; }
-    ReplicatedMoveSpeed = (bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Speed() : 420) * (1 + Investigator->Stickiness() * .25f) * (1 - FMath::Max(SlowFraction, SpiritSlow) * (1 - Investigator->Resistance()));
+    if (SuppressedUntilTick > 0 && Tick >= SuppressedUntilTick) { SuppressedUntilTick = 0; bSuppressed = false; }
+    if (IncomingUntilTick > 0 && Tick >= IncomingUntilTick) { IncomingUntilTick = 0; IncomingMultiplier = 1; }
+    if (BreakMeter.Step(Tick))
+    {
+        // Recovery clears only the flag the meter set (tests and boss windows may set it themselves).
+        if (BrokenUntilTick > 0) { bBreakVulnerable = false; }
+        BrokenUntilTick = 0; Break = 0;
+        if (auto* Mode = GetWorld()->GetAuthGameMode<ADMCombatGameMode>())
+        { auto Data = MakeShared<FJsonObject>(); Data->SetStringField(TEXT("entity_id"), EntityId); Mode->Emit(TEXT("break.recovered"), Data); }
+    }
+    Slows.RemoveAll([&](const FDMSlow& S) { return S.UntilTick <= Tick; });
+    const float Slow = FMath::Max(DMKitRules::EffectiveSlow(Slows, Tick), SpiritSlow);
+    ReplicatedMoveSpeed = (bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Speed() : 420) * (1 + Investigator->Stickiness() * .25f) * (1 - Slow * (1 - EffectiveResistance()));
+}
+void ADMCombatant::AddBreak(float Amount)
+{
+    auto* Mode = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    if (!HasAuthority() || !Mode || bCommonEnemy || !bIsEnemy || IsDown() || !FMath::IsFinite(Amount) || Amount <= 0) { return; }
+    const int32 Tick = Mode->GetCombatTick();
+    const bool bBroke = BreakMeter.Add(Amount, Tick);
+    Break = BreakMeter.Value;
+    if (bBroke)
+    {
+        bBreakVulnerable = true; BrokenUntilTick = BreakMeter.BrokenUntil;
+        auto Data = MakeShared<FJsonObject>(); Data->SetStringField(TEXT("entity_id"), EntityId); Data->SetNumberField(TEXT("value"), Break);
+        Mode->Emit(TEXT("break.broken"), Data);
+    }
+    ForceNetUpdate();
+}
+void ADMCombatant::ApplyControl(const FDMControl& Control, ADMCombatant* Source, const FString& AbilityId)
+{
+    auto* Mode = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    if (!HasAuthority() || !Mode || IsDown()) { return; }
+    const int32 Tick = Mode->GetCombatTick();
+    const FDMControl R = DMKitRules::ResolveControl(Control, bCommonEnemy || !bIsEnemy, bBreakVulnerable);
+    if (R.Damage > 0 && Source) { Source->DealCombatDamage(this, R.Damage, AbilityId); }
+    if (IsDown()) { return; }
+    if (R.Slow > 0 && R.SlowTicks > 0) { ApplySlow(R.Slow, Tick + R.SlowTicks); }
+    if (!R.Displacement.IsNearlyZero()) { ApplyDisplacement(R.Displacement); }
+    if (R.StaggerTicks > 0) { NextAttackTick = FMath::Max(NextAttackTick, Tick + R.StaggerTicks); bTelegraphActive = false; }
+    if (R.bInterrupt && bIsEnemy && (Smuggler->IsCasting() || Smuggler->OrderTarget))
+    {
+        auto Data = MakeShared<FJsonObject>(); Data->SetStringField(TEXT("actor_id"), EntityId);
+        Data->SetStringField(TEXT("enemy_role"), StaticEnum<EDMSmuggler>()->GetNameStringByValue(static_cast<int64>(Smuggler->Role)));
+        Data->SetStringField(TEXT("stage"), TEXT("interrupted")); Mode->Emit(TEXT("smuggler.signature"), Data);
+        Smuggler->Cancel();
+    }
+    if (R.BreakPressure > 0) { AddBreak(R.BreakPressure); }
+    ForceNetUpdate();
+}
+void ADMCombatant::ApplySuppression(int32 UntilTick, ADMCombatant* Source)
+{
+    auto* Mode = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    if (!HasAuthority() || !Mode || IsDown() || !bIsEnemy) { return; }
+    bSuppressed = true; SuppressedUntilTick = FMath::Max(SuppressedUntilTick, UntilTick);
+    FDMControl Control; Control.Slow = .4f; Control.SlowTicks = FMath::Max(1, UntilTick - Mode->GetCombatTick()); Control.BreakPressure = 5;
+    ApplyControl(Control, Source, TEXT("ability.w.suppression"));
+}
+void ADMCombatant::AddShield(float Amount)
+{
+    if (!HasAuthority()) { return; }
+    const float Delta = DMKitRules::ShieldGain(Shield(), MaxHealth() * .5f, Amount);
+    if (Delta > 0) { ApplyAttributeDelta(UDMHealthAttributes::GetShieldAttribute(), Delta); ForceNetUpdate(); }
 }
 void ADMCombatant::SetAttackTarget(ADMCombatant* Target)
 { AttackTarget = Target; if (HasAuthority()) { AttackTargetId = Target ? Target->EntityId : FString(); } }
@@ -296,9 +366,13 @@ void ADMCombatant::SetAttackHold(bool bHold)
 void ADMCombatant::SetReviveChannel(const FString& Reviver, float Progress)
 { if (HasAuthority()) { ReviverId = Reviver; ReviveProgress = FMath::Clamp(Progress, 0.f, 1.f); } }
 void ADMCombatant::ApplySlow(float Fraction, int32 UntilTick)
-{ if (HasAuthority()) { SlowFraction = FMath::Clamp(Fraction, 0.f, 1.f); SlowUntilTick = UntilTick; } }
+{
+    if (!HasAuthority()) { return; }
+    const auto* Mode = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    DMKitRules::AddSlow(Slows, Fraction, UntilTick, Mode ? Mode->GetCombatTick() : 0);
+}
 void ADMCombatant::ApplyDisplacement(FVector Delta)
-{ if (HasAuthority() && !IsDown()) { SetActorLocation(GetActorLocation() + Delta * (1 - Investigator->Resistance()), true); } }
+{ if (HasAuthority() && !IsDown() && !Delta.ContainsNaN()) { SetActorLocation(GetActorLocation() + Delta * (1 - EffectiveResistance()), true); } }
 void ADMCombatant::MulticastAttackFX_Implementation(FVector From, FVector To, FLinearColor Color, uint8 Style)
 {
     if (GetNetMode() == NM_DedicatedServer) { return; }

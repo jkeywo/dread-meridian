@@ -25,6 +25,11 @@ FDMHudUnit FDMHudModel::Read(const ADMCombatant& Unit, const FString& LocalEntit
     Row.ReviveProgress = Unit.ReviveProgress;
     Row.bTargetingLocal = !LocalEntityId.IsEmpty() && Unit.AttackTargetId == LocalEntityId;
     Row.Location = Unit.GetActorLocation();
+    Row.Madness = Unit.Investigator->Madness;
+    Row.bElite = Unit.bIsEnemy && !Unit.bCommonEnemy;
+    Row.BreakFraction = Row.bElite ? FMath::Clamp(Unit.Break / FDMBreakMeter::Threshold, 0.f, 1.f) : 0.f;
+    Row.bBroken = Unit.bBreakVulnerable;
+    Row.bSuppressed = Unit.bSuppressed;
     return Row;
 }
 
@@ -71,6 +76,35 @@ FDMHudModel FDMHudModel::Build(UWorld* World, const ADMCombatant* LocalPawn, con
         const int32 Remaining = LocalPawn->NextAttackTick - Model.CombatTick;
         Model.BasicCooldown = FMath::Clamp(static_cast<float>(Remaining) / LocalPawn->AttackIntervalTicks, 0.f, 1.f);
         Model.BasicCooldownSeconds = FMath::Max(0, Remaining) * CombatTickSeconds;
+    }
+
+    // Ability slots, all from replicated projections so a client draws the same thing the server would.
+    if (LocalPawn)
+    {
+        const UDMPrimaryComponent* Q = LocalPawn->Primary;
+        const UDMKitComponent* Kit = LocalPawn->Kit;
+        FDMHudAbility Primary;
+        Primary.Key = TEXT("Q"); Primary.Name = Q->Name(); Primary.Status = Q->Status();
+        Primary.CooldownSeconds = Q->Cooldown;
+        Primary.Cooldown = FMath::Clamp(Q->Cooldown / 4.f, 0.f, 1.f);
+        Primary.bReady = Q->Cooldown <= 0;
+        Primary.bImplemented = LocalPawn->Investigator->Kind != EDMInvestigator::None;
+        Model.Abilities.Add(Primary);
+        for (int32 Index = 0; Index < static_cast<int32>(EDMKitSlot::Count); ++Index)
+        {
+            const EDMKitSlot Slot = static_cast<EDMKitSlot>(Index);
+            FDMHudAbility Row;
+            Row.Key = Index == 0 ? TEXT("W") : Index == 1 ? TEXT("E") : TEXT("R");
+            Row.Name = Kit->Name(Slot);
+            Row.Status = Kit->Status(Slot);
+            Row.CooldownSeconds = Kit->CooldownSeconds(Slot);
+            const float Length = FMath::Max(1, UDMKitComponent::Spec(LocalPawn->Investigator->Kind, Slot).CooldownTicks) * CombatTickSeconds;
+            Row.Cooldown = FMath::Clamp(Row.CooldownSeconds / Length, 0.f, 1.f);
+            Row.bReady = Kit->IsReady(Slot);
+            Row.bActive = Slot == EDMKitSlot::R ? Kit->IsRActive() : Slot == EDMKitSlot::E ? Kit->IsBraced() : Kit->IsCharging();
+            Row.bImplemented = !Row.Name.IsEmpty();
+            Model.Abilities.Add(Row);
+        }
     }
 
     // Live pings from the replicated board; author tint and target position come from the roster.

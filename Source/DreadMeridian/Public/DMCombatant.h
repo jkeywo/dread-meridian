@@ -6,6 +6,8 @@
 #include "AttributeSet.h"
 #include "DMInvestigatorComponent.h"
 #include "DMPrimaryComponent.h"
+#include "DMKitComponent.h"
+#include "DMKitRules.h"
 #include "DMSmugglerComponent.h"
 #include "DMCombatant.generated.h"
 
@@ -32,8 +34,22 @@ public:
     float GetAttackRange() const;
     void StepInvestigator(int32 Tick);
     void RecordResources(const FString& Reason);
+    /** Slows stack by strength (DMKitRules::AddSlow); the effective slow is the strongest live one. */
     void ApplySlow(float Fraction, int32 UntilTick);
     void ApplyDisplacement(FVector Delta);
+    /**
+     * Control through the Break/Resolve layer (GDD 4.4, O.6): common enemies take everything, unbroken elites take the
+     * damage and half the slow and bank the pressure, broken elites (bBreakVulnerable) take everything. Source deals the damage.
+     */
+    void ApplyControl(const FDMControl& Control, ADMCombatant* Source, const FString& AbilityId);
+    /** Elite Resolve damage; common enemies ignore it. Sets bBreakVulnerable on break and clears only what it set. */
+    void AddBreak(float Amount);
+    /** Sapper suppression: the carbine tag plus its slow and Break share go through ApplyControl. */
+    void ApplySuppression(int32 UntilTick, ADMCombatant* Source);
+    /** Shield capped at half MaxHealth (DMHealthAttributes clamps the GE path too). */
+    void AddShield(float Amount);
+    bool IsBraced() const { return BraceResistance > 0; }
+    float EffectiveResistance() const;
     UFUNCTION(NetMulticast, Unreliable) void MulticastAttackFX(FVector From, FVector To, FLinearColor Color, uint8 Style);
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UDMInvestigatorComponent> Investigator;
     UPROPERTY(Replicated) bool bHumanEnemy = true;
@@ -48,11 +64,23 @@ public:
     bool DealCombatDamage(ADMCombatant* Target, float Damage, const FString& AbilityId, bool bBasic = false);
     bool IsRestrained() const { return IsValid(HeldBy); }
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UDMPrimaryComponent> Primary;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UDMKitComponent> Kit;
     UPROPERTY(Replicated) TObjectPtr<ADMCombatant> HeldBy;
+    /** The one "broken" truth: Clinch gate, ResolveControl and the HUD read it; tests may set it directly. */
     UPROPERTY(Replicated) bool bBreakVulnerable = false;
     UPROPERTY(Replicated) bool bTelegraphActive = false;
     UPROPERTY(Replicated) float SpiritProtection = 0;
     UPROPERTY(Replicated) float SpiritSlow = 0;
+    // Kit projections (provisional stubs for Break and Suppression; see docs/kits.md).
+    UPROPERTY(Replicated) float Break = 0;
+    UPROPERTY(Replicated) int32 BrokenUntilTick = 0;
+    UPROPERTY(Replicated) int32 SuppressedUntilTick = 0;
+    UPROPERTY(Replicated) float IncomingMultiplier = 1;
+    UPROPERTY(Replicated) float ReachBonus = 0;
+    int32 IncomingUntilTick = 0;
+    float BraceResistance = 0;
+    FDMBreakMeter BreakMeter;
+    TArray<FDMSlow> Slows;
     int32 TelegraphEndTick = 0;
     bool Revive(ADMCombatant* Ally);
     /** Public revive projection for the HUD. Authority only; progress is 0..1. */
@@ -101,8 +129,6 @@ private:
     bool bAttackHold = false;
     UPROPERTY(Replicated) float ReplicatedMoveSpeed = 420;
     FString LastResourceSnapshot;
-    int32 SlowUntilTick = 0;
-    float SlowFraction = 0;
     FGameplayAbilitySpecHandle BasicAttackHandle;
     TWeakObjectPtr<ADMCombatant> AttackTarget;
     TWeakObjectPtr<ADMCombatant> TelegraphTarget;
