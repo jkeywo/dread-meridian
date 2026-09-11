@@ -289,7 +289,8 @@ void UDMCombatPresentation::Cue(uint8 Event, FVector Target)
         Spawn(Flashbulb, Lens, .5f, .7f);
         Burst(Lens, Target, FLinearColor(4, 4, 5), 1);
     }
-    else if (Event == 16) { Spawn(Developed, Target + FVector(0, 0, 40), .4f, .9f); Burst(Target, Target, FLinearColor(1.4f, 2.6f, 4), 5); }
+    // Develop's Niagara removed for now for the same reason as the Smuggler's: too large for this scale.
+    else if (Event == 16) { Burst(Target, Target, FLinearColor(1.4f, 2.6f, 4), 5); }
     else if (Event == 17) { CameraUntil = GetWorld()->GetTimeSeconds() + 1.f; Attach(PhotographAura, 8.f); }
     // ---- Medium kit. 18 plays on the caster when spirits are called and again where each one lands.
     else if (Event == 18)
