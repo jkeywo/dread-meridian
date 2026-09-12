@@ -90,6 +90,14 @@ orders. The first consumer is rescue: a companion yields a casualty to a better-
 claimant, so one bot revives and the rest keep fighting rather than all dropping the
 fight onto one body.
 
+Companion target choice adds curved terms to the focus score: finish the wounded,
+peel for an ally below `ThreatenedAllyHealth`, press a suppressed target, and join
+a teammate rather than a crowd. Weights are in the same distance units the formula
+already subtracts, so commitment and the ping bonuses keep their tuned meaning.
+The company term is a bell rather than a slope because companions already converge
+on one enemy unaided, so rewarding company on a slope only buys overkill. Enemies
+keep the threat-table formula until their own port.
+
 `ADMCombatGameMode` owns a pure `FDMPingBoard` (limits, lifetimes, fulfilment,
 acknowledge, cancel, respond) and steps it before the Think loop so bots see a
 settled board. `ADMGameState::Pings` replicates the live pings as the public

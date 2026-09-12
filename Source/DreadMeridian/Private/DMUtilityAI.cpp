@@ -80,7 +80,8 @@ namespace
         TEXT("Distance"), TEXT("TargetHealthFrac"), TEXT("SelfHealthFrac"), TEXT("Threat"), TEXT("StockFrac"), TEXT("CooldownFrac"),
         TEXT("EnemiesInRadius"), TEXT("AlliesInRadius"), TEXT("TargetSpeedOverRadius"), TEXT("AnchorDistance"), TEXT("LeaderDistance"),
         TEXT("HazardDepth"), TEXT("PingFocusOnTarget"), TEXT("PingIgnoreOnTarget"), TEXT("PingAge"), TEXT("PingDistance"),
-        TEXT("NotCasting"), TEXT("NotRooted"), TEXT("NotFraming"), TEXT("HasSight") };
+        TEXT("NotCasting"), TEXT("NotRooted"), TEXT("NotFraming"), TEXT("HasSight"),
+        TEXT("AlliesOnTarget"), TEXT("AllyInPeril"), TEXT("TargetSuppressed") };
     static_assert(static_cast<int32>(UE_ARRAY_COUNT(InputNames)) == static_cast<int32>(EDMAIInput::Count), "InputNames out of sync with EDMAIInput");
 
     bool IsAbility(EDMAIAction A)
@@ -152,6 +153,35 @@ namespace
         for (const FDMAIClaimView& Claim : C.Claims)
         { if (Claim.Kind == Kind && Claim.TargetIndex == TargetIndex) { ++Count; } }
         return Count;
+    }
+
+    /**
+     * The target-choice inputs. Kept as a free function rather than a FBuilder method because ChooseFocus runs
+     * before any option exists, and both paths must read them identically or a bot would value a target one way
+     * when picking it and another way when acting on it.
+     */
+    float TargetChoiceRaw(const FDMAIContext& C, EDMAIInput In, const FDMAIActorView& A)
+    {
+        switch (In)
+        {
+        case EDMAIInput::AlliesOnTarget: return static_cast<float>(ClaimCountOn(C, EDMClaimKind::Focus, A.Index));
+        case EDMAIInput::AllyInPeril:
+        {
+            if (!C.Actors.IsValidIndex(A.AttackTargetIndex)) { return 0.f; }
+            const FDMAIActorView& Victim = C.Actors[A.AttackTargetIndex];
+            if (Victim.bEnemy == A.bEnemy || Victim.bDown) { return 0.f; }
+            // Measured against the peril threshold, not against full health. Scaling from full health makes this
+            // fire for every ally with a scratch, and since it moves every time anyone takes a hit it pulls the
+            // focus around continuously: bots walk between targets instead of shooting one. Keyed to the same
+            // ThreatenedAllyHealth the Medium's protective abilities use, it is silent until someone is in
+            // actual trouble, and then decisive.
+            const float Peril = C.W ? C.W->ThreatenedAllyHealth : 50.f;
+            if (Peril <= 0 || Victim.Health >= Peril) { return 0.f; }
+            return 1.f - FMath::Clamp(Victim.Health / Peril, 0.f, 1.f);
+        }
+        case EDMAIInput::TargetSuppressed: return A.bSuppressed ? 1.f : 0.f;
+        default: return 0.f;
+        }
     }
 
     bool AttacksHelpedAlly(const FDMAIContext& C, const FDMAIActorView& A)
@@ -324,6 +354,8 @@ namespace
             case EDMAIInput::NotRooted: return S.bRestrained || S.FrameTarget != INDEX_NONE ? 0.f : 1.f;
             case EDMAIInput::NotFraming: return S.FrameTarget != INDEX_NONE ? 0.f : 1.f;
             case EDMAIInput::HasSight: return !T || T->bVisible ? 1.f : 0.f;
+            case EDMAIInput::AlliesOnTarget: case EDMAIInput::AllyInPeril: case EDMAIInput::TargetSuppressed:
+                return T ? TargetChoiceRaw(C, In, *T) : 0.f;
             default: return 0.f;
             }
         }
@@ -998,6 +1030,29 @@ namespace DMUtilityAI
         const bool bCompanionKind = Kind != EDMInvestigator::None;
         const bool bRaider = !bEnemyRole && !bCompanionKind;
 
+        // Why this target rather than the nearest one. Weights are in distance units: 250 means "worth walking
+        // 250 units further for". Enemies keep the threat-table formula; their turn comes with the enemy port.
+        if (bCompanionKind)
+        {
+            // Finish what is nearly dead instead of starting on something fresh.
+            W.FocusTerms.Emplace(EDMAIInput::TargetHealthFrac, FDMAICurveSpec(EDMAICurve::InverseQuadratic, 0, 1, 2), 260.f);
+            // Go for whatever is beating a teammate who is actually in trouble.
+            W.FocusTerms.Emplace(EDMAIInput::AllyInPeril, FDMAICurveSpec(EDMAICurve::Linear, 0, 1), 320.f);
+            // A bell, not a slope. Companions already converge on one target without being told to - they all
+            // walk to the leader and then pick the nearest, and it is the same nearest for everyone - so a term
+            // that simply rewarded company would reinforce a pile-on that is already total and pay for it in
+            // overkill. Two on a target is the peak; the third and fourth are worth less than a free enemy.
+            W.FocusTerms.Emplace(EDMAIInput::AlliesOnTarget, FDMAICurveSpec(EDMAICurve::Bell, 0, 3, 3.2f, .4f), 150.f);
+            // Press an advantage the team has already paid for.
+            W.FocusTerms.Emplace(EDMAIInput::TargetSuppressed, FDMAICurveSpec(EDMAICurve::Step, 0, 1, 2, .5f), 110.f);
+            // Two further terms were tried and measured out. Preferring whatever is currently shooting a teammate
+            // ("kill what is hurting us") cost five extra downs across six seeds: nearly every enemy qualifies, so
+            // it mostly re-ranked targets by how far into the fight they were and kept pulling bots off a target
+            // they were about to finish. Preferring elites cost two downs and the most overkill of any variant;
+            // elites are tanky, so the squad spent longer under fire for the same kill. Elite worth already earns
+            // its keep where it belongs, in EliteWorth on the cast valuations.
+        }
+
         // Rescue yields inside a hostile circle (switch on HazardDepth) so EvadeHazard wins there instead of a revive that restarts on every burn tick.
         if (bCompanionKind || bRaider) { D.Add(EDMAIAction::Rescue, EDMAIRank::Locked, 1, ChAll, { Inv(EDMAIInput::HazardDepth, 0, 1) }); }
         if (bEnemyRole) { D.Add(EDMAIAction::ReturnHome, EDMAIRank::Reflex, 1, ChAll, {}); }
@@ -1152,8 +1207,18 @@ namespace DMUtilityAI
             if (A.bForced) { Rank = EDMAIRank::Locked; }
             else if (S.bEnemy) { Rank = A.bDiver ? EDMAIRank::Reflex : A.bMarked ? EDMAIRank::Tactical : EDMAIRank::Routine; }
             else { Rank = ExactPingWeight(C, A.Index, EDMPingKind::Focus) > 0 ? EDMAIRank::Reflex : AttacksHelpedAlly(C, A) ? EDMAIRank::Tactical : EDMAIRank::Routine; }
-            const float Score = (S.bEnemy ? A.Threat * 1000.f : 0.f) - A.Distance + (A.Index == C.Memory.TargetIndex ? W.TargetCommitment : 0.f)
+            float Score = (S.bEnemy ? A.Threat * 1000.f : 0.f) - A.Distance + (A.Index == C.Memory.TargetIndex ? W.TargetCommitment : 0.f)
                 + W.PingEnemyScore * PingWeightOnTarget(C, A.Index, EDMPingKind::Enemy) - W.PingIgnorePenalty * PingWeightOnTarget(C, A.Index, EDMPingKind::Ignore);
+            // Why this one rather than the one two paces closer: how nearly dead it is, what it is doing to the
+            // team, whether teammates are already on it, and whether it is worth more than it looks.
+            for (const FDMAIFocusTerm& Term : W.FocusTerms)
+            {
+                if (Term.Weight == 0) { continue; }
+                const float Raw = Term.Input == EDMAIInput::TargetHealthFrac
+                    ? (A.MaxHealth > 0 ? A.Health / A.MaxHealth : 0.f)
+                    : TargetChoiceRaw(C, Term.Input, A);
+                Score += Term.Weight * Term.Curve.Evaluate(Raw);
+            }
             if (Best == INDEX_NONE || Rank > BestRank || (Rank == BestRank && Score > BestScore)) { Best = A.Index; BestRank = Rank; BestScore = Score; }
         }
         if (OutRank) { *OutRank = Best == INDEX_NONE ? EDMAIRank::Routine : BestRank; }

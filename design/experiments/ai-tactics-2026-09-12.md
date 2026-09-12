@@ -105,3 +105,91 @@ Note what this says about the metric set: the change that flipped a loss into a 
 differently - `isolated_downs` going 1 to 0 and `hazard_ticks` falling on four of six seeds are
 consistent with a squad that no longer abandons its position to crowd a body, which is the behaviour
 the change was actually aimed at.
+
+## Slice 2 — why this target rather than the nearest
+
+Companion focus scoring gains additive curved terms, in the same distance units the formula already
+subtracts, so `TargetCommitment` and the ping bonuses keep the meaning they were tuned with. Enemies
+are untouched. Six seeds:
+
+| seed | outcome | tick | dmg taken | downs | overkill | hazard | trap kills |
+|---|---|---|---|---|---|---|---|
+| 1 | victory | 570 | 409 | 1 | 205 | 19 | 8 |
+| 2 | victory | 637 | 421 | 1 | 203 | 34 | 6 |
+| 3 | victory | 682 | 440 | 0 | 154 | 63 | 6 |
+| 4 | victory | 636 | 436 | 1 | 201 | 23 | 8 |
+| 5 | victory | 677 | 493 | 1 | 244 | 37 | 3 |
+| 6 | victory | 667 | 449 | 2 | 202 | 32 | 6 |
+
+Against the baseline: victories 5/6 to 6/6, downs 11 to 6, damage taken 3331 to 2648 (-21%), hazard
+ticks 385 to 208 (-46%), overkill 1293 to 1209, trap kills 31 to 37, and every enemy dead on every
+seed. Against slice 1: downs 9 to 6, damage 3191 to 2648.
+
+### The first attempt was worse than no change at all
+
+Six terms went in together on judgement: finish the wounded, kill what is hurting us, peel for an ally
+in peril, prefer company, press a suppressed target, prefer elites. That set turned a 6/6 record into
+5/6 and raised downs from 9 to 13. It did cut overkill by 12%, which is what the terms were aimed at,
+so the headline metric alone would have called it a success.
+
+Ablating one term at a time found the cost was not spread evenly.
+
+| dropped | wins (of 3) | downs | overkill |
+|---|---|---|---|
+| nothing | 2 | 9 | 661 |
+| finish the wounded | 2 | 10 | 568 |
+| **kill what is hurting us** | **3** | **3** | 630 |
+| peel | 2 | 9 | 607 |
+| prefer company | 3 | 5 | 628 |
+| press the suppressed | 2 | 9 | 646 |
+| prefer elites | 3 | 5 | 761 |
+
+Two terms were doing the damage:
+
+- **Kill what is hurting us** (`TargetThreatToAllies`) was the worst single term. Nearly every living
+  enemy is attacking somebody, so it does not identify a threat, it re-ranks targets by how far into
+  the fight they are - and it keeps pulling bots off a target they are two hits from finishing.
+- **Prefer elites** cost the most overkill of any variant. Elites are tanky; the squad spent longer
+  under fire for the same kill. Elite worth already earns its keep in `EliteWorth` on cast valuation,
+  which is a different decision.
+
+Both are removed rather than zeroed. A weight-zero knob is a dead knob, and this work already found one
+(`PingFocusScore`, declared and never read) that had been sitting in the tuning surface.
+
+Note that **finish the wounded costs overkill** (dropping it lowered overkill from 661 to 568) while
+saving downs. That is not a defect: everyone piling onto the nearly-dead target is what finishing *is*.
+Overkill is the price of the behaviour, worth paying up to a point, which is what the company bell is
+for.
+
+### Two cautions about the method
+
+Ablating over three seeds said prefer-company was harmful. Over six, with the threat term gone, it is
+clearly helpful: adding it took downs from 11 to 7 and damage from 2937 to 2744. **Small ablations
+disagree with each other**; single-term results only held up where the effect was large, as with the
+threat term.
+
+The whole-configuration comparison was run through `-DMAIWeights` with a `"*"` section, which applies
+to *every* profile including the enemies - who have no focus terms in the shipped defaults. It ranked
+configurations usefully but its absolute numbers are not comparable to a real run, and the final build
+measured better than that test predicted (6 downs against 7). Prefer a rebuild for a final figure.
+
+### What shipped
+
+| term | input | curve | weight |
+|---|---|---|---|
+| finish the wounded | `TargetHealthFrac` | InverseQuadratic 0..1 | 260 |
+| peel for an ally in peril | `AllyInPeril` | Linear 0..1 | 320 |
+| join a pair, not a crowd | `AlliesOnTarget` | Bell 0..3, peak near 1 | 150 |
+| press the suppressed | `TargetSuppressed` | Step | 110 |
+
+`AllyInPeril` is measured against `ThreatenedAllyHealth`, not against full health. Scaling from full
+health made it fire for any ally with a scratch and moved every time anyone took a hit, so the focus
+was dragged around continuously and bots walked between targets instead of shooting one. Keyed to the
+peril threshold it is silent until someone is actually dying.
+
+`AlliesOnTarget` is a bell rather than a slope for the reason the baseline established: companions
+already converge without being told to, so rewarding company on a slope reinforces a pile-on that is
+already total. The peak sits near one other bot - pair up, but leave the third and fourth to find
+their own target.
+
+All four terms are hand-picked and remain untuned; they are new knobs for the tuning campaign.

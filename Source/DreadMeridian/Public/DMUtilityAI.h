@@ -85,6 +85,10 @@ enum class EDMAIInput : uint8
     NotRooted,           // 1 unless self is restrained or framing
     NotFraming,          // 1 unless self has a FrameTarget
     HasSight,            // 1 when self has line of sight to the target (always evaluated last; lazy)
+    // Target-choice inputs. Added for focus scoring; usable by any action's considerations.
+    AlliesOnTarget,      // teammates whose live Focus claim names this target (0..3)
+    AllyInPeril,         // how far below ThreatenedAllyHealth the ally this target is attacking has fallen (0..1)
+    TargetSuppressed,    // 1 when the target is suppressed
     Count UMETA(Hidden)
 };
 
@@ -108,6 +112,25 @@ struct DREADMERIDIAN_API FDMAICurveSpec
         : Curve(InCurve), Min(InMin), Max(InMax), Exponent(InExponent), Midpoint(InMidpoint), bInvert(bInInvert) {}
     /** Clamp/normalise Raw with the bookends, apply the curve, invert if asked. Always returns [0,1]. */
     float Evaluate(float Raw) const;
+};
+
+/**
+ * One additive term of the focus score. Unlike an action's considerations, which multiply into [0,1], focus
+ * terms sum into a score measured in the same units as the distance the formula subtracts: a Weight of 250
+ * says "worth closing 250 units for". Keeping the scale additive is what lets Distance, TargetCommitment and
+ * the ping bonuses stay exactly as tuned while the reasons to prefer one target over another are added.
+ */
+USTRUCT(BlueprintType)
+struct DREADMERIDIAN_API FDMAIFocusTerm
+{
+    GENERATED_BODY()
+    UPROPERTY(EditAnywhere) EDMAIInput Input = EDMAIInput::TargetHealthFrac;
+    UPROPERTY(EditAnywhere) FDMAICurveSpec Curve;
+    /** Score added at curve value 1, in distance units. Negative discourages. */
+    UPROPERTY(EditAnywhere) float Weight = 0;
+    FDMAIFocusTerm() = default;
+    FDMAIFocusTerm(EDMAIInput InInput, const FDMAICurveSpec& InCurve, float InWeight)
+        : Input(InInput), Curve(InCurve), Weight(InWeight) {}
 };
 
 USTRUCT(BlueprintType)
@@ -183,6 +206,8 @@ struct DREADMERIDIAN_API FDMAIWeights
     GENERATED_BODY()
     UPROPERTY(EditAnywhere) TArray<FDMAIActionSpec> Actions;
     UPROPERTY(EditAnywhere) TMap<EDMAIAction, FDMAIAbilityTemplate> Abilities;
+    /** Added to every focus candidate's score. Empty leaves ChooseFocus on distance, commitment and pings alone. */
+    UPROPERTY(EditAnywhere) TArray<FDMAIFocusTerm> FocusTerms;
 
     // Conservation
     UPROPERTY(EditAnywhere) float KStock = 2;

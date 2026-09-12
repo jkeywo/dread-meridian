@@ -881,4 +881,93 @@ bool FDMUtilityAIRescueTest::RunTest(const FString& Parameters)
     return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FDMUtilityAIFocusTermsTest, "DreadMeridian.Foundation.UtilityAI.FocusTerms", EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+bool FDMUtilityAIFocusTermsTest::RunTest(const FString& Parameters)
+{
+    // Finish the wounded rather than start on something fresh two paces closer.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        R.Add(FVector(400, 0, 0), true, 100);
+        R.Add(FVector(560, 0, 0), true, 8);
+        TestEqual(TEXT("the nearly dead one, not the nearer one"), R.Focus(), 2);
+    }
+
+    // ... but not at any distance: a sliver of health across the arena is not worth the walk.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        R.Add(FVector(400, 0, 0), true, 100);
+        R.Add(FVector(2000, 0, 0), true, 8);
+        TestEqual(TEXT("distance still decides when the gap is large"), R.Focus(), 1);
+    }
+
+    // Peel: the enemy beating a teammate who is genuinely in trouble. The term is worth about 280 units of
+    // walking at its strongest, so it buys a detour, not a march across the arena - assert both sides of that
+    // so the trade is recorded rather than rediscovered.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        R.Add(FVector(400, 0, 0), true, 100);
+        R.Add(FVector(600, 0, 0), true, 100).AttackTargetIndex = 3;
+        R.Add(FVector(650, 0, 0), false, 6);
+        TestEqual(TEXT("switches to the attacker of a dying ally"), R.Focus(), 2);
+    }
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        R.Add(FVector(400, 0, 0), true, 100);
+        R.Add(FVector(900, 0, 0), true, 100).AttackTargetIndex = 3;
+        R.Add(FVector(950, 0, 0), false, 6);
+        TestEqual(TEXT("but does not abandon the fight to cross the map"), R.Focus(), 1);
+    }
+
+    // A healthy teammate taking fire is not peril, and must not pull the squad around: this is the regression
+    // that cost five downs across six seeds when peril scaled from full health instead of the peril threshold.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        R.Add(FVector(400, 0, 0), true, 100);
+        R.Add(FVector(700, 0, 0), true, 100).AttackTargetIndex = 3;
+        R.Add(FVector(750, 0, 0), false, 90);
+        TestEqual(TEXT("a scratched ally is not an emergency"), R.Focus(), 1);
+    }
+
+    // Company is a bell, not a slope: pairing up is worth crossing ground for, a third body on the same target
+    // is not. Both candidates are otherwise identical, so only the claims separate them.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        R.Add(FVector(500, 0, 0), true, 100);
+        R.Add(FVector(500, 200, 0), true, 100);
+        R.Claim(EDMClaimKind::Focus, 0, 1);
+        R.Claim(EDMClaimKind::Focus, 0, 2);
+        R.Claim(EDMClaimKind::Focus, 0, 2);
+        R.Claim(EDMClaimKind::Focus, 0, 2);
+        TestEqual(TEXT("joins the pair, not the crowd"), R.Focus(), 1);
+    }
+
+    // Press an advantage the team has already paid for.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        R.Add(FVector(500, 0, 0), true, 100);
+        R.Add(FVector(560, 0, 0), true, 100).bSuppressed = true;
+        TestEqual(TEXT("prefers the suppressed target"), R.Focus(), 2);
+    }
+
+    // Rank still outranks every one of these: a human's Focus ping is not a suggestion to be outbid.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        R.Add(FVector(300, 0, 0), true, 5);
+        R.Add(FVector(1500, 0, 0), true, 100);
+        R.Ping(EDMPingKind::Focus, FVector(1500, 0, 0), 2);
+        EDMAIRank Rank = EDMAIRank::Routine;
+        TestEqual(TEXT("the pinged target wins"), R.Focus(&Rank), 2);
+        TestEqual(TEXT("at Reflex rank"), static_cast<int32>(Rank), static_cast<int32>(EDMAIRank::Reflex));
+    }
+
+    // Enemies keep the threat-table formula until their own port: no focus terms apply to them.
+    {
+        FRig R(EDMSmuggler::Gunman, EDMInvestigator::None, true);
+        R.Add(FVector(400, 0, 0), false, 100);
+        R.Add(FVector(560, 0, 0), false, 8);
+        TestEqual(TEXT("enemies still take the nearest"), R.Focus(), 1);
+    }
+    return true;
+}
+
 #endif
