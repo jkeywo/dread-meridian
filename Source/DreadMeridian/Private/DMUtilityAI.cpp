@@ -1492,6 +1492,13 @@ namespace DMUtilityAI
                 for (const FDMAIPingView& P : C.Pings) { if ((P.Kind == EDMPingKind::Enemy || P.Kind == EDMPingKind::Focus) && P.TargetIndex == D.Focus) { bPinged = true; break; } }
                 if (!bPinged) { RequestPing(EDMPingKind::Enemy, D.Focus, C.Actors[D.Focus].Location); }
             }
+            // A peel callout was tried here - a bot breaking off to kill whatever is beating a dying ally would
+            // author Help on that ally, so a human could see who was in trouble. It cost two downs and 700 damage
+            // across the six seeds, because on this board a Help ping is not only a callout: HelpPing is a
+            // Tactical move action and AttacksHelpedAlly promotes the attacker's focus rank, so one bot asking
+            // for help pulls the whole squad onto one ally. That is the pile-on this work removed from rescue,
+            // arriving again by another route. Bots keep to Enemy on a new focus and Help on themselves when they
+            // break off, both of which describe the author rather than tasking everyone else.
             for (const FDMAIOption& O : D.Chosen) { if (O.PingId != INDEX_NONE) { D.PingsOnIt.AddUnique(O.PingId); } }
             // Compliance counts as on_it: attacking a pinged enemy, leaving an ignored one alone, or already standing inside a command ring.
             for (const FDMAIPingView& P : C.Pings)

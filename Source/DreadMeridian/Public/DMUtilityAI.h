@@ -253,7 +253,6 @@ struct DREADMERIDIAN_API FDMAIWeights
     // Pings
     UPROPERTY(EditAnywhere) float PingCompliance = 1;
     UPROPERTY(EditAnywhere) float BotPingWeight = .5f;
-    UPROPERTY(EditAnywhere) float PingFocusScore = 400;
     UPROPERTY(EditAnywhere) float PingEnemyScore = 250;
     UPROPERTY(EditAnywhere) float PingIgnorePenalty = 5000;
     UPROPERTY(EditAnywhere) float PingActBoost = .3f;
