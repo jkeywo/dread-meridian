@@ -43,17 +43,18 @@ void ADMCombatGameMode::ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& 
 {
     Metadata->SetStringField(TEXT("scenario_id"), TEXT("combat-sandbox"));
     Metadata->SetStringField(TEXT("run_kind"), TEXT("combat_sandbox"));
-    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.3.0"));
+    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.4.0"));
     if (UsesEncounterLayout()) { Metadata->SetStringField(TEXT("native_faction"), TEXT("smugglers")); }
+    Metadata->SetStringField(TEXT("combat_rules_version"), TEXT("break-cc-v1"));
     Metadata->SetStringField(TEXT("bot_policy"), TEXT("squad-utility-v4"));
     Metadata->SetStringField(TEXT("test_profile"), bNetworkTest ? TEXT("network_probe") : (SmokeOutcome.IsEmpty() ? TEXT("interactive") : SmokeOutcome));
     Metadata->SetNumberField(TEXT("initial_bot_count"), 4);
     Metadata->RemoveField(TEXT("production_bots"));
     Metadata->SetNumberField(TEXT("logical_step_seconds"), .1);
     TArray<TSharedPtr<FJsonValue>> Omissions;
-    // Madness and Break exist only as stub meters (see docs/kits.md); they stay declared as omissions.
+    // Madness remains a stub; Mythos boss encounters and migration are still absent.
     for (const TCHAR* Missing : { TEXT("ability_evolutions"), TEXT("objectives_htn"), TEXT("madness"),
-        TEXT("mythos_boss_encounters"), TEXT("break_cc"), TEXT("named_injury_effects"), TEXT("burst_injury_window"),
+        TEXT("mythos_boss_encounters"), TEXT("named_injury_effects"), TEXT("burst_injury_window"),
         TEXT("host_migration"), TEXT("deterministic_physics_navigation") })
     { Omissions.Add(MakeShared<FJsonValueString>(Missing)); }
     Metadata->SetArrayField(TEXT("omissions"), Omissions);
@@ -245,7 +246,7 @@ void ADMCombatGameMode::ReleaseInvestigator(AController* Exiting)
 void ADMCombatGameMode::RequestRevive(ADMCombatant* Actor, ADMCombatant* Ally)
 {
     if (!bCombatActive || !IsValid(Actor) || !IsValid(Ally) || Actor == Ally || Actor->bIsEnemy || Ally->bIsEnemy
-        || Actor->IsDown() || !Ally->IsDown()) { return; }
+        || Actor->IsDown() || Actor->IsStunned() || Actor->IsRestrained() || !Ally->IsDown()) { return; }
     auto* Existing = Revives.Find(Actor);
     if (!Existing || Existing->Key.Get() != Ally) { Revives.Add(Actor, {Ally, CombatTick}); }
 }
@@ -564,6 +565,8 @@ void ADMCombatGameMode::StepCombat()
     StepPings();
     // Same for squad intent: claims older than their lifetime go before anyone reads the board.
     SquadBoard.Step(CombatTick);
+    // Expire control for the whole roster before persistent abilities or signatures resolve.
+    for (ADMCombatant* Actor : Combatants) { Actor->StepControl(CombatTick); }
     for (ADMCombatant* Actor : Combatants) { Actor->Primary->Step(CombatTick); Actor->Kit->Step(CombatTick); Actor->Smuggler->Step(*this); }
     if (ADMGameState* Projection = GetGameState<ADMGameState>()) { Projection->SetCombatTick(CombatTick); }
     for (ADMCombatant* Actor : Combatants)
@@ -585,7 +588,7 @@ void ADMCombatGameMode::StepCombat()
         if (!Channel) { continue; }
         ADMCombatant* Ally = Channel->Key.Get();
         const int32 Started = Channel->Value;
-        if (!Ally || !Ally->IsDown() || Actor->IsDown() || Actor->LastDamageTick >= Started
+        if (!Ally || !Ally->IsDown() || Actor->IsDown() || Actor->IsStunned() || Actor->IsRestrained() || Actor->LastDamageTick >= Started
             || FVector::DistSquared(Actor->GetActorLocation(), Ally->GetActorLocation()) > FMath::Square(160.f))
         { Revives.Remove(Actor); continue; }
         const int32 Duration = ReviveDurationTicks(Ally->GrievousCount);
@@ -649,6 +652,7 @@ void ADMCombatGameMode::CompleteCombat(bool bVictory)
             Expected->SetStringField(Actor->EntityId + TEXT(".name"), Actor->DisplayName());
             Expected->SetStringField(Actor->EntityId + TEXT(".resources"), Actor->Investigator->ResourceSummary());
             Expected->SetStringField(Actor->EntityId + TEXT(".primary"), Actor->Primary->ReplicationSummary());
+            Expected->SetStringField(Actor->EntityId + TEXT(".resolve"), Actor->Resolve->ReplicationSummary());
             Expected->SetStringField(Actor->EntityId + TEXT(".kit"), Actor->Kit->ReplicationSummary());
         }
         Expected->SetStringField(TEXT("phase"), bVictory ? TEXT("Victory") : TEXT("Defeat"));

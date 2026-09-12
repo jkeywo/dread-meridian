@@ -27,7 +27,9 @@ FDMHudUnit FDMHudModel::Read(const ADMCombatant& Unit, const FString& LocalEntit
     Row.Location = Unit.GetActorLocation();
     Row.Madness = Unit.Investigator->Madness;
     Row.bElite = Unit.bIsEnemy && !Unit.bCommonEnemy;
-    Row.BreakFraction = Row.bElite ? FMath::Clamp(Unit.Break / FDMBreakMeter::Threshold, 0.f, 1.f) : 0.f;
+    Row.BreakFraction = Row.bElite && Unit.Resolve->MaxResolve > 0 ? FMath::Clamp(Unit.Resolve->CurrentResolve / Unit.Resolve->MaxResolve, 0.f, 1.f) : 0.f;
+    Row.bResisting = Unit.Resolve->bResisting;
+    Row.bInterruptible = Unit.Resolve->InterruptUntilTick > 0;
     Row.bBroken = Unit.bBreakVulnerable;
     Row.bSuppressed = Unit.bSuppressed;
     return Row;

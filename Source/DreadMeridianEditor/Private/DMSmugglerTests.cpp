@@ -90,7 +90,7 @@ public:
             Bomber->HeldBy=Hero;Bomber->Smuggler->Step(*M);
             Test->TestFalse(TEXT("Control interrupts bomber signature"),Bomber->Smuggler->IsCasting());
             int32 HostileAreas=0;for(TActorIterator<ADMAbilityMarker> It(W);It;++It) { if(It->bHostile && !It->BoundTarget) { ++HostileAreas; } }
-            Test->TestEqual(TEXT("Interrupted bomber clears area"),HostileAreas,0);Bomber->HeldBy=nullptr;
+            Test->TestEqual(TEXT("Restraining the caster preserves released fire"),HostileAreas,1);Bomber->HeldBy=nullptr;
             Lookout->Smuggler->Cancel();Hero->SetActorLocation(FVector(-1900,0,95));Bruiser->SetActorLocation(FVector(-1760,0,95));
             Bruiser->Smuggler->NextSignatureTick=0;Before=Hero->Health();Position=Hero->GetActorLocation();
             Test->TestTrue(TEXT("Bruiser winds up bodyguard shove"),Bruiser->Smuggler->TrySignature(*M,Hero));Tick=M->GetCombatTick();Stage=5;

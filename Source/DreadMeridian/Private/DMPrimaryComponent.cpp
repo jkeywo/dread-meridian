@@ -61,7 +61,7 @@ bool UDMPrimaryComponent::Ground(FVector Point, FVector& Out) const
 FString UDMPrimaryComponent::Validate(ADMCombatant* Target, FVector Point, bool bDetonate) const
 {
     auto* Actor = Self();
-    if (Actor->IsDown() || Actor->IsRestrained() || Actor->bIsEnemy) { return TEXT("Cannot cast in this state"); }
+    if (Actor->IsDown() || (Actor->IsRestrained() || Actor->IsStunned()) || Actor->bIsEnemy) { return TEXT("Cannot cast in this state"); }
     if (Point.ContainsNaN()) { return TEXT("Invalid aim point"); }
     if (Target && (!IsValid(Target) || Target->GetWorld() != GetWorld())) { return TEXT("Invalid target"); }
     const auto Kind = Actor->Investigator->Kind;
@@ -149,8 +149,8 @@ bool UDMPrimaryComponent::Resolve()
         {
             auto* Victim = HeldTarget.Get();
             const FVector Direction = (RequestedPoint - Actor->GetActorLocation()).GetSafeNormal2D();
-            ReleaseClinch(); Victim->ApplyDisplacement(Direction * (bDrowned ? 450 : 300));
-            Victim->NextAttackTick = FMath::Max(Victim->NextAttackTick, Now() + 5);
+            ReleaseClinch(); FDMControl Control; Control.Displacement = Direction * (bDrowned ? 450 : 300);
+            Control.StaggerTicks = 5; Victim->ApplyControl(Control, Actor, TEXT("ability.q.throw"));
             R->Pressure(Now(), 10); Emit(TEXT("throw"), Victim);
             Actor->MulticastAttackFX(Actor->GetActorLocation(), Victim->GetActorLocation(), R->Color(), 4);
         }
@@ -165,8 +165,10 @@ bool UDMPrimaryComponent::Resolve()
         else
         {
             HeldTarget = Target; Target->HeldBy = Actor; Target->StopGoal();
-            Target->GetCharacterMovement()->StopMovementImmediately(); Actor->StopGoal();
-            HoldEndTick = Now() + (bDrowned ? 25 : 15); R->Pressure(Now(), 10); Emit(TEXT("clinch"), Target);
+            Target->GetCharacterMovement()->StopMovementImmediately(); Target->InterruptControl(); Actor->StopGoal();
+            HoldEndTick = Now() + (bDrowned ? 25 : 15);
+            if (!Target->bCommonEnemy) { HoldEndTick = FMath::Min(HoldEndTick, Target->BrokenUntilTick); }
+            R->Pressure(Now(), 10); Emit(TEXT("clinch"), Target);
         }
     }
     if (!bRequestedDetonate) { ActiveMode->NoteQCast(); Actor->MulticastPresentation(R->Kind == EDMInvestigator::Smuggler && !HeldTarget ? 3 : 1, Target ? Target->GetActorLocation() : RequestedPoint); }
@@ -234,7 +236,7 @@ void UDMPrimaryComponent::Step(int32 Tick)
     if (HeldTarget && (Actor->IsDown() || HeldTarget->IsDown() || Tick >= HoldEndTick || FVector::DistSquared2D(Actor->GetActorLocation(), HeldTarget->GetActorLocation()) > FMath::Square(240.f))) { ReleaseClinch(); }
     if (FrameTarget)
     {
-        if (Actor->IsDown() || FrameTarget->IsDown() || Actor->IsRestrained() || Tick >= FrameEndTick || Actor->GetVelocity().SizeSquared2D() > 100
+        if (Actor->IsDown() || FrameTarget->IsDown() || (Actor->IsRestrained() || Actor->IsStunned()) || Tick >= FrameEndTick || Actor->GetVelocity().SizeSquared2D() > 100
             || FVector::DistSquared2D(Actor->GetActorLocation(), FrameTarget->GetActorLocation()) > FMath::Square(Range()) || !Sight(FrameTarget->GetActorLocation(), FrameTarget)) { CancelChannel(); }
         else
         {

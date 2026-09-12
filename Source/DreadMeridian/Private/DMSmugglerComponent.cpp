@@ -26,6 +26,7 @@ void UDMSmugglerComponent::Initialize(EDMSmuggler NewRole)
 {
     check(Self()->HasAuthority()); Cancel(); Role = NewRole;
     Self()->bCommonEnemy = Role != EDMSmuggler::GangBoss;
+    Self()->Resolve->Reset();
     Self()->bHumanEnemy = true; Self()->AttackDamage = BaseDamage(); Self()->AttackIntervalTicks = Interval();
     Self()->ForceNetUpdate();
 }
@@ -47,6 +48,14 @@ void UDMSmugglerComponent::Cancel()
     if (!Self()->HasAuthority()) { return; }
     ClearMarker(); OrderTarget = nullptr; PendingTarget = nullptr; OrderUntil = 0;
     ResolveTick = 0; FireUntil = 0; bSetPosition = false; StationarySince = -1;
+}
+void UDMSmugglerComponent::Interrupt()
+{
+    if (!Self()->HasAuthority()) { return; }
+    // Already released fire persists; interrupting the caster cannot erase accepted ground damage.
+    if (FireUntil <= 0) { ClearMarker(); }
+    OrderTarget = nullptr; PendingTarget = nullptr; OrderUntil = 0; ResolveTick = 0;
+    bSetPosition = false; StationarySince = -1;
 }
 void UDMSmugglerComponent::EndPlay(const EEndPlayReason::Type Reason) { Cancel(); Super::EndPlay(Reason); }
 bool UDMSmugglerComponent::Sight(FVector From, FVector To) const
@@ -110,7 +119,7 @@ bool UDMSmugglerComponent::CanSignature(const ADMCombatGameMode& Mode, const ADM
     const TCHAR* Why = nullptr;
     if (!A->HasAuthority()) { Why = TEXT("authority"); }
     else if (!Mode.IsCombatActive()) { Why = TEXT("inactive"); }
-    else if (!A->bIsEnemy || A->IsDown() || A->IsRestrained()) { Why = TEXT("state"); }
+    else if (!A->bIsEnemy || A->IsDown() || A->IsRestrained() || A->IsStunned()) { Why = TEXT("state"); }
     else if (!IsValid(Target) || Target->bIsEnemy || Target->IsDown()) { Why = TEXT("target"); }
     else if (IsCasting()) { Why = TEXT("casting"); }
     else if (Tick < NextSignatureTick) { Why = TEXT("cooldown"); }
@@ -152,11 +161,13 @@ void UDMSmugglerComponent::Step(ADMCombatGameMode& Mode)
 {
     auto* A = Self(); const int32 Tick = Mode.GetCombatTick();
     if (!A->HasAuthority() || Role == EDMSmuggler::None) { return; }
-    if (!Mode.IsCombatActive() || A->IsDown() || A->IsRestrained())
+    if (!Mode.IsCombatActive() || A->IsDown())
     { if (IsCasting() || OrderTarget || Marker) { Record(Mode, TEXT("interrupted")); } Cancel(); return; }
+    if (A->IsRestrained() || A->IsStunned())
+    { if (IsCasting() || OrderTarget) { Record(Mode, TEXT("interrupted")); } Interrupt(); }
     if (Role == EDMSmuggler::Gunman)
     {
-        const bool bSteady = A->GetAttackTarget() && !A->GetAttackTarget()->IsDown() && A->GetVelocity().Size2D() < 15
+        const bool bSteady = !A->IsRestrained() && !A->IsStunned() && A->GetAttackTarget() && !A->GetAttackTarget()->IsDown() && A->GetVelocity().Size2D() < 15
             && FVector::DistSquared2D(PositionAnchor, A->GetActorLocation()) < FMath::Square(20.f);
         if (!bSteady) { StationarySince = Tick; PositionAnchor = A->GetActorLocation(); }
         const bool bWasSet = bSetPosition;

@@ -5,8 +5,8 @@ The [master GDD](gdd/Mythos_PvE_MOBA_Master_GDD_v0.3.md) remains canonical.
 
 ## Play the combat sandbox
 
-The first playable slice has a native greybox arena, four investigators, three
-enemies, a GAS basic attack, Health/Shield, downing, interruptible revives, basic
+The playable slice has a native greybox arena, four investigators, a staged
+smuggler encounter, GAS attacks, Health/Shield, downing, interruptible revives, basic
 threat and bot control. Humans take over existing investigators; disconnects
 return them to the same companion policy used in headless runs.
 
@@ -36,8 +36,10 @@ right-click only and revive moved to V.
 
 Move to cancel auto-attack. Revival requires staying close and is interrupted by
 damage; repeated Grievous Injuries lengthen the channel. Defeat occurs when all
-four investigators are down. Defeating all three enemies wins this **sandbox
-encounter**, not a GDD scenario/boss. Restart play to reset the encounter.
+four investigators are down. Clear the eleven occupation enemies, then defeat
+the Gang Boss and all four posse members to win this **sandbox encounter**,
+not a GDD scenario/boss. Smoke and network probes use a compact three-enemy
+fixture. Restart play to reset the encounter.
 
 Companions and enemies share one utility brain: every candidate action is ranked
 and scored, each reserves only the move/attack/cast channels it needs, casts must
@@ -45,10 +47,10 @@ beat a scarcity-scaled threshold, and latches stop dithering. Companions rescue
 downed allies, retreat toward the leader at low Health, step out of bomber
 circles and answer [pings](docs/pings.md). Tuning lives in per-hero/role data
 assets with C++ defaults. It is a per-bot combat policy, not the GDD team planner.
-Ability evolutions, the three remaining W/E/R kits, full Break/CC, burst-window and
+Ability evolutions, burst-window and
 named Injury effects, Madness, HTN/objectives, bosses, matchmaking and host
-migration remain explicit omissions in captures. Break and Madness exist only as
-declared stub meters. Sandbox and smoke-profile values are provisional tuning.
+migration remain explicit omissions in captures. Break/CC uses configurable Resolve and bounded control windows; see [Break/CC](docs/break-cc.md).
+Madness remains a declared stub meter. Sandbox and smoke-profile values are provisional tuning.
 
 ## Verify
 
@@ -117,7 +119,7 @@ contract; engine/network checks require the pinned Unreal installation.
 
 ## Investigator basics
 
-The four named investigators use their supplied rigged models, held weapons, holstered gear, retargeted combat animations and attack/ability effects. See [combat presentation and asset sources](docs/combat-presentation.md). See [character rules and resource availability](docs/characters.md). Base Q is implemented for all four; the Sapper's W/E/R are implemented, the other three investigators' remain deferred. See [named kits](docs/kits.md).
+The four named investigators use their supplied rigged models, held weapons, holstered gear, retargeted combat animations and attack/ability effects. See [combat presentation and asset sources](docs/combat-presentation.md). See [character rules and resource availability](docs/characters.md). Basic, Q and named W/E/R are implemented for all four at their A nodes; ability evolutions remain outstanding. See [named kits](docs/kits.md).
 Non-original content is recorded in [third-party content](docs/third-party-content.md).
 
 ## Base Q abilities

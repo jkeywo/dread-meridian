@@ -9,8 +9,9 @@ human/bot handoffs, Enhanced Input mappings and local Play Trace source/telemetr
 ingestion. All four investigators now have Basic, Q and their named W/E/R at the
 A nodes, used by humans and companions alike; see [named kits](kits.md). The rows
 below retain the full GDD acceptance scope. Ability evolutions, burst/named
-Injuries, the real Break/CC and Madness systems behind their stub meters, and
-scenario-aware team planning remain outstanding.
+Injuries, the Madness system behind its stub meter, and
+scenario-aware team planning remain outstanding. Break/CC now uses configurable
+Resolve, bounded control windows and recovery resistance; see [Break/CC](break-cc.md).
 
 | Slice | Deliverable | Acceptance |
 |---|---|---|

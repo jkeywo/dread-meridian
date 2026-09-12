@@ -91,7 +91,7 @@ void ADMCombatPlayerController::Move(const FInputActionValue& Value)
     }
     const ADMGameState* State = GetWorld()->GetGameState<ADMGameState>();
     if (!Actor || Actor->IsDown() || !State || State->GetRunState().Phase != EDMRunPhase::Apocalypse) { return; }
-    if (Actor->IsRestrained() || Actor->Kit->IsCharging()) { return; }
+    if ((Actor->IsRestrained() || Actor->IsStunned()) || Actor->Kit->IsCharging()) { return; }
     if (bAiming && bQGamepad)
     {
         const FVector2D Axis = Value.Get<FVector2D>();
@@ -336,7 +336,7 @@ void ADMCombatPlayerController::PlayerTick(float DeltaTime)
 #endif
     if (!Actor || !State || State->GetRunState().Phase != EDMRunPhase::Apocalypse || Actor->IsDown())
     { if (Actor) { Actor->StopGoal(); } return; }
-    if (Actor->Primary->FrameTarget || Actor->IsRestrained() || Actor->Kit->IsCharging()) { Actor->StopGoal(); return; }
+    if (Actor->Primary->FrameTarget || (Actor->IsRestrained() || Actor->IsStunned()) || Actor->Kit->IsCharging()) { Actor->StopGoal(); return; }
     if (bAutoAttack && SelectedTarget.IsValid() && !SelectedTarget->IsDown())
     {
         if (FVector::DistSquared2D(Actor->GetActorLocation(), SelectedTarget->GetActorLocation()) > FMath::Square(Actor->GetAttackRange() - 35))
@@ -379,6 +379,7 @@ void ADMCombatPlayerController::ClientVerifyCombatState_Implementation(const FSt
                 Check(TEXT("name"), Expected->GetStringField(It->EntityId + TEXT(".name")) == It->DisplayName(), It->DisplayName(), Expected->GetStringField(It->EntityId + TEXT(".name")));
                 Check(TEXT("resources"), Expected->GetStringField(It->EntityId + TEXT(".resources")) == It->Investigator->ResourceSummary(), It->Investigator->ResourceSummary(), Expected->GetStringField(It->EntityId + TEXT(".resources")));
                 Check(TEXT("primary"), Expected->GetStringField(It->EntityId + TEXT(".primary")) == It->Primary->ReplicationSummary(), It->Primary->ReplicationSummary(), Expected->GetStringField(It->EntityId + TEXT(".primary")));
+                Check(TEXT("resolve"), Expected->GetStringField(It->EntityId + TEXT(".resolve")) == It->Resolve->ReplicationSummary(), It->Resolve->ReplicationSummary(), Expected->GetStringField(It->EntityId + TEXT(".resolve")));
                 Check(TEXT("kit"), Expected->GetStringField(It->EntityId + TEXT(".kit")) == It->Kit->ReplicationSummary(), It->Kit->ReplicationSummary(), Expected->GetStringField(It->EntityId + TEXT(".kit")));
             }
             const ADMGameState* State = GetWorld()->GetGameState<ADMGameState>();
@@ -398,7 +399,7 @@ void ADMCombatPlayerController::BeginR() { BeginSlot(3); }
 void ADMCombatPlayerController::BeginSlot(int32 Slot)
 {
     auto* Actor = Cast<ADMCombatant>(GetPawn());
-    if (!Actor || Actor->IsDown() || Actor->IsRestrained()) { return; }
+    if (!Actor || Actor->IsDown() || (Actor->IsRestrained() || Actor->IsStunned())) { return; }
     // Pressing the slot that is already aiming cancels it; pressing a different one switches.
     if (bAiming && AimSlot == Slot) { CancelQ(); return; }
     LastQFeedback.Reset();

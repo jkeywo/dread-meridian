@@ -82,7 +82,7 @@ bool FDMKitComponentTest::RunTest(const FString& Parameters)
     // initialised for play, so the ability system holds no attribute set. The cap rule itself is pure and covered in
     // Kits.Rules; that it reaches Shield is asserted in the PIE tests.
 
-    // The Break meter is elite-only and never clears a vulnerability flag it did not set.
+    // The component owns the Broken projection; external writes cannot create an endless control window.
     ADMCombatant* Common = World->SpawnActor<ADMCombatant>();
     Common->InitializeCombatant(TEXT("common"), true, 100, 5);
     Common->bCommonEnemy = true;
@@ -94,8 +94,8 @@ bool FDMKitComponentTest::RunTest(const FString& Parameters)
     Elite->InitializeCombatant(TEXT("elite"), true, 750, 9);
     Elite->bCommonEnemy = false;
     Elite->bBreakVulnerable = true;   // set by hand, as the base-Q tests do
-    Elite->StepInvestigator(5);
-    TestTrue(TEXT("A hand-set vulnerability survives the meter step"), Elite->bBreakVulnerable);
+    Elite->StepControl(5);
+    TestFalse(TEXT("Only the Resolve component can establish a Broken window"), Elite->bBreakVulnerable);
     Elite->bBreakVulnerable = false;
 
     Hero->Destroy(); Common->Destroy(); Elite->Destroy();

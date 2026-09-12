@@ -8,6 +8,7 @@
 #include "DMPrimaryComponent.h"
 #include "DMKitComponent.h"
 #include "DMKitRules.h"
+#include "DMBreakComponent.h"
 #include "DMSmugglerComponent.h"
 #include "DMCombatant.generated.h"
 
@@ -42,7 +43,7 @@ public:
      * damage and half the slow and bank the pressure, broken elites (bBreakVulnerable) take everything. Source deals the damage.
      */
     void ApplyControl(const FDMControl& Control, ADMCombatant* Source, const FString& AbilityId);
-    /** Elite Resolve damage; common enemies ignore it. Sets bBreakVulnerable on break and clears only what it set. */
+    /** Elite Resolve damage; common enemies ignore it. Uses the authoritative Resolve component. */
     void AddBreak(float Amount);
     /** Sapper suppression: the carbine tag plus its slow and Break share go through ApplyControl. */
     void ApplySuppression(int32 UntilTick, ADMCombatant* Source);
@@ -66,12 +67,12 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UDMPrimaryComponent> Primary;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UDMKitComponent> Kit;
     UPROPERTY(Replicated) TObjectPtr<ADMCombatant> HeldBy;
-    /** The one "broken" truth: Clinch gate, ResolveControl and the HUD read it; tests may set it directly. */
+    /** Public Broken projection, written only by the Resolve component. */
     UPROPERTY(Replicated) bool bBreakVulnerable = false;
     UPROPERTY(Replicated) bool bTelegraphActive = false;
     UPROPERTY(Replicated) float SpiritProtection = 0;
     UPROPERTY(Replicated) float SpiritSlow = 0;
-    // Kit projections (provisional stubs for Break and Suppression; see docs/kits.md).
+    // Public control projections. Break is accumulated Resolve damage for AI compatibility.
     UPROPERTY(Replicated) float Break = 0;
     UPROPERTY(Replicated) int32 BrokenUntilTick = 0;
     UPROPERTY(Replicated) int32 SuppressedUntilTick = 0;
@@ -79,7 +80,12 @@ public:
     UPROPERTY(Replicated) float ReachBonus = 0;
     int32 IncomingUntilTick = 0;
     float BraceResistance = 0;
-    FDMBreakMeter BreakMeter;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UDMBreakComponent> Resolve;
+    UPROPERTY(Replicated) int32 StunnedUntilTick = 0;
+    UPROPERTY(Replicated) int32 StaggeredUntilTick = 0;
+    bool IsStunned() const { return StunnedUntilTick > 0; }
+    void StepControl(int32 Tick);
+    void InterruptControl();
     TArray<FDMSlow> Slows;
     int32 TelegraphEndTick = 0;
     bool Revive(ADMCombatant* Ally);

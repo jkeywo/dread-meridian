@@ -34,6 +34,9 @@ Combat headers include source/GDD/Git/engine identity, seed, profile, bot policy
 logical step duration and omissions. Spawn events record stable IDs, teams,
 Health/Shield and damage/cooldown tuning. Damage records actor/target/ability and
 before/after Health/Shield. Down, kill, revive and control changes use the same IDs.
+Accepted shield gains emit `combat.shield_gained` with before/after Shield and
+the actual amount granted. This keeps subsequent damage consistent with prior
+recorded state; a gain at the shield cap emits nothing.
 
 Shared validation checks lifecycle, finite timing, sequences, actor references,
 health/shield arithmetic and combat outcomes. Unsupported `combat.*` events fail.

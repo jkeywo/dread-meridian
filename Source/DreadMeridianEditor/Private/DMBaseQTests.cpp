@@ -79,9 +79,9 @@ public:
                 {
                     Enemy->bCommonEnemy = false;
                     Test->TestFalse(TEXT("Unbroken elite cannot be grabbed"), Hero->Primary->Request(Enemy.Get(), Enemy->GetActorLocation()));
-                    Enemy->bBreakVulnerable = true;
+                    Enemy->Resolve->Reset(); Enemy->AddBreak(Enemy->Resolve->MaxResolve);
                     Test->TestTrue(TEXT("Break-vulnerable elite passes gate"), Hero->Primary->Validate(Enemy.Get(), Enemy->GetActorLocation()).IsEmpty());
-                    Enemy->bCommonEnemy = true; Enemy->bBreakVulnerable = false;
+                    Enemy->bCommonEnemy = true; Enemy->Resolve->Reset();
                 }
                 EnemyHealth = Enemy->Health(); HeroHealth = Hero->Health();
                 ADMCombatant* Target = Kind == EDMInvestigator::Sapper ? nullptr : Kind == EDMInvestigator::Medium ? Ally.Get() : Enemy.Get();

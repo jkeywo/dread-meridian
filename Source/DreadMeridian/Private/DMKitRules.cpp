@@ -1,18 +1,32 @@
 #include "DMKitRules.h"
 
+void FDMBreakSettings::Sanitize()
+{
+    MaxResolve = FMath::IsFinite(MaxResolve) ? FMath::Clamp(MaxResolve, 1.f, 1000000.f) : 100.f;
+    BrokenTicks = FMath::Clamp(BrokenTicks, 1, 1000000);
+    ResistTicks = FMath::Clamp(ResistTicks, 0, 1000000);
+    ResistFactor = FMath::IsFinite(ResistFactor) ? FMath::Clamp(ResistFactor, 0.f, 1.f) : .5f;
+    ProtectedSlowFactor = FMath::IsFinite(ProtectedSlowFactor) ? FMath::Clamp(ProtectedSlowFactor, 0.f, 1.f) : .5f;
+    ControlPressure = FMath::IsFinite(ControlPressure) ? FMath::Clamp(ControlPressure, 0.f, 1000000.f) : 10.f;
+}
+
 bool FDMBreakMeter::Add(float Amount, int32 Tick)
 {
+    Step(Tick);
+    Settings.Sanitize();
     if (!FMath::IsFinite(Amount) || Amount <= 0 || IsBroken(Tick)) { return false; }
-    Value += Amount * (IsResisting(Tick) ? ResistFactor : 1.f);
-    if (Value < Threshold) { return false; }
-    Value = Threshold; BrokenUntil = Tick + BrokenTicks;
+    Value += Amount * (IsResisting(Tick) ? Settings.ResistFactor : 1.f);
+    if (Value < Settings.MaxResolve) { return false; }
+    Value = Settings.MaxResolve; BrokenUntil = Tick + Settings.BrokenTicks;
     return true;
 }
 
 bool FDMBreakMeter::Step(int32 Tick)
 {
     if (BrokenUntil <= 0 || Tick < BrokenUntil) { return false; }
-    BrokenUntil = 0; Value = 0; ResistUntil = Tick + ResistTicks;
+    Settings.Sanitize();
+    ResistUntil = BrokenUntil + Settings.ResistTicks;
+    BrokenUntil = 0; Value = 0;
     return true;
 }
 
@@ -115,12 +129,13 @@ namespace DMKitRules
         return !P0.Equals(P1) && SegmentsCross2D(A, B, P0, P1);
     }
 
-    FDMControl ResolveControl(const FDMControl& Requested, bool bCommon, bool bBroken)
+    FDMControl ResolveControl(const FDMControl& Requested, bool bCommon, bool bBroken, float ProtectedSlowFactor, bool bInterruptWindow)
     {
         FDMControl R = Requested;
         if (bCommon) { R.BreakPressure = 0; return R; }
         if (bBroken) { R.BreakPressure = 0; return R; }
-        R.Slow *= .5f; R.Displacement = FVector::ZeroVector; R.StaggerTicks = 0; R.bInterrupt = false;
+        R.Slow *= ProtectedSlowFactor; R.Displacement = FVector::ZeroVector; R.StaggerTicks = 0; R.StunTicks = 0;
+        R.bInterrupt = Requested.bInterrupt && bInterruptWindow;
         return R;
     }
 }

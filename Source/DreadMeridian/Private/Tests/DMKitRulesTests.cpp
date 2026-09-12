@@ -58,7 +58,7 @@ bool FDMKitRulesTest::RunTest(const FString&)
     FDMBreakMeter M;
     TestFalse(TEXT("meter 60"), M.Add(60, 10)); TestEqual(TEXT("meter value"), M.Value, 60.f);
     TestTrue(TEXT("meter breaks"), M.Add(40, 12)); TestTrue(TEXT("meter broken"), M.IsBroken(12));
-    TestFalse(TEXT("meter ignores while broken"), M.Add(50, 20)); TestEqual(TEXT("meter capped"), M.Value, FDMBreakMeter::Threshold);
+    TestFalse(TEXT("meter ignores while broken"), M.Add(50, 20)); TestEqual(TEXT("meter capped"), M.Value, M.Settings.MaxResolve);
     TestFalse(TEXT("meter step early"), M.Step(51)); TestTrue(TEXT("meter still broken"), M.IsBroken(51));
     TestTrue(TEXT("meter recovers"), M.Step(52)); TestFalse(TEXT("meter recovered"), M.IsBroken(52));
     TestEqual(TEXT("meter reset"), M.Value, 0.f); TestTrue(TEXT("meter resisting"), M.IsResisting(100));

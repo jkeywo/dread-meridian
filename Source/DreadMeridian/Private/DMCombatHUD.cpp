@@ -448,8 +448,8 @@ void ADMCombatHUD::DrawTarget(const FDMHudModel& Model)
     // Elites carry a visible Resolve layer; common enemies never do (GDD 4.4).
     if (Unit.bElite)
     {
-        Label(Unit.bBroken ? TEXT("BROKEN") : TEXT("RESOLVE"), Unit.bBroken ? DMHud::Brass : DMHud::Muted, X + W - 96 * S, Y + 26 * S, .75f);
-        Bar(X + W - 96 * S, Y + 38 * S, 84 * S, 8 * S, Unit.bBroken ? 1.f : Unit.BreakFraction, Unit.bBroken ? DMHud::Brass : DMHud::Shield);
+        Label(Unit.bBroken ? TEXT("BROKEN") : Unit.bInterruptible ? TEXT("INTERRUPT") : Unit.bResisting ? TEXT("RESISTING") : TEXT("RESOLVE"), Unit.bBroken ? DMHud::Brass : DMHud::Muted, X + W - 96 * S, Y + 26 * S, .75f);
+        Bar(X + W - 96 * S, Y + 38 * S, 84 * S, 8 * S, Unit.BreakFraction, Unit.bBroken ? DMHud::Brass : DMHud::Shield);
     }
     if (Unit.bSuppressed) { Label(TEXT("SUPPRESSED"), DMHud::Shield, X + 84 * S, Y + 43 * S, .8f); }
 }
@@ -480,8 +480,7 @@ void ADMCombatHUD::DrawCondition(const FDMHudModel& Model)
     // The meter is real but the system is not: the label keeps the gap explicit rather than reading as finished data.
     Bar(X + 10 * S, Y + 48 * S, 110 * S, 8 * S, Model.Self.Madness / 100.f, DMHud::Gap);
     Label(FString::Printf(TEXT("Madness %.0f (stub: R spikes only)"), Model.Self.Madness), DMHud::Gap, X + 10 * S, Y + 58 * S, .75f);
-    // Elite RESOLVE bars are the same kind of stub, and are read from here rather than crowding every unit card.
-    Label(TEXT("Resolve stub: pressure/Broken only"), DMHud::Gap, X + 10 * S, Y + 72 * S, .75f);
+    Label(TEXT("Deplete Resolve to open a control window"), DMHud::Gap, X + 10 * S, Y + 72 * S, .75f);
 }
 
 void ADMCombatHUD::DrawInvestigator(const FDMHudModel& Model)

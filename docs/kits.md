@@ -24,10 +24,10 @@ Control effects convert through the Break/Resolve layer (GDD 4.4 LOCKED, O.6):
   Break pressure instead.
 - **Broken elites** take the full effect. `bBreakVulnerable` is the single source of truth for "broken".
 
-Break is an **elite-only stub**: pressure accumulates to a threshold, the enemy is Broken for a window, then
-recovers with temporary resistance to further pressure. Madness is a **stub meter** that the ultimates spike and
-nothing else reads; it has no symptoms, no floor and no decay. Neither is the GDD system, and `madness` and
-`break_cc` remain declared omissions.
+Break uses the authoritative Resolve component described in [Break/CC](break-cc.md). Its values are
+provisional encounter data. Broken control durations and clinch end at recovery. An independent interrupt
+window permits interrupts without granting hard control. Madness remains a **stub meter** that the ultimates
+spike; it has no symptoms, floor or decay. Actual Mythos boss encounters remain unimplemented.
 
 Slows stack by strength rather than overwriting, so a root is not cut short by a weaker slow landing on top.
 

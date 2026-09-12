@@ -16,7 +16,7 @@ counter (two ordinary slots, then Grievous). Revive channels require proximity,
 a living rescuer and no incoming damage. Revival restores half Health and reduces
 existing enemy threat to one quarter. These values and the nonlinear Grievous
 duration curve are AI-origin provisional tuning. Named/burst Injury effects,
-treatment, Break and CC remain unsupported.
+and treatment remain unsupported.
 
 `UDMKitComponent` owns the W/E/R slots beside `UDMPrimaryComponent`'s Q, with the
 same shape: `Request` validates and activates a server-only GAS shim, `Resolve`
@@ -29,13 +29,12 @@ projections. `Cancel` runs wherever Q's channel and clinch are already cancelled
 half-placed wire outlives its owner. Pure geometry, Break/Resolve conversion,
 slow stacking and the deferred-trap ledger live in `DMKitRules` with no UObjects.
 
-Break and Madness exist only as declared stub meters: Madness is a value the
-ultimates spike with no symptoms or floor, and Break is an elite-only Resolve
-meter that sets the existing vulnerability flag for a window, then recovers with
-temporary resistance. Control effects convert through that layer (GDD O.6):
-common enemies take the full effect, unbroken elites take the damage and half
-the slow and bank the pressure. Neither is the GDD system, and both remain
-declared omissions in capture metadata.
+`UDMBreakComponent` owns authoritative elite/boss Resolve and projects current/max Resolve,
+Broken, recovery resistance and independent interrupt windows. Encounter settings are editable
+component data, with provisional defaults in `DefaultGame.ini`. The whole roster expires
+control before any persistent ability or signature resolves. The breaking hit uses pre-hit
+protection; subsequent control is capped at recovery. See [Break/CC](break-cc.md).
+Madness remains a stub value that ultimates spike, without symptoms or floor.
 
 `ADMCombatPlayerController` creates Enhanced Input mappings. Q/W/E/R take the
 conventional MOBA keys, so keyboard movement is right-click only and revive moved

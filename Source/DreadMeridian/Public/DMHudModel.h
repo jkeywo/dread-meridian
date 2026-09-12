@@ -30,12 +30,14 @@ struct DREADMERIDIAN_API FDMHudUnit
     /** This unit is currently attacking the locally controlled investigator. */
     bool bTargetingLocal = false;
     FVector Location = FVector::ZeroVector;
-    /** Provisional stub meters (see docs/kits.md); Madness has no symptoms and Break only gates elite control. */
+    /** Madness remains a stub meter with no symptoms. */
     float Madness = 0;
-    /** 0..1 of the elite Resolve threshold; meaningless for common enemies. */
+    /** 0..1 remaining elite Resolve; meaningless for common enemies. */
     float BreakFraction = 0;
     bool bElite = false;
     bool bBroken = false;
+    bool bResisting = false;
+    bool bInterruptible = false;
     bool bSuppressed = false;
 
     float HealthFraction() const { return MaxHealth > 0 ? FMath::Clamp(Health / MaxHealth, 0.f, 1.f) : 0.f; }
@@ -82,7 +84,7 @@ struct DREADMERIDIAN_API FDMHudAbility
 /**
  * Everything the combat HUD draws, assembled once per frame from replicated state.
  * It reports only what the sandbox actually simulates: evolutions, objectives and the full
- * Madness and Break systems remain gaps. Madness and Break appear as declared stub meters.
+ * Madness system remain gaps. Madness appears as a declared stub meter; Resolve is public combat state.
  */
 struct DREADMERIDIAN_API FDMHudModel
 {

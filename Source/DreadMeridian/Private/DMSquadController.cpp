@@ -83,8 +83,8 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
     S.bPatrolMember = bPatrolMember;
     S.bCompanionTethered = Mode.UsesEncounterLayout() && !Self->bIsEnemy && Leader != nullptr;
     S.bCasting = Self->Smuggler->IsCasting();
-    S.bRestrained = Self->IsRestrained();
-    S.bAttackReady = Self->NextAttackTick <= Tick;
+    S.bRestrained = Self->IsRestrained() || Self->IsStunned();
+    S.bAttackReady = Self->NextAttackTick <= Tick && Self->StaggeredUntilTick <= Tick;
     S.bSetPosition = Self->Smuggler->bSetPosition;
     S.bRanged = Self->Smuggler->IsRanged();
     S.Role = Self->Smuggler->Role;
@@ -146,7 +146,7 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
         V.Threat = Self->Threat.FindRef(C->EntityId);
         V.ExposureMultiplier = Self->Investigator->DamageMultiplier(C->EntityId, false);
         V.AttackDamage = C->AttackDamage; V.AttackInterval = C->AttackIntervalTicks;
-        V.NextAttackIn = FMath::Max(0, C->NextAttackTick - Tick);
+        V.NextAttackIn = FMath::Max(0, FMath::Max(C->NextAttackTick, C->StaggeredUntilTick) - Tick);
         V.Speed2D = C->GetVelocity().Size2D();
         V.Velocity2D = C->GetVelocity() * FVector(1, 1, 0);
         V.Location = Loc;

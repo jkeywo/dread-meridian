@@ -1,5 +1,21 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "DMKitRules.generated.h"
+
+/** Encounter tuning, in logical combat ticks (0.1 seconds). All defaults are provisional. */
+USTRUCT(BlueprintType)
+struct DREADMERIDIAN_API FDMBreakSettings
+{
+    GENERATED_BODY()
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="1")) float MaxResolve = 100;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="1")) int32 BrokenTicks = 40;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0")) int32 ResistTicks = 100;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", ClampMax="1")) float ResistFactor = .5f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", ClampMax="1")) float ProtectedSlowFactor = .5f;
+    /** Pressure for control requests with no explicitly authored Break contribution. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0")) float ControlPressure = 10;
+    void Sanitize();
+};
 
 /**
  * Pure rules shared by the W/E/R kit abilities: no UObjects, no world, no RNG. The kit component and the
@@ -16,19 +32,18 @@ struct DREADMERIDIAN_API FDMControl
     FVector Displacement = FVector::ZeroVector;
     /** Basic attack delay; also cancels an active telegraph. */
     int32 StaggerTicks = 0;
+    /** Stops movement, attacks and new casts; interrupts active channels. */
+    int32 StunTicks = 0;
     /** Cancels an enemy signature in progress and clears its orders. */
     bool bInterrupt = false;
     /** Resolve damage banked by elites that are not yet broken. */
     float BreakPressure = 0;
 };
 
-/** Elite Break/Resolve meter (common enemies never carry one). */
+/** Pure elite/boss Resolve state. Value is damage to Resolve; remaining Resolve is MaxResolve - Value. */
 struct DREADMERIDIAN_API FDMBreakMeter
 {
-    static constexpr float Threshold = 100;
-    static constexpr int32 BrokenTicks = 40;
-    static constexpr int32 ResistTicks = 100;
-    static constexpr float ResistFactor = .5f;
+    FDMBreakSettings Settings;
 
     float Value = 0;
     /** 0 when not broken. */
@@ -97,8 +112,10 @@ namespace DMKitRules
      */
     DREADMERIDIAN_API bool CrossesWire(const FVector& A, const FVector& B, const FVector& P0, const FVector& P1, float Slack);
     /**
-     * O.6: common enemies take the full request (no Break tracking); unbroken elites take half the slow and the damage,
-     * no displacement, stagger or interrupt, and bank the pressure; broken elites take everything (no further pressure).
+     * O.6: common enemies take the full request; protected targets take configured partial slow and damage,
+     * no displacement/stagger/stun, and bank pressure. Explicit windows admit interrupts only.
+     * Broken targets take full control (the runtime caps durations at recovery), without further pressure.
      */
-    DREADMERIDIAN_API FDMControl ResolveControl(const FDMControl& Requested, bool bCommon, bool bBroken);
+    DREADMERIDIAN_API FDMControl ResolveControl(const FDMControl& Requested, bool bCommon, bool bBroken,
+        float ProtectedSlowFactor = .5f, bool bInterruptWindow = false);
 }

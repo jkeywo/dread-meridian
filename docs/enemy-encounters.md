@@ -1,7 +1,23 @@
 # Sandbox encounters
 
-Interactive play contains three camps of three existing raiders and a two-raider patrol. Camps are south, east and north of the central route. The squad starts west. Camp signs, supply crates and a dashed patrol circuit mark the layout.
+Interactive play contains three camps of three smugglers and a two-person patrol.
+Camps sit south, east and north of the central route; the squad starts west.
+Camp signs, supply crates and a dashed patrol circuit mark the layout.
 
-Enemies notice visible investigators within 600 units. Damage or a group member engaging alerts that group. They pursue within 1800 units of their home/current patrol waypoint, then return; health is retained. Patrol members resume their four-waypoint loop after combat. Dead enemies do not respawn. Ranged smugglers (Gunman, Lookout, Bomber) back off when an investigator closes inside half their attack range. Squad bots follow the player and select nearby fights; they retreat toward the leader below a quarter Health, step out of bomber circles and answer [pings](pings.md). Perception, leash and alert rules are unchanged. Clear all eleven enemies to win.
+Clear all eleven occupation enemies to trigger a three-second arrival warning.
+The Gang Boss then enters from the east with a Gunman, Bruiser, Lookout and Bomber.
+All five must fall for victory; killing only the Gang Boss is insufficient.
+A squad wipe at any stage is defeat. Dead enemies do not respawn.
 
-These are provisional sandbox groups using the existing enemy kit, not the GDD faction roster or encounter director. Explicit network and smoke probes keep their compact three-enemy fixture. The normal PIE map uses the full encounter layout.
+The utility AI handles sight, group alerts, pursuit, retreat, target selection
+and positioning. Tuning lives in role profiles; see [AI tuning](ai-tuning.md).
+Companions follow the player, rescue allies, avoid hazards and answer [pings](pings.md).
+The Gang Boss uses the protected [Break/Resolve layer](break-cc.md); ordinary
+smugglers receive full control. Interrupting a pending firebomb prevents its
+release; interrupting or restraining the caster after release preserves its fire.
+
+These are provisional sandbox encounters, not the Mythos boss system or encounter
+director. Explicit network and smoke probes keep their compact three-enemy
+fixture. The normal PIE map uses the full encounter layout. The original encounter
+design is recorded in [smuggler sandbox](../design/encounters/smuggler-sandbox.md);
+its historical implementation omissions predate the current Break/CC work.

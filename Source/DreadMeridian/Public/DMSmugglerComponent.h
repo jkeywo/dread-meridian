@@ -41,6 +41,7 @@ public:
     /** Line of sight between two points ignoring combatant bodies (world geometry blocks). */
     bool Sight(FVector From, FVector To) const;
     void Cancel();
+    void Interrupt();
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const override;
     FString Name() const;

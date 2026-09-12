@@ -328,7 +328,7 @@ struct DREADMERIDIAN_API FDMAIActorView
     bool bSuppressed = false;
     /** Mid-telegraph: Perfect Moment and Flashbulb value these higher. */
     bool bCommitted = false;
-    /** Elite Resolve damage banked so far (0..FDMBreakMeter::Threshold). */
+    /** Elite Resolve damage banked so far (0..encounter MaxResolve). */
     float Break = 0;
 };
 

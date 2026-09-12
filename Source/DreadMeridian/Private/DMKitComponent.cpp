@@ -130,7 +130,7 @@ bool UDMKitComponent::IsTwoPoint(EDMKitSlot Slot) const { return Spec(Self()->In
 float UDMKitComponent::CooldownSeconds(EDMKitSlot Slot) const
 { switch (Slot) { case EDMKitSlot::W: return CooldownW; case EDMKitSlot::E: return CooldownE; default: return CooldownR; } }
 bool UDMKitComponent::IsReady(EDMKitSlot Slot) const
-{ return CooldownSeconds(Slot) <= 0 && !IsCharging() && !Self()->IsDown() && !Self()->IsRestrained(); }
+{ return CooldownSeconds(Slot) <= 0 && !IsCharging() && !Self()->IsDown() && !Self()->IsRestrained() && !Self()->IsStunned(); }
 int32 UDMKitComponent::CooldownRemaining(EDMKitSlot Slot, int32 Tick) const { return FMath::Max(0, NextCastTick[Index(Slot)] - Tick); }
 
 FString UDMKitComponent::Status(EDMKitSlot Slot) const
@@ -153,7 +153,7 @@ FString UDMKitComponent::Validate(EDMKitSlot Slot, ADMCombatant* Target, FVector
     if (Slot >= EDMKitSlot::Count) { return TEXT("Invalid slot"); }
     if (Point.ContainsNaN()) { return TEXT("Invalid aim point"); }
     if (Target && (!IsValid(Target) || Target->GetWorld() != GetWorld())) { return TEXT("Invalid target"); }
-    if (Actor->IsDown() || Actor->IsRestrained() || Actor->bIsEnemy) { return TEXT("Cannot cast in this state"); }
+    if (Actor->IsDown() || (Actor->IsRestrained() || Actor->IsStunned()) || Actor->bIsEnemy) { return TEXT("Cannot cast in this state"); }
     if (Actor->Investigator->Kind == EDMInvestigator::None || Name(Slot).IsEmpty()) { return TEXT("No ability available"); }
     if (IsCharging()) { return TEXT("Charging"); }
     if (CooldownSeconds(Slot) > 0 || (Actor->HasAuthority() && NextCastTick[Index(Slot)] > Now()))

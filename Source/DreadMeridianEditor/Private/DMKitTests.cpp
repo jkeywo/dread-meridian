@@ -130,7 +130,7 @@ public:
                 return false;
             case 5:
                 Test->TestTrue(TEXT("Crossing the wire applies its damage"), Enemy->Health() < EnemyHealth);
-                Test->TestTrue(TEXT("Crossing staggers the crosser"), Enemy->NextAttackTick > Mode->GetCombatTick());
+                Test->TestTrue(TEXT("Crossing staggers the crosser"), Enemy->StaggeredUntilTick > Mode->GetCombatTick());
                 Test->TestEqual(TEXT("A wire is spent by its first crossing"), Kit->Wires.Num(), 0);
                 // R: prepare a satchel, then defer its trigger.
                 Hero->Investigator->Charges = 3;
@@ -267,7 +267,7 @@ public:
             EnemyHealth = Enemy->Health();
             Test->TestTrue(TEXT("Flashbulb accepted"), Hero->Kit->Request(EDMKitSlot::W, nullptr, Hero->GetActorLocation() + FVector(400, 0, 0)));
             Test->TestTrue(TEXT("The flash exposes what it catches"), Hero->Investigator->PeekExposure(Enemy->EntityId) > 0);
-            Test->TestTrue(TEXT("The flash staggers"), Enemy->NextAttackTick > Mode->GetCombatTick());
+            Test->TestTrue(TEXT("The flash staggers"), Enemy->StaggeredUntilTick > Mode->GetCombatTick());
             TestTick = Mode->GetCombatTick() + 2; Stage = 2;
             return false;
         }
@@ -633,7 +633,7 @@ public:
             case 4:
             {
                 // R: the altered state strengthens the grab without waiving the Break layer.
-                Enemy->bCommonEnemy = false; Enemy->bBreakVulnerable = false;
+                Enemy->bCommonEnemy = false; Enemy->Resolve->Reset();
                 Test->TestFalse(TEXT("An unbroken elite cannot be grabbed normally"), Hero->Primary->Request(Enemy.Get(), Enemy->GetActorLocation()));
                 const float Reach = Hero->GetAttackRange();
                 Test->TestTrue(TEXT("Drowned Man Walking accepted"), Kit->Request(EDMKitSlot::R, nullptr, Hero->GetActorLocation()));
