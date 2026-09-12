@@ -76,6 +76,20 @@ consideration breakdown whenever a bot's focus or chosen actions change.
 human fills the first bot-owned slot: this is backfill, not authenticated
 restoration of a returning player's identity.
 
+Companions also publish what they have committed to on a pure `FDMSquadBoard` the
+game mode owns and steps before the Think loop. This is communicated intent, not
+shared sight (GDD 4.13): a claim says what its author decided, teammates weigh it,
+and nothing is ever told what to do. It does not replicate - the player-facing half
+of coordination is the ping board, which already has a locked grammar and a HUD.
+Claims live two ticks rather than one. Bots Think in roster order and execute before
+the next builds its context, so within a tick a later bot hears an earlier one but
+not the reverse; a two-tick lifetime makes the exchange symmetric at the cost of one
+tick of staleness, instead of splitting the tick into gather and commit phases.
+Enemies neither publish nor read: their coordination is the Gang Boss's replicated
+orders. The first consumer is rescue: a companion yields a casualty to a better-placed
+claimant, so one bot revives and the rest keep fighting rather than all dropping the
+fight onto one body.
+
 `ADMCombatGameMode` owns a pure `FDMPingBoard` (limits, lifetimes, fulfilment,
 acknowledge, cancel, respond) and steps it before the Think loop so bots see a
 settled board. `ADMGameState::Pings` replicates the live pings as the public

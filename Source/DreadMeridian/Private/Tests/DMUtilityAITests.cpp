@@ -38,6 +38,13 @@ namespace
             A.bEnemy = bEnemy; A.Health = Health; A.MaxHealth = 100; A.Location = Location; A.AttackDamage = 10; A.AttackInterval = 10;
             return A;
         }
+        /** A teammate's published intent, as this bot would hear it. */
+        FDMAIClaimView& Claim(EDMClaimKind Kind, int32 AuthorIndex, int32 Target = INDEX_NONE, FVector Location = FVector::ZeroVector)
+        {
+            FDMAIClaimView& Claim = C.Claims.AddDefaulted_GetRef();
+            Claim.Kind = Kind; Claim.AuthorIndex = AuthorIndex; Claim.TargetIndex = Target; Claim.Location = Location;
+            return Claim;
+        }
         FDMAIPingView& Ping(EDMPingKind Kind, FVector Location, int32 Target = INDEX_NONE, bool bHuman = true)
         {
             FDMAIPingView& P = C.Pings.AddDefaulted_GetRef();
@@ -745,4 +752,133 @@ bool FDMUtilityAIPingsTest::RunTest(const FString& Parameters)
     }
     return true;
 }
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FDMSquadBoardTest, "DreadMeridian.Foundation.UtilityAI.SquadBoard", EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+bool FDMSquadBoardTest::RunTest(const FString& Parameters)
+{
+    FDMSquadBoard Board;
+    auto Make = [](EDMClaimKind Kind, const TCHAR* Author, int32 Target, int32 Tick)
+    {
+        FDMSquadClaim C; C.Kind = Kind; C.AuthorId = Author; C.TargetIndex = Target; C.Tick = Tick; return C;
+    };
+
+    Board.Publish(Make(EDMClaimKind::Focus, TEXT("a"), 5, 0));
+    Board.Publish(Make(EDMClaimKind::Focus, TEXT("b"), 5, 0));
+    TestEqual(TEXT("two authors, two claims"), Board.Claims.Num(), 2);
+    TestEqual(TEXT("both on the target"), Board.FocusCount(5, FString(), 0), 2);
+    TestEqual(TEXT("a reader never counts itself"), Board.FocusCount(5, TEXT("a"), 0), 1);
+
+    // One statement of intent per author per kind: changing your mind replaces, never accumulates.
+    Board.Publish(Make(EDMClaimKind::Focus, TEXT("a"), 7, 0));
+    TestEqual(TEXT("re-publishing replaces"), Board.Claims.Num(), 2);
+    TestEqual(TEXT("old target released"), Board.FocusCount(5, FString(), 0), 1);
+    TestEqual(TEXT("new target claimed"), Board.FocusCount(7, FString(), 0), 1);
+
+    // An empty author is not a speaker.
+    Board.Publish(Make(EDMClaimKind::Focus, TEXT(""), 9, 0));
+    TestEqual(TEXT("anonymous claims rejected"), Board.Claims.Num(), 2);
+
+    // Ground claims describe placed objects, so one author may hold several, keyed by serial.
+    FDMSquadClaim Wire = Make(EDMClaimKind::Ground, TEXT("a"), INDEX_NONE, 0); Wire.Serial = 1;
+    Board.Publish(Wire);
+    Wire.Serial = 2; Board.Publish(Wire);
+    TestEqual(TEXT("two wires coexist"), Board.Claims.Num(), 4);
+
+    // Claims survive exactly one further tick, so a bot that thought before the author still hears it.
+    Board.Step(1);
+    TestEqual(TEXT("one tick old claims live"), Board.Claims.Num(), 4);
+    TestEqual(TEXT("and are still readable"), Board.FocusCount(7, FString(), 1), 1);
+    Board.Step(2);
+    TestEqual(TEXT("two ticks old claims are gone"), Board.Claims.Num(), 0);
+
+    Board.Publish(Make(EDMClaimKind::Rescue, TEXT("a"), 3, 2));
+    Board.Publish(Make(EDMClaimKind::Rescue, TEXT("b"), 4, 2));
+    TArray<FDMSquadClaim> Out;
+    Board.Gather(EDMClaimKind::Rescue, TEXT("a"), 2, Out);
+    TestEqual(TEXT("gather excludes the reader"), Out.Num(), 1);
+    TestEqual(TEXT("and returns the other author's subject"), Out.IsValidIndex(0) ? Out[0].TargetIndex : -1, 4);
+    TestNotNull(TEXT("claim on a subject is findable"), Board.FindOnTarget(EDMClaimKind::Rescue, 4, TEXT("a"), 2));
+    TestNull(TEXT("but not one's own"), Board.FindOnTarget(EDMClaimKind::Rescue, 3, TEXT("a"), 2));
+
+    Board.ClearAuthor(TEXT("a"));
+    TestEqual(TEXT("a downed author stops speaking"), Board.Claims.Num(), 1);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FDMUtilityAIRescueTest, "DreadMeridian.Foundation.UtilityAI.Rescue", EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+bool FDMUtilityAIRescueTest::RunTest(const FString& Parameters)
+{
+    // Two casualties: index 1 far away and index 2 close. Roster order used to send everyone to index 1.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        R.Add(FVector(1200, 0, 0), false).bDown = true;
+        R.Add(FVector(200, 0, 0), false).bDown = true;
+        const FDMAIDecision D = R.Step();
+        const FDMAIOption* Rescue = FRig::Find(D, EDMAIAction::Rescue);
+        TestNotNull(TEXT("a downed ally is rescued"), Rescue);
+        TestEqual(TEXT("the nearer casualty, not the first in roster order"), Rescue ? Rescue->Target : -1, 2);
+    }
+
+    // With the near one already claimed, the second rescuer goes to the other casualty instead of doubling up.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        R.Add(FVector(1200, 0, 0), false).bDown = true;
+        R.Add(FVector(200, 0, 0), false).bDown = true;
+        R.Add(FVector(220, 0, 0), false);
+        R.Claim(EDMClaimKind::Rescue, 3, 2);
+        const FDMAIDecision D = R.Step();
+        const FDMAIOption* Rescue = FRig::Find(D, EDMAIAction::Rescue);
+        TestNotNull(TEXT("still rescuing someone"), Rescue);
+        TestEqual(TEXT("the unattended casualty"), Rescue ? Rescue->Target : -1, 1);
+    }
+
+    // The single casualty case, which is where the old pile-on actually happened: a teammate standing on the
+    // body has it, so this bot stays in the fight rather than joining a revive it cannot help with.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        R.Add(FVector(600, 0, 0), false).bDown = true;
+        R.Add(FVector(620, 0, 0), false);
+        R.Claim(EDMClaimKind::Rescue, 2, 1);
+        const FDMAIDecision D = R.Step();
+        TestNull(TEXT("yields to the closer rescuer"), FRig::Find(D, EDMAIAction::Rescue));
+    }
+
+    // But a claim from someone further away is not a reason to abandon a casualty this bot can reach first.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        R.Add(FVector(200, 0, 0), false).bDown = true;
+        R.Add(FVector(1400, 0, 0), false);
+        R.Claim(EDMClaimKind::Rescue, 2, 1);
+        const FDMAIDecision D = R.Step();
+        TestNotNull(TEXT("the nearer bot takes over"), FRig::Find(D, EDMAIAction::Rescue));
+    }
+
+    // A claim whose author has gone down is no longer a reason to stay away: the board ages it out, and until
+    // it does the claimant is not in the roster as a living ally.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        R.Add(FVector(600, 0, 0), false).bDown = true;
+        const FDMAIDecision D = R.Step();
+        TestNotNull(TEXT("an unclaimed casualty is rescued"), FRig::Find(D, EDMAIAction::Rescue));
+    }
+
+    // A rescuing bot says so, so the teammate deciding after it can hear the claim this tick.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        R.Add(FVector(200, 0, 0), false).bDown = true;
+        const FDMAIDecision D = R.Step();
+        const FDMSquadClaim* Claim = D.Claims.FindByPredicate([](const FDMSquadClaim& C) { return C.Kind == EDMClaimKind::Rescue; });
+        TestNotNull(TEXT("the rescue is announced"), Claim);
+        TestEqual(TEXT("naming who is being rescued"), Claim ? Claim->TargetIndex : -1, 1);
+    }
+
+    // Enemies coordinate through the Gang Boss's replicated orders, not this board.
+    {
+        FRig R(EDMSmuggler::Bruiser, EDMInvestigator::None, true);
+        R.Add(FVector(200, 0, 0), false);
+        const FDMAIDecision D = R.Step();
+        TestEqual(TEXT("enemies publish nothing"), D.Claims.Num(), 0);
+    }
+    return true;
+}
+
 #endif

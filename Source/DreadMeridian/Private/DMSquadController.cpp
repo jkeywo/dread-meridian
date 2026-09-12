@@ -205,6 +205,20 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
             PV.AgeFrac = P.AgeFraction(Tick); PV.AgeTicks = Tick - P.CreatedTick;
             PV.Weight = FMath::Clamp((PV.bHuman ? 1.f : W.BotPingWeight) * W.PingCompliance, 0.f, 1.f);
         }
+
+        // What teammates have said they are doing. Self's own claims are excluded: a bot that read its own
+        // intent back would reinforce whatever it already chose, which is not coordination but an echo.
+        for (const FDMSquadClaim& C : Mode.GetSquadBoard().Claims)
+        {
+            if (C.AuthorId == Self->EntityId || C.AgeTicks(Tick) >= FDMSquadBoard::LifetimeTicks) { continue; }
+            const int32 AuthorIndex = IndexOfId(C.AuthorId);
+            if (!Roster.IsValidIndex(AuthorIndex) || Roster[AuthorIndex]->IsDown()) { continue; }
+            FDMAIClaimView& CV = Out.Claims.AddDefaulted_GetRef();
+            CV.Kind = C.Kind; CV.AuthorIndex = AuthorIndex; CV.TargetIndex = C.TargetIndex;
+            CV.Location = C.Location; CV.Location2 = C.Location2;
+            CV.Radius = C.Radius; CV.Magnitude = C.Magnitude;
+            CV.AgeTicks = C.AgeTicks(Tick); CV.ResolveIn = C.ResolveTick - Tick; CV.Serial = C.Serial;
+        }
     }
 
     // One attack-sight trace per bot per tick against the provisional focus (the same world trace ResolveAttack applies):
@@ -320,6 +334,18 @@ FString ADMSquadController::Execute(ADMCombatGameMode& Mode, const FDMAIContext&
     // Pings are a companion concern (the context carries none for enemies; this gate is belt and braces).
     if (!Self->bIsEnemy)
     {
+        // Say what this decision committed to, so the teammates who Think after it can hear it this tick and
+        // the ones that already thought hear it next tick. Published after execution, so a claim always
+        // describes something the bot actually did rather than something it merely considered.
+        FDMSquadBoard& Squad = Mode.GetSquadBoard();
+        for (FDMSquadClaim Claim : Decision.Claims)
+        {
+            Claim.AuthorId = Self->EntityId;
+            Claim.Tick = Tick;
+            if (Claim.ResolveTick <= 0) { Claim.ResolveTick = Tick; }
+            Squad.Publish(Claim);
+        }
+
         // Bot-authored pings go through the same board as human ones so the HUD shows the callout.
         for (const FDMAIPingRequest& R : Decision.PingRequests)
         {

@@ -66,3 +66,42 @@ it rises whenever teammates are hurt. `unanswered_peril_ticks` was added to name
 
 `investigator_downs` and `tick` stay as outcome guards. Per-kit evidence comes from `kit_casts_by`;
 the aggregate `w_casts` cannot show that every kit fired.
+
+## Slice 1 — squad intent board and rescue arbitration
+
+Claims published and read; the only consumer so far is rescue arbitration. Same six seeds.
+
+| seed | outcome | tick | dmg taken | downs | revives | overkill | hazard | unanswered | isolated |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | victory | 610 | 376 | 2 | 2 | 198 | 26 | 156 | 0 |
+| 2 | victory | 707 | 545 | 2 | 2 | 257 | 49 | 257 | 0 |
+| 3 | victory | 581 | 391 | 0 | 0 | 207 | 67 | 126 | 0 |
+| 4 | **victory** | 786 | 766 | 3 | 3 | 222 | 57 | 693 | 0 |
+| 5 | victory | 671 | 533 | 1 | 1 | 206 | 41 | 252 | 0 |
+| 6 | victory | 703 | 580 | 1 | 1 | 217 | 68 | 223 | 0 |
+
+Totals against baseline: victories 5/6 to 6/6, downs 11 to 9, revives 7 to 9, damage taken 3331 to
+3191, isolated downs 1 to 0. Seed 3 is byte-identical, as it should be: nobody goes down on it, so no
+rescue decision is ever reached. Seeds 2 and 6 take slightly more damage; the gain is not uniform.
+
+Seed 4 is the whole result. It was the baseline's only defeat, at 4 downs and **0 revives**: the squad
+lost, having never completed a single revive. It now wins with 3 downs and 3 revives and all 16 kills.
+
+The mechanism is worth recording, because the first attempt at this fix did nothing at all. Choosing
+the *nearest* casualty instead of the first in roster order produced output identical to baseline on
+every seed, because the sandbox rarely has two casualties at once. A probe log showed the actual
+behaviour: at tick 448 of seed 1, **three** companions published a rescue claim on the same body.
+Rescue is Locked on all three channels, so each of those bots had dropped out of the fight entirely to
+crowd one revive that only one of them could perform - while the enemies that downed the ally kept
+firing. The first rule ("a claim is a preference, not a prohibition") deliberately permitted this, to
+avoid abandoning a lone casualty; it was the wrong call.
+
+Yielding to a better-placed claimant - closer, ties broken on roster index so two equidistant rescuers
+can neither both yield nor both go - leaves exactly one rescuer and keeps the rest shooting. If that
+rescuer goes down, its claim ages off the board within two ticks and the next closest takes over.
+
+Note what this says about the metric set: the change that flipped a loss into a win moved
+`investigator_downs` and `revives`, both of which already existed. The new counters earned their place
+differently - `isolated_downs` going 1 to 0 and `hazard_ticks` falling on four of six seeds are
+consistent with a squad that no longer abandons its position to crowd a body, which is the behaviour
+the change was actually aimed at.

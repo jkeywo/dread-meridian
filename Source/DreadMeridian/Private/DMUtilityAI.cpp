@@ -134,6 +134,26 @@ namespace
     }
 
     /** True when A is attacking a living ally that a live Help ping names. */
+    /** Roster index of the teammate claiming this kind on TargetIndex, or INDEX_NONE. Stale claims still count:
+     *  a claim is at most one tick old, and treating it as expired would re-open the pile-on it prevents. */
+    int32 ClaimedBy(const FDMAIContext& C, EDMClaimKind Kind, int32 TargetIndex)
+    {
+        if (TargetIndex == INDEX_NONE) { return INDEX_NONE; }
+        for (const FDMAIClaimView& Claim : C.Claims)
+        { if (Claim.Kind == Kind && Claim.TargetIndex == TargetIndex) { return Claim.AuthorIndex; } }
+        return INDEX_NONE;
+    }
+
+    /** How many teammates have said they are on this target. */
+    int32 ClaimCountOn(const FDMAIContext& C, EDMClaimKind Kind, int32 TargetIndex)
+    {
+        if (TargetIndex == INDEX_NONE) { return 0; }
+        int32 Count = 0;
+        for (const FDMAIClaimView& Claim : C.Claims)
+        { if (Claim.Kind == Kind && Claim.TargetIndex == TargetIndex) { ++Count; } }
+        return Count;
+    }
+
     bool AttacksHelpedAlly(const FDMAIContext& C, const FDMAIActorView& A)
     {
         if (A.AttackTargetIndex == INDEX_NONE) { return false; }
@@ -390,11 +410,30 @@ namespace
             const bool bCompanion = !S.bEnemy;
             const FDMAIPingView* Retreat = bCompanion ? BestPing(C, EDMPingKind::Retreat) : nullptr;
 
-            // Rescue: first downed ally in roster order.
+            // Rescue: the nearest casualty this bot is the best-placed rescuer for.
+            //
+            // Roster order used to decide this, so every companion walked to the same body while a second
+            // casualty went unattended. Rescue is Locked on all three channels, so a bot that joins a revive
+            // someone else is already closer to drops out of the fight to stand over a finished job.
+            // Yielding to a better-placed claim leaves exactly one rescuer and keeps the rest fighting;
+            // if that rescuer goes down its claim ages out within two ticks and the next closest takes over.
             if (bCompanion)
             {
+                const FDMAIActorView* Best = nullptr;
                 for (const FDMAIActorView& A : C.Actors)
-                { if (A.bEnemy == S.bEnemy && A.Index != S.Index && A.bDown) { Simple(EDMAIAction::Rescue, &A, A.Location, true); break; } }
+                {
+                    if (A.bEnemy != S.bEnemy || A.Index == S.Index || !A.bDown) { continue; }
+                    const int32 Claimant = ClaimedBy(C, EDMClaimKind::Rescue, A.Index);
+                    if (C.Actors.IsValidIndex(Claimant))
+                    {
+                        // Ties break on roster index so two equidistant rescuers cannot both yield, or both go.
+                        const float Theirs = FVector::Dist2D(C.Actors[Claimant].Location, A.Location);
+                        if (Theirs < A.Distance2D || (Theirs == A.Distance2D && Claimant < S.Index)) { continue; }
+                    }
+                    if (Best && A.Distance2D >= Best->Distance2D) { continue; }
+                    Best = &A;
+                }
+                if (Best) { Simple(EDMAIAction::Rescue, Best, Best->Location, true); }
             }
             if (S.bLocalEnemy && M.bReturningHome) { Simple(EDMAIAction::ReturnHome, nullptr, S.Anchor, true); }
 
@@ -1231,6 +1270,23 @@ namespace DMUtilityAI
                 default: break;
                 }
                 if (bOnIt) { D.PingsOnIt.AddUnique(P.Id); }
+            }
+        }
+
+        // Say what this decision committed to. Only companions: enemies coordinate through the Gang Boss's
+        // orders, which are a replicated game mechanic with their own rules, not through this board.
+        if (!S.bEnemy)
+        {
+            if (D.Focus != INDEX_NONE)
+            {
+                FDMSquadClaim& Claim = D.Claims.AddDefaulted_GetRef();
+                Claim.Kind = EDMClaimKind::Focus; Claim.TargetIndex = D.Focus;
+                Claim.Location = C.Actors[D.Focus].Location;
+            }
+            if (const FDMAIOption* Rescue = D.Chosen.FindByPredicate([](const FDMAIOption& O) { return O.Action == EDMAIAction::Rescue; }))
+            {
+                FDMSquadClaim& Claim = D.Claims.AddDefaulted_GetRef();
+                Claim.Kind = EDMClaimKind::Rescue; Claim.TargetIndex = Rescue->Target; Claim.Location = Rescue->Point;
             }
         }
 

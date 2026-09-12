@@ -3,6 +3,7 @@
 #include "DMSmugglerComponent.h"
 #include "DMInvestigatorComponent.h"
 #include "DMPing.h"
+#include "DMSquadBoard.h"
 #include "DMUtilityAI.generated.h"
 
 /**
@@ -328,6 +329,26 @@ struct DREADMERIDIAN_API FDMAIPingView
     float Weight = 1;
 };
 
+/**
+ * One teammate's published intent, as this bot hears it. A view rather than the claim itself so the pure
+ * layer never sees entity ids: TargetIndex is already resolved to a roster index by the context builder.
+ */
+struct DREADMERIDIAN_API FDMAIClaimView
+{
+    EDMClaimKind Kind = EDMClaimKind::Focus;
+    /** Roster index of the author, so a reader can weigh who is speaking. */
+    int32 AuthorIndex = INDEX_NONE;
+    int32 TargetIndex = INDEX_NONE;
+    FVector Location = FVector::ZeroVector;
+    FVector Location2 = FVector::ZeroVector;
+    float Radius = 0, Magnitude = 0;
+    /** 0 for a claim made this tick, 1 for last tick's. Stale claims should count for less. */
+    int32 AgeTicks = 0;
+    /** Cast: ticks from now until it lands; negative once it has. */
+    int32 ResolveIn = 0;
+    int32 Serial = 0;
+};
+
 struct DREADMERIDIAN_API FDMAISelfView
 {
     int32 Index = INDEX_NONE;
@@ -383,6 +404,8 @@ struct DREADMERIDIAN_API FDMAIContext
     TArray<FDMAIPingView> Pings;
     /** The deciding bot's own satchels, wires, zones and spirits, so kit options can reason about their geometry. */
     TArray<FDMAIMarkerView> Markers;
+    /** What teammates have said they are doing. Never contains the deciding bot's own claims. */
+    TArray<FDMAIClaimView> Claims;
     FVector PlayableExtent = FVector(2900, 2400, 0);
     const FDMAIWeights* W = nullptr;
     FDMAIMemory Memory;
@@ -441,6 +464,8 @@ struct DREADMERIDIAN_API FDMAIDecision
     /** True when a chosen option clears the focus (the controller passes nullptr to SetAttackTarget). */
     bool bClearFocus = false;
     TArray<FDMAIPingRequest> PingRequests;
+    /** Intent this decision commits to, for the controller to publish on the squad board. */
+    TArray<FDMSquadClaim> Claims;
     /** Ping ids that shaped a chosen option this tick (the controller answers them with on_it). */
     TArray<int32> PingsOnIt;
 

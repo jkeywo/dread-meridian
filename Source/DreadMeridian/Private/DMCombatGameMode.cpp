@@ -426,6 +426,8 @@ void ADMCombatGameMode::NoteDowned(const ADMCombatant& Target)
         return;
     }
     ++Metrics.InvestigatorDowns;
+    // A downed companion is not doing what they said they were doing.
+    SquadBoard.ClearAuthor(Target.EntityId);
     for (const ADMCombatant* Ally : Combatants)
     {
         if (!Ally || Ally == &Target || Ally->bIsEnemy || Ally->IsDown()) { continue; }
@@ -560,6 +562,8 @@ void ADMCombatGameMode::StepCombat()
     for (ADMCombatant* Actor : Combatants) { Actor->SpiritProtection = 0; Actor->SpiritSlow = 0; }
     // Settle the ping board before any bot reads it this tick.
     StepPings();
+    // Same for squad intent: claims older than their lifetime go before anyone reads the board.
+    SquadBoard.Step(CombatTick);
     for (ADMCombatant* Actor : Combatants) { Actor->Primary->Step(CombatTick); Actor->Kit->Step(CombatTick); Actor->Smuggler->Step(*this); }
     if (ADMGameState* Projection = GetGameState<ADMGameState>()) { Projection->SetCombatTick(CombatTick); }
     for (ADMCombatant* Actor : Combatants)

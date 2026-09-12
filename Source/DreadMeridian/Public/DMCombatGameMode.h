@@ -3,6 +3,7 @@
 #include "DMGameMode.h"
 #include "DMSmugglerWave.h"
 #include "DMPing.h"
+#include "DMSquadBoard.h"
 #include "DMSmugglerComponent.h"
 #include "DMInvestigatorComponent.h"
 #include "DMKitComponent.h"
@@ -90,6 +91,11 @@ public:
     bool RespondToPing(int32 Id, const FString& ResponderId, bool bOnIt);
     const FDMPingBoard& GetPingBoard() const { return PingBoard; }
 
+    // ---- Squad intent
+    /** Companions publish what they are committing to here; teammates read it on their next Think. */
+    FDMSquadBoard& GetSquadBoard() { return SquadBoard; }
+    const FDMSquadBoard& GetSquadBoard() const { return SquadBoard; }
+
     // ---- AI profiles
     /** Resolves (and caches per profile name) the UDMAIProfile for an actor's role/kind, applying -DMAIWeights overrides. */
     UDMAIProfile* ProfileFor(const ADMCombatant& Actor);
@@ -128,6 +134,7 @@ private:
     bool bGuardChecksPassed = true;
     FDMSmugglerWave SmugglerWave;
     FDMPingBoard PingBoard;
+    FDMSquadBoard SquadBoard;
     FDMCombatMetrics Metrics;
     void SpawnBossPosse();
     void PublishEncounter();
