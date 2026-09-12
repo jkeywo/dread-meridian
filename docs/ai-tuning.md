@@ -48,6 +48,15 @@ investigators, downs and a defeat and penalises damage taken and long fights;
 bot fitness rewards damage to enemies, kills, a victory and a fast finish and
 penalises damage and downs taken.
 
+Companion knobs also cover where to stand and which target to pick: the positional
+weights (`Position*`), the `Reposition` action's weight and latches, and the four
+focus-term weights. Focus terms live in an array, which a dotted knob path cannot
+address, so the search tunes `FocusTerm.<index>.Weight` and `expand_focus_terms`
+rewrites those into the array the profile loader reads. The inputs and curve shapes
+are fixed by design, so `FOCUS_TERMS` in the harness must stay in step with the
+terms `DMUtilityAI::DefaultWeights` builds, or a candidate quietly tunes a
+different curve from the one that ships. Enemies have neither system yet.
+
 Knobs are chosen for effect, not coverage. With rank ordering and one option per
 channel, an action's weight only matters when it competes inside the same rank
 and channel: an enemy's Engage, Signature or Strafe weight and a companion's

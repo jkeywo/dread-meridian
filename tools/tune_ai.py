@@ -74,6 +74,21 @@ RANGED = [Knob("KeepDistanceEnter", 0.15, 0.8, 0.5), Knob("KeepDistanceExit", 0.
 CAMP = [Knob("LeashRange", 1200, 2600, 1800), Knob("SightRange", 400, 900, 600), Knob("TargetCommitment", 0, 300, 75),
         Knob("MarkedWorth", 0, 1, 0.25), Knob("EliteWorth", 0, 1, 0.5)]
 COMMANDER = [Knob("AllyRadius", 500, 1400, 900)]
+# Where to stand and which target to pick: the knobs added by the 2026-09-12 tactics work, all hand-picked.
+# Every one of them changes which option wins or which target is chosen, which is the bar for a slot here.
+POSITION = [Knob("PositionStep", 150, 600, 320), Knob("PositionDangerRadius", 400, 1100, 750),
+            Knob("PositionDangerWeight", 0, 3, 1.4), Knob("PositionHazardWeight", 1, 8, 4),
+            Knob("PositionRangeWeight", 0, 3, 1.6), Knob("PositionAllyWeight", 0, 2, 0.45),
+            Knob("PositionClumpRadius", 60, 400, 170), Knob("PositionClumpWeight", 0, 2, 0.8),
+            Knob("PositionGroundRadius", 150, 800, 420), Knob("PositionGroundWeight", 0, 2, 0.7),
+            Knob("PositionTravelWeight", 0, 2, 0.55),
+            Knob("Actions.Reposition.Weight", 0.1, 1.0, 0.6),
+            Knob("Actions.Reposition.MaxRuntimeTicks", 5, 80, 25, True),
+            Knob("Actions.Reposition.DecisionCooldownTicks", 0, 80, 35, True)]
+# Indices match FOCUS_TERMS: finish the wounded, peel for an ally in peril, join a pair, press the suppressed.
+FOCUS = [Knob("FocusTerm.0.Weight", 0, 600, 260), Knob("FocusTerm.1.Weight", 0, 700, 320),
+         Knob("FocusTerm.2.Weight", 0, 400, 150), Knob("FocusTerm.3.Weight", 0, 400, 110)]
+
 COMPANION = [Knob("FleeEnter", 0.05, 0.5, 0.25), Knob("FleeExit", 0.3, 0.8, 0.4), Knob("FleeEnemyRadius", 200, 800, 400),
              Knob("FleeSafeRadius", 300, 1200, 600), Knob("FleeDistance", 150, 700, 400), Knob("EvadeMargin", 20, 200, 100),
              weight("Flee"), weight("EvadeHazard"), Knob("KCooldown", 0, 3, 1), Knob("TargetCommitment", 0, 300, 75),
@@ -118,22 +133,22 @@ HAND_KNOBS: dict[str, list[Knob]] = {
                  Knob("TargetCommitment", 0, 300, 75)],
     # The kit Bases are the cast-or-hold boundary for each named ability; DeadGround also exposes the cap that
     # keeps a 600-tick ultimate reachable at all, since that interacts with the shared KCooldown above.
-    "Sapper": COMPANION + [weight("SeekPickup", 0.2, 2.0, 0.9), Knob("PickupRadius", 300, 1200, 700),
+    "Sapper": COMPANION + POSITION + FOCUS + [weight("SeekPickup", 0.2, 2.0, 0.9), Knob("PickupRadius", 300, 1200, 700),
                Knob("Abilities.PlaceSatchel.Base", 1, 80, 23), Knob("KStock", 0, 4, 2),
                Knob("Abilities.SuppressingFire.Base", 1, 60, 10), Knob("Abilities.Tripwire.Base", 1, 60, 16),
                Knob("Abilities.DeadGround.Base", 1, 120, 32),
                Knob("Abilities.DeadGround.ThresholdCooldownCap", 50, 600, 150, True)],
     # Develop.Radius is the Exposure a bot waits for before spending a subject, which is the real decision here.
-    "Photographer": COMPANION + [Knob("Abilities.Frame.Base", 1, 60, 20),
+    "Photographer": COMPANION + POSITION + FOCUS + [Knob("Abilities.Frame.Base", 1, 60, 20),
                      Knob("Abilities.Flashbulb.Base", 1, 40, 6), Knob("Abilities.Develop.Base", 1, 40, 10),
                      Knob("Abilities.Develop.Radius", 10, 90, 40),
                      Knob("Abilities.ImpossiblePhotograph.Base", 1, 60, 11.7),
                      Knob("Abilities.ImpossiblePhotograph.ThresholdCooldownCap", 50, 600, 150, True)],
-    "Medium": COMPANION + [Knob("Abilities.BindSpirit.Base", 1, 40, 10), Knob("ThreatenedAllyHealth", 20, 90, 50),
+    "Medium": COMPANION + POSITION + FOCUS + [Knob("Abilities.BindSpirit.Base", 1, 40, 10), Knob("ThreatenedAllyHealth", 20, 90, 50),
                Knob("Abilities.Beckon.Base", 1, 40, 8), Knob("Abilities.Intercession.Base", 1, 40, 10),
                Knob("Abilities.OpenSeance.Base", 1, 90, 27),
                Knob("Abilities.OpenSeance.ThresholdCooldownCap", 50, 600, 150, True)],
-    "Smuggler": COMPANION + [Knob("Abilities.Clinch.Base", 1, 40, 10),
+    "Smuggler": COMPANION + POSITION + FOCUS + [Knob("Abilities.Clinch.Base", 1, 40, 10),
                  Knob("Abilities.ShoulderThrough.Base", 1, 40, 6), Knob("Abilities.DigIn.Base", 1, 30, 4),
                  Knob("Abilities.DrownedMan.Base", 1, 90, 26.4),
                  Knob("Abilities.DrownedMan.ThresholdCooldownCap", 50, 600, 150, True)],
@@ -146,6 +161,37 @@ LATCHES = [("FleeEnter", "FleeExit"), ("KeepDistanceEnter", "KeepDistanceExit")]
 
 def knob_for(profile: str, path: str) -> Knob | None:
     return next((k for k in KNOBS.get(profile, []) if k.path == path), None)
+
+
+# Focus-term weights live in an array, and a knob path builds nested dicts, so the search addresses them as
+# FocusTerm.<index>.Weight and expand_focus_terms() rewrites those into the array the profile loader expects.
+# Inputs and curve shapes are fixed by design (see DMUtilityAI::DefaultWeights); only the weights are tuned.
+# Keep this list in step with the FocusTerms built there, or a candidate will quietly tune a different curve.
+FOCUS_TERMS = [
+    {"Input": "TargetHealthFrac", "Curve": {"Curve": "InverseQuadratic", "Min": 0, "Max": 1, "Exponent": 2, "Midpoint": 0.5, "bInvert": False}, "Weight": 260.0},
+    {"Input": "AllyInPeril", "Curve": {"Curve": "Linear", "Min": 0, "Max": 1, "Exponent": 2, "Midpoint": 0.5, "bInvert": False}, "Weight": 320.0},
+    {"Input": "AlliesOnTarget", "Curve": {"Curve": "Bell", "Min": 0, "Max": 3, "Exponent": 3.2, "Midpoint": 0.4, "bInvert": False}, "Weight": 150.0},
+    {"Input": "TargetSuppressed", "Curve": {"Curve": "Step", "Min": 0, "Max": 1, "Exponent": 2, "Midpoint": 0.5, "bInvert": False}, "Weight": 110.0},
+]
+
+
+def expand_focus_terms(doc: dict) -> dict:
+    """Rewrite each profile's FocusTerm.<i>.Weight scalars as the full FocusTerms array the engine reads."""
+    out = {}
+    for profile, values in doc.items():
+        if not isinstance(values, dict) or "FocusTerm" not in values:
+            out[profile] = values
+            continue
+        values = dict(values)
+        indexed = values.pop("FocusTerm")
+        terms = [dict(term, Curve=dict(term["Curve"])) for term in FOCUS_TERMS]
+        for key, fields in (indexed or {}).items():
+            index = int(key)
+            if 0 <= index < len(terms) and isinstance(fields, dict) and "Weight" in fields:
+                terms[index]["Weight"] = fields["Weight"]
+        values["FocusTerms"] = terms
+        out[profile] = values
+    return out
 
 
 def get_value(doc: dict, profile: str, path: str, default: float) -> float:
@@ -345,7 +391,7 @@ def evaluate(runner: Runner, phase: int, team: str, generation: int, candidates:
     for index, doc in candidates:
         candidate_path = runner.args.out / "candidates" / f"p{phase}_g{generation}_c{index}.json"
         candidate_path.parent.mkdir(parents=True, exist_ok=True)
-        candidate_path.write_text(json.dumps(doc, indent=2, sort_keys=True), encoding="utf-8")
+        candidate_path.write_text(json.dumps(expand_focus_terms(doc), indent=2, sort_keys=True), encoding="utf-8")
         for seed in seeds:
             log_path = runner.args.out / "logs" / f"p{phase}_g{generation}_c{index}_s{seed}.log"
             jobs.append(Job(phase, team, generation, index, seed, candidate_path, log_path))
@@ -454,7 +500,7 @@ def evaluate_holdout(args: argparse.Namespace) -> int:
     label = args.label or ("defaults" if source.lower() == "none" else Path(source).stem)
     candidate_path = args.out / "candidates" / f"eval_{label}.json"
     candidate_path.parent.mkdir(parents=True, exist_ok=True)
-    candidate_path.write_text(json.dumps(doc, indent=2, sort_keys=True), encoding="utf-8")
+    candidate_path.write_text(json.dumps(expand_focus_terms(doc), indent=2, sort_keys=True), encoding="utf-8")
     runner = Runner(args, bot_fitness)
     runner.csv_path = args.out / f"eval_{label}.csv"
     jobs = [Job(-1, "eval", 0, 0, seed, candidate_path, args.out / "logs" / f"eval_{label}_s{seed}.log") for seed in args.seed_list]
@@ -517,7 +563,7 @@ def main() -> int:
         for index, doc in candidates:
             candidate_path = args.out / "candidates" / f"p{start_phase}_g0_c{index}.json"
             candidate_path.parent.mkdir(parents=True, exist_ok=True)
-            candidate_path.write_text(json.dumps(doc, indent=2, sort_keys=True), encoding="utf-8")
+            candidate_path.write_text(json.dumps(expand_focus_terms(doc), indent=2, sort_keys=True), encoding="utf-8")
             for seed in args.seed_list:
                 print(subprocess.list2cmdline(runner.command(seed, candidate_path, args.out / "logs" / f"p{start_phase}_g0_c{index}_s{seed}.log")))
         print(f"dry run: {len(candidates) * len(args.seed_list)} commands for phase {start_phase} ({team}); nothing launched")
