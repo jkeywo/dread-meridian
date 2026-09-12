@@ -99,8 +99,9 @@ COMPANION = [Knob("FleeEnter", 0.05, 0.5, 0.25), Knob("FleeExit", 0.3, 0.8, 0.4)
 BAKED_DEFAULTS: dict[str, dict[str, float]] = {
     "Gunman": {"Actions.KeepDistance.MaxRuntimeTicks": 27, "SightRange": 612.3128},
     "Bruiser": {"LeashRange": 1492.3444},
-    "Lookout": {"AllyRadius": 1011.3852, "EliteWorth": 0.9737, "TargetCommitment": 13.7513},
-    "Bomber": {"TargetCommitment": 52.5924},
+    "Lookout": {"AllyRadius": 1011.3852, "EliteWorth": 0.9737, "TargetCommitment": 0,
+                "LeashRange": 1995.1742, "Actions.KeepDistance.DecisionCooldownTicks": 36},
+    "Bomber": {"TargetCommitment": 52.5924, "Actions.KeepDistance.MaxRuntimeTicks": 54},
     "Sapper": {"Actions.EvadeHazard.Weight": 1.0801, "Actions.SeekPickup.Weight": 0.9233, "EliteWorth": 0.5328,
                "FleeDistance": 185.6959, "FleeEnter": 0.1843, "KCooldown": 0.7768, "KStock": 2.7864, "MarkedWorth": 0.36,
                "PingEnemyScore": 291.5309, "TargetCommitment": 46.0947},

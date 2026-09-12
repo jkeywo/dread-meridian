@@ -265,3 +265,73 @@ unknowable, since markers were private to the bot that placed them.
 Positional weights are hand-picked and untuned. The danger weight is deliberately cut to 35% for
 repositioning: standing in range of what you are shooting is dangerous by definition, and a bot that
 weighed it the way a retreating one does would simply leave.
+
+## Slice 5 — the tuning campaign
+
+Four phases alternating enemy and companion, six candidates over four generations, training seeds
+1927-1929, validation seeds 1930-1931, min gain 2%, sigma 0.15. 163 runs. Output in
+`Saved/AITuning2`. Seeds 1-6 were kept out of the campaign entirely and used only for the hold-out
+below.
+
+| Phase | Team | Before | After | Knobs moved |
+|---|---|---|---|---|
+| 0 | enemy | -1502.5 | -1379.4 | 4 |
+| 1 | bot | 10509.9 | 10509.9 | 0 |
+| 2 | enemy | -1379.4 | -1379.4 | 0 |
+| 3 | bot | 10509.9 | 10509.9 | 0 |
+
+### The companion phases found nothing, and that is the result
+
+"No knob moved" understates what happened. In **every** bot generation a candidate beat the incumbent
+on the training seeds by a wide margin - 10835.5 against 10509.9 in phase 1 generation 0, far above the
+2% acceptance bar - and was then rejected because it did **not** beat the incumbent on the two
+validation seeds (10639.2 against 10721.8). The same pattern repeated four times.
+
+That is the hold-out gate doing exactly the job it was added for. The gains were specific to three
+seeds, and the hand-picked tactical weights generalise better than anything the search found within
+budget. The four focus weights and eleven positional weights therefore ship as chosen by hand and
+ablation, not by the campaign.
+
+This is a budget statement, not a proof of optimality: four generations of a (1+5) hill climb over
+about forty knobs per companion profile is a small search, and a longer campaign with more training
+seeds may well beat these values.
+
+### The enemies were retuned, and it shows
+
+| Knob | Before | After |
+|---|---|---|
+| Bomber `Actions.KeepDistance.MaxRuntimeTicks` | default 40 | 54 |
+| Lookout `Actions.KeepDistance.DecisionCooldownTicks` | default 30 | 36 |
+| Lookout `LeashRange` | default 1800 | 1995.17 |
+| Lookout `TargetCommitment` | 13.7513 | 0 |
+
+The Lookout dropping target commitment to zero is the one worth reading: against companions that now
+leave a fight deliberately rather than standing where they were, a spotter that holds its mark is
+marking somebody who has already gone.
+
+Hold-out on seeds 1-6, which the campaign never saw, against the same build without the overrides:
+
+| | companions only | + enemy retune |
+|---|---|---|
+| victories | 6/6 | 6/6 |
+| downs | 3 | 5 |
+| damage taken | 2013 | 2249 |
+
+The investigators do worse, which is the point: this is an enemy improvement and it transfers to seeds
+it was not fitted to. Seed 3 carries most of it (1 down to 3). Baked into `ApplyTunedDefaults`, and
+the baked build reproduces the `-DMAIWeights` run byte for byte on all six seeds, which is the
+contract that block claims.
+
+### Final position against the 2026-09-12 baseline
+
+| metric | baseline | after, with the retuned enemies | |
+|---|---|---|---|
+| victories | 5/6 | **6/6** | |
+| investigator downs | 11 | **5** | -55% |
+| damage taken | 3331 | **2249** | -32% |
+| overkill damage | 1293 | **1008** | -22% |
+| hazard ticks | 385 | **200** | -48% |
+| trap ground kills | 31 | **34** | +10% |
+
+Both sides improved; the companions improved by more. Sandbox tuning against one encounter, not
+approved balance.

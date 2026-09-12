@@ -955,7 +955,10 @@ namespace
 {
     /**
      * Values baked from the Saved/AITuning/final campaign (campaign3 investigators + campaign4 enemies, 11 Sep 2026;
-     * thirty-seed hold-out 4/30 wins vs 2/30 for the hand defaults, see final/report.md). Applied on top of the hand
+     * thirty-seed hold-out 4/30 wins vs 2/30 for the hand defaults, see final/report.md), plus the 2026-09-12
+     * enemy retune against the new companion tactics (AITuning2; four Lookout and Bomber knobs, and nothing on the
+     * companion side - every bot mutation beat the incumbent on the training seeds and was rejected by the
+     * validation seeds, so the hand-picked tactical weights stand. See design/experiments/ai-tactics-2026-09-12.md). Applied on top of the hand
      * defaults so DefaultWeights(Role, Kind) equals those defaults plus final/best.json exactly: the literals are doubles
      * narrowed once, the same path a -DMAIWeights JSON number takes. Curve bookends that DefaultWeights derives from a
      * scalar (Flee, KeepDistance, SeekPickup, FollowLeader) are re-derived afterwards, as UDMAIProfile does for a JSON
@@ -966,6 +969,7 @@ namespace
         FDMAIWeights& W;
         void Weight(EDMAIAction A, double V) { if (FDMAIActionSpec* S = W.FindAction(A)) { S->Weight = static_cast<float>(V); S->bEnabled = S->Weight > 0; } }
         void Runtime(EDMAIAction A, int32 Ticks) { if (FDMAIActionSpec* S = W.FindAction(A)) { S->MaxRuntimeTicks = Ticks; } }
+        void Cooldown(EDMAIAction A, int32 Ticks) { if (FDMAIActionSpec* S = W.FindAction(A)) { S->DecisionCooldownTicks = Ticks; } }
         void Base(EDMAIAction A, double V) { if (FDMAIAbilityTemplate* T = W.Abilities.Find(A)) { T->Base = static_cast<float>(V); } }
         void Bookend(EDMAIAction A, EDMAIInput In, float Min, float Max)
         {
@@ -983,8 +987,14 @@ namespace
         {
         case EDMSmuggler::Gunman: W.SightRange = F(612.3128); T.Runtime(EDMAIAction::KeepDistance, 27); break;
         case EDMSmuggler::Bruiser: W.LeashRange = F(1492.3444); break;
-        case EDMSmuggler::Lookout: W.AllyRadius = F(1011.3852); W.EliteWorth = F(0.9737); W.TargetCommitment = F(13.7513); break;
-        case EDMSmuggler::Bomber: W.TargetCommitment = F(52.5924); break;
+        // Lookout and Bomber were retuned on 2026-09-12 against the new companion behaviour (AITuning2). The
+        // Lookout dropping TargetCommitment to zero is the interesting one: against companions that now leave a
+        // fight deliberately, a spotter that holds its mark is marking someone who has already gone.
+        case EDMSmuggler::Lookout:
+            W.AllyRadius = F(1011.3852); W.EliteWorth = F(0.9737); W.TargetCommitment = F(0);
+            W.LeashRange = F(1995.1742); T.Cooldown(EDMAIAction::KeepDistance, 36);
+            break;
+        case EDMSmuggler::Bomber: W.TargetCommitment = F(52.5924); T.Runtime(EDMAIAction::KeepDistance, 54); break;
         default: break;
         }
         switch (Kind)
