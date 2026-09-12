@@ -18,6 +18,24 @@ at victory, defeat or the 1800-tick soak timeout: outcome, tick, standing counts
 damage per team, downs, kills, revives, signature and Q activations, ping count
 and damage per entity.
 
+It also carries tactical-quality counters, sampled by `StepMetrics` after each
+Think loop. Outcome counters say who won; these say whether the squad played
+well, which damage and downs alone cannot distinguish from luck.
+`overkill_damage` is damage past what was needed to kill. `hazard_ticks` counts
+companion-ticks standing inside a hostile circle. `peel_ticks` counts attacking
+an enemy that is beating a companion in peril, and `unanswered_peril_ticks` the
+case nobody answered. `trap_ground_kills` counts enemies killed inside an
+investigator's armed trap, wire or zone. `isolated_downs` counts downs with no
+living companion nearby. `focus_distinct_ticks` and `focus_holder_ticks` are a
+pair: their ratio is how many companions share each target.
+
+Read the pair as a ratio, not a total, and be careful what you conclude from it.
+At the 2026-09-12 baseline it sits near 3.2 companions per ~1.05 distinct
+targets, so companions already converge on one enemy simply by being near it —
+a plain "two bots share a target" counter is over 90% saturated and cannot
+measure an improvement. `design/experiments/ai-tactics-2026-09-12.md` records
+the baseline and which counters actually discriminate.
+
 ## Search
 
 Phases alternate: even phases mutate only the enemy profiles (Gunman, Bruiser,

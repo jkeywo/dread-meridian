@@ -9,6 +9,8 @@
 #include "DMGameState.h"
 #include "DMAIProfile.h"
 #include "DMScroungePickup.h"
+#include "DMAbilityMarker.h"
+#include "DMKitRules.h"
 #include "Engine/GameInstance.h"
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -376,13 +378,102 @@ void ADMCombatGameMode::EmitPingEnded(const TArray<FDMPingEnded>& Ended)
 
 // ---- Tuning metrics
 
-void ADMCombatGameMode::NoteDamage(const ADMCombatant& From, const ADMCombatant& To, float Damage)
+namespace
+{
+    // Measurement thresholds for the tactical counters below. They describe play; they never steer it, so they
+    // are deliberately plain constants rather than tunable weights the search could optimise against.
+    constexpr float MetricIsolationRadius = 700.f;
+    constexpr float MetricPerilHealth = 50.f;
+    // A wire marker never sets Radius (it keeps the 220 default, which means nothing for a segment), so the
+    // band is named here. Deliberately wider than the kit's 35-unit crossing slack: the stagger and the
+    // follow-up that finishes the victim land slightly off the line, and those still count as the wire working.
+    constexpr float MetricWireBand = 120.f;
+
+    /** True when Point lies inside this marker's actual shape, not just its bounding radius. */
+    bool MarkerCovers(const ADMAbilityMarker& Marker, const FVector& Point)
+    {
+        switch (Marker.Shape)
+        {
+        case EDMMarkerShape::Cone:
+            return DMKitRules::PointInCone(Marker.GetActorLocation(), Marker.Direction, Marker.HalfAngle, Marker.Length, Point);
+        case EDMMarkerShape::Wire:
+            return DMKitRules::DistanceToSegment2D(Marker.GetActorLocation(), Marker.WireEnd, Point) <= MetricWireBand;
+        default:
+            return FVector::Dist2D(Marker.GetActorLocation(), Point) <= Marker.Radius;
+        }
+    }
+}
+
+void ADMCombatGameMode::NoteDamage(const ADMCombatant& From, const ADMCombatant& To, float Damage, float PoolBefore)
 {
     if (!(Damage > 0)) { return; }
     if (To.bIsEnemy) { Metrics.DamageToEnemies += Damage; } else { Metrics.DamageToInvestigators += Damage; }
     Metrics.DamageDealtBy.FindOrAdd(From.EntityId) += Damage;
+    // Everything past the target's remaining pool bought nothing: the cost of piling onto a target already dead.
+    Metrics.OverkillDamage += FMath::Max(0.f, Damage - FMath::Max(0.f, PoolBefore));
 }
-void ADMCombatGameMode::NoteDowned(const ADMCombatant& Target) { if (Target.bIsEnemy) { ++Metrics.EnemyKills; } else { ++Metrics.InvestigatorDowns; } }
+void ADMCombatGameMode::NoteDowned(const ADMCombatant& Target)
+{
+    if (Target.bIsEnemy)
+    {
+        ++Metrics.EnemyKills;
+        for (TActorIterator<ADMAbilityMarker> It(GetWorld()); It; ++It)
+        {
+            if (It->bHostile || It->bSpirit || !It->IsArmed() || !MarkerCovers(**It, Target.GetActorLocation())) { continue; }
+            ++Metrics.TrapGroundKills;
+            break;
+        }
+        return;
+    }
+    ++Metrics.InvestigatorDowns;
+    for (const ADMCombatant* Ally : Combatants)
+    {
+        if (!Ally || Ally == &Target || Ally->bIsEnemy || Ally->IsDown()) { continue; }
+        if (FVector::Dist2D(Ally->GetActorLocation(), Target.GetActorLocation()) <= MetricIsolationRadius) { return; }
+    }
+    ++Metrics.IsolatedDowns;
+}
+
+void ADMCombatGameMode::StepMetrics()
+{
+    TMap<const ADMCombatant*, int32> OnTarget;
+    for (const ADMCombatant* Actor : Combatants)
+    {
+        if (!Actor || Actor->bIsEnemy || Actor->IsDown()) { continue; }
+        for (TActorIterator<ADMAbilityMarker> It(GetWorld()); It; ++It)
+        {
+            if (!It->bHostile || It->BoundTarget || !MarkerCovers(**It, Actor->GetActorLocation())) { continue; }
+            ++Metrics.HazardTicks;
+            break;
+        }
+        const ADMCombatant* Focus = Actor->GetAttackTarget();
+        if (!Focus || Focus->IsDown()) { continue; }
+        ++OnTarget.FindOrAdd(Focus);
+        // Peeling: hitting the enemy that is beating a teammate who is in real trouble.
+        const ADMCombatant* Victim = Focus->GetAttackTarget();
+        if (Victim && Victim != Actor && !Victim->bIsEnemy && !Victim->IsDown() && Victim->Health() < MetricPerilHealth)
+        { ++Metrics.PeelTicks; }
+    }
+    Metrics.FocusDistinctTicks += OnTarget.Num();
+    for (const TPair<const ADMCombatant*, int32>& Pair : OnTarget) { Metrics.FocusHolderTicks += Pair.Value; }
+
+    // A companion in peril whose attacker nobody is answering.
+    for (const ADMCombatant* Victim : Combatants)
+    {
+        if (!Victim || Victim->bIsEnemy || Victim->IsDown() || Victim->Health() >= MetricPerilHealth) { continue; }
+        for (const ADMCombatant* Attacker : Combatants)
+        {
+            if (!Attacker || !Attacker->bIsEnemy || Attacker->IsDown() || Attacker->GetAttackTarget() != Victim) { continue; }
+            bool bAnswered = false;
+            for (const ADMCombatant* Ally : Combatants)
+            {
+                if (!Ally || Ally->bIsEnemy || Ally->IsDown() || Ally == Victim) { continue; }
+                if (Ally->GetAttackTarget() == Attacker) { bAnswered = true; break; }
+            }
+            if (!bAnswered) { ++Metrics.UnansweredPerilTicks; }
+        }
+    }
+}
 void ADMCombatGameMode::NoteRevive() { ++Metrics.Revives; }
 void ADMCombatGameMode::NoteSignature() { ++Metrics.SignatureActivations; }
 void ADMCombatGameMode::NoteQCast() { ++Metrics.QCasts; }
@@ -426,6 +517,14 @@ void ADMCombatGameMode::LogResult(const FString& Outcome)
     Data->SetNumberField(TEXT("e_casts"), Metrics.ECasts);
     Data->SetNumberField(TEXT("r_casts"), Metrics.RCasts);
     Data->SetNumberField(TEXT("pings"), Metrics.PingsCreated);
+    Data->SetNumberField(TEXT("overkill_damage"), Metrics.OverkillDamage);
+    Data->SetNumberField(TEXT("focus_distinct_ticks"), Metrics.FocusDistinctTicks);
+    Data->SetNumberField(TEXT("focus_holder_ticks"), Metrics.FocusHolderTicks);
+    Data->SetNumberField(TEXT("hazard_ticks"), Metrics.HazardTicks);
+    Data->SetNumberField(TEXT("peel_ticks"), Metrics.PeelTicks);
+    Data->SetNumberField(TEXT("unanswered_peril_ticks"), Metrics.UnansweredPerilTicks);
+    Data->SetNumberField(TEXT("trap_ground_kills"), Metrics.TrapGroundKills);
+    Data->SetNumberField(TEXT("isolated_downs"), Metrics.IsolatedDowns);
     TSharedPtr<FJsonObject> By = MakeShared<FJsonObject>();
     TArray<FString> Keys;
     Metrics.DamageDealtBy.GetKeys(Keys);
@@ -473,6 +572,7 @@ void ADMCombatGameMode::StepCombat()
     // Character movement/physics remains Unreal-authoritative, outside a replay guarantee.
     for (ADMCombatant* Actor : Combatants)
     { if (ADMSquadController* Bot = Cast<ADMSquadController>(Actor->GetController())) { Bot->Think(*this); } }
+    StepMetrics();
     for (ADMCombatant* Actor : Combatants)
     { if (!Actor->bIsEnemy) { Actor->SetReviveChannel(FString(), 0); } }
     for (ADMCombatant* Actor : Combatants)

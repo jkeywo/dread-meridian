@@ -29,6 +29,33 @@ struct DREADMERIDIAN_API FDMCombatMetrics
     TMap<FString, float> DamageDealtBy;
     /** "<EntityId>.<w|e|r>" -> casts. The totals above cannot show that every kit fired, only that some did. */
     TMap<FString, int32> KitCastsBy;
+
+    // Tactical-quality counters. The counters above say who won; these say whether the squad played well,
+    // which damage and downs alone cannot distinguish from luck. All are observations, never inputs to play.
+    /** Damage dealt past what was needed to kill: the cost of two bots committing to the same dying target. */
+    float OverkillDamage = 0;
+    /**
+     * Focus quality, as a pair to be read as a ratio. Each tick adds the number of distinct enemies held by
+     * living companions to the first, and the number of companions holding any target to the second. A ratio
+     * near 1 is the whole squad on one enemy; near 4 is four bots on four enemies. "Do two bots share a target"
+     * was tried first and is useless here: nearest-target selection already saturates it above 90%.
+     */
+    int32 FocusDistinctTicks = 0;
+    int32 FocusHolderTicks = 0;
+    /** Companion-ticks spent standing inside a hostile hazard circle. */
+    int32 HazardTicks = 0;
+    /** Companion-ticks spent attacking an enemy that is itself attacking a companion below PerilHealth. */
+    int32 PeelTicks = 0;
+    /**
+     * The failure this is really about: ticks where a companion below PerilHealth is being attacked and no
+     * other living companion is attacking their attacker. PeelTicks alone rises simply because everyone is
+     * hurt, so it cannot tell good peeling from a losing fight; this one names the unanswered case.
+     */
+    int32 UnansweredPerilTicks = 0;
+    /** Enemy deaths inside an investigator's armed satchel, wire or suppression zone: prepared ground paying off. */
+    int32 TrapGroundKills = 0;
+    /** Investigator downs with no living companion within IsolationRadius. */
+    int32 IsolatedDowns = 0;
 };
 
 UCLASS()
@@ -68,7 +95,8 @@ public:
     UDMAIProfile* ProfileFor(const ADMCombatant& Actor);
 
     // ---- Tuning metrics (called by ADMCombatant on the authority)
-    void NoteDamage(const ADMCombatant& From, const ADMCombatant& To, float Damage);
+    /** PoolBefore is the target's Health + Shield before this hit, so the overkill past a kill can be counted. */
+    void NoteDamage(const ADMCombatant& From, const ADMCombatant& To, float Damage, float PoolBefore);
     void NoteDowned(const ADMCombatant& Target);
     void NoteRevive();
     void NoteSignature();
@@ -106,6 +134,11 @@ private:
     void StepCombat();
     /** Expires/fulfils pings (dead targets, revived allies, collected pickups), emits ping.ended, republishes. Runs before the Think loop. */
     void StepPings();
+    /**
+     * Samples the per-tick tactical counters (focus overlap, hazard standing, peeling) after the Think loop,
+     * so they describe the decisions the squad just committed to. Observation only: it changes no gameplay state.
+     */
+    void StepMetrics();
     void PublishPings();
     void EmitPingEnded(const TArray<FDMPingEnded>& Ended);
     /** One DREAD_AI_RESULT line with FDMCombatMetrics plus outcome/tick; Outcome is victory, defeat or timeout. */

@@ -207,7 +207,7 @@ bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FS
     Target->ApplyAttributeDelta(UDMHealthAttributes::GetHealthAttribute(), -(ResolvedDamage - Absorbed));
     Target->Threat.FindOrAdd(EntityId) += Before - Target->Health();
     Target->LastDamageTick = Mode->GetCombatTick();
-    Mode->NoteDamage(*this, *Target, ResolvedDamage);
+    Mode->NoteDamage(*this, *Target, ResolvedDamage, Before + ShieldBefore);
     TSharedRef<FJsonObject> Data = MakeShared<FJsonObject>();
     Data->SetStringField(TEXT("actor_id"), EntityId);
     Data->SetStringField(TEXT("target_id"), Target->EntityId);
