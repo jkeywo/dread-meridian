@@ -66,6 +66,8 @@ namespace
     constexpr float SeekPickupNearRadius = 300;
     /** Engage keeps closing to this distance while the focus is occluded, instead of parking at attack range behind a wall. */
     constexpr float OccludedApproachStop = 120;
+    /** Below this, a better stand-point is not worth the walk: shuffling costs more shooting than it saves damage. */
+    constexpr float RepositionMinStep = 140;
 
     const TCHAR* const ActionNames[] = {
         TEXT("None"), TEXT("HoldCast"), TEXT("Rescue"), TEXT("ReturnHome"), TEXT("EvadeHazard"), TEXT("Flee"), TEXT("RetreatToPing"),
@@ -73,7 +75,8 @@ namespace
         TEXT("Strafe"), TEXT("Engage"), TEXT("InvestigatePing"), TEXT("Anchor"), TEXT("Patrol"), TEXT("FollowLeader"), TEXT("Hold"),
         TEXT("BasicAttack"), TEXT("Signature"), TEXT("Throw"), TEXT("HoldFrame"), TEXT("Frame"), TEXT("PlaceSatchel"), TEXT("BindSpirit"), TEXT("Clinch"),
         TEXT("SuppressingFire"), TEXT("Tripwire"), TEXT("DeadGround"), TEXT("Flashbulb"), TEXT("Develop"), TEXT("ImpossiblePhotograph"),
-        TEXT("Beckon"), TEXT("Intercession"), TEXT("OpenSeance"), TEXT("ShoulderThrough"), TEXT("DigIn"), TEXT("DrownedMan") };
+        TEXT("Beckon"), TEXT("Intercession"), TEXT("OpenSeance"), TEXT("ShoulderThrough"), TEXT("DigIn"), TEXT("DrownedMan"),
+        TEXT("Reposition") };
     static_assert(static_cast<int32>(UE_ARRAY_COUNT(ActionNames)) == static_cast<int32>(EDMAIAction::Count), "ActionNames out of sync with EDMAIAction");
 
     const TCHAR* const InputNames[] = {
@@ -480,7 +483,9 @@ namespace
                 if (In)
                 {
                     const FVector Dir = Away(In->Center);
-                    Simple(EDMAIAction::EvadeHazard, nullptr, Clamp(In->Center + Dir * (In->Radius + W.EvadeMargin + 20)));
+                    const FVector Fallback = Clamp(In->Center + Dir * (In->Radius + W.EvadeMargin + 20));
+                    // Radially outward is not always out: it can cross a second circle, or a wall.
+                    Simple(EDMAIAction::EvadeHazard, nullptr, DMUtilityAI::ChoosePosition(C, EDMAIIntent::Evade, F, Fallback));
                 }
             }
 
@@ -491,7 +496,10 @@ namespace
                 const FVector Dir = Enemy ? Away(Enemy->Location) : FVector(1, 0, 0);
                 const FDMAIActorView* Ally = C.Actors.IsValidIndex(C.LeaderIndex) && Friendly(C.Actors[C.LeaderIndex]) ? &C.Actors[C.LeaderIndex] : nullptr;
                 if (!Ally) { for (const FDMAIActorView& A : C.Actors) { if (Friendly(A)) { Ally = &A; break; } } }
-                Simple(EDMAIAction::Flee, nullptr, Clamp(Ally ? Ally->Location + Dir * 150 : S.Location + Dir * W.FleeDistance));
+                const FVector Fallback = Clamp(Ally ? Ally->Location + Dir * 150 : S.Location + Dir * W.FleeDistance);
+                // Which way out, rather than simply away: the old vector ignored where the rest of the enemies
+                // were, walked through hazards it could see, and knew nothing about the wire an ally had laid.
+                Simple(EDMAIAction::Flee, nullptr, DMUtilityAI::ChoosePosition(C, EDMAIIntent::Flee, Enemy, Fallback));
             }
             if (bCompanion)
             {
@@ -834,6 +842,14 @@ namespace
                 }
             }
 
+            // Reposition: already in range, so stand somewhere better while shooting. Ranked below Engage and
+            // latched like KeepDistance, because it competes for the one Move channel a tick allows.
+            if (bCompanion && F && F->Distance2D <= S.AttackRange && !M.bFleeing)
+            {
+                const FVector Better = DMUtilityAI::ChoosePosition(C, EDMAIIntent::Reposition, F, S.Location);
+                if (FVector::Dist2D(Better, S.Location) > RepositionMinStep) { Simple(EDMAIAction::Reposition, F, Better); }
+            }
+
             // Engage: approach the focus to attack range, or to the range of a cast vetoed out_of_range.
             if (F)
             {
@@ -849,7 +865,17 @@ namespace
                 if (!F->bVisible) { Stop = FMath::Min(Stop, OccludedApproachStop); }
                 if (F->Distance2D > Stop)
                 {
-                    FEmit E; E.Action = EDMAIAction::Engage; E.Target = F; E.Point = F->Location; E.bPingAct = true; E.Multiplier = bBonus ? 1.2f : 1.f;
+                    FEmit E; E.Action = EDMAIAction::Engage; E.Target = F; E.bPingAct = true; E.Multiplier = bBonus ? 1.2f : 1.f;
+                    // Walking onto the target is the shortest path, not the best place to stand. Only worth
+                    // scoring once close enough for the choice of approach to matter; further out the straight
+                    // line is the answer and the whiskers cannot see that far anyway.
+                    // Straight at it, deliberately. Scoring the approach was tried twice and lost both times: left
+                    // to choose freely the squad stood off and timed out three of six seeds with five kills
+                    // between them, and constrained so every candidate closes it still cost three extra downs and
+                    // 800 more damage taken than walking in. In an arena with no cover the shortest path is also
+                    // the least time under fire, so a prettier approach is only a longer one. Repositioning once
+                    // already in range is a different question and does pay - see Reposition.
+                    E.Point = F->Location;
                     Emit(W.FindAction(EDMAIAction::Engage), E);
                 }
             }
@@ -1083,6 +1109,9 @@ namespace DMUtilityAI
         }
         D.Add(EDMAIAction::Engage, EDMAIRank::Routine, 1, ChMove, FDefaults::Std());
         if (bCompanionKind) { D.Add(EDMAIAction::InvestigatePing, EDMAIRank::Routine, .8f, ChMove, StdPlus({ Inv(EDMAIInput::PingAge, 0, 1) })); }
+        // Below Engage's weight so closing always wins the Move channel, and latched so a bot cannot spend the
+        // fight sidestepping between two equally good spots.
+        if (bCompanionKind) { D.Add(EDMAIAction::Reposition, EDMAIRank::Routine, .6f, ChMove, FDefaults::Std(), 25, 35); }
         if (bEnemyRole || bRaider)
         {
             D.Add(EDMAIAction::Anchor, EDMAIRank::Routine, .3f, ChMove, FDefaults::Std());
@@ -1226,6 +1255,150 @@ namespace DMUtilityAI
         return Best;
     }
 
+    FVector ChoosePosition(const FDMAIContext& C, EDMAIIntent Intent, const FDMAIActorView* Focus, const FVector& Fallback)
+    {
+        static const FDMAIWeights FallbackWeights = DefaultWeights(EDMSmuggler::None, EDMInvestigator::None);
+        const FDMAIWeights& W = C.W ? *C.W : FallbackWeights;
+        const FDMAISelfView& S = C.Self;
+
+        const auto Clamped = [&C](const FVector& P)
+        {
+            return FVector(FMath::Clamp(P.X, -C.PlayableExtent.X, C.PlayableExtent.X),
+                           FMath::Clamp(P.Y, -C.PlayableExtent.Y, C.PlayableExtent.Y), P.Z);
+        };
+        const auto Living = [&S](const FDMAIActorView& A) { return !A.bDown && A.Index != S.Index; };
+
+        // Candidates: stand still, do what the formula would have done, or step out along a whisker. Standing
+        // still competes on equal terms, which with the travel cost is what keeps a bot from skating; and
+        // including the old geometry means this can lose to nothing it replaces.
+        TArray<FVector, TInlineAllocator<16>> Candidates;
+        Candidates.Add(S.Location);
+        Candidates.Add(Clamped(Fallback));
+        const int32 Rays = C.Clearance.Num();
+        for (int32 Ray = 0; Ray < Rays; ++Ray)
+        {
+            const float Angle = 2.f * PI * Ray / Rays;
+            const FVector Dir(FMath::Cos(Angle), FMath::Sin(Angle), 0);
+            // Stop short of whatever the whisker hit: a point inside a wall is not somewhere to stand.
+            const float Reach = FMath::Min(W.PositionStep, FMath::Max(0.f, C.Clearance[Ray] - 60.f));
+            if (Reach < 60.f) { continue; }
+            Candidates.Add(Clamped(S.Location + Dir * Reach));
+        }
+
+        // Reference scale for danger, so the term reads as "what fraction of the incoming this point eats".
+        float TotalDps = 0;
+        for (const FDMAIActorView& A : C.Actors)
+        { if (Living(A) && A.bEnemy != S.bEnemy && A.AttackInterval > 0) { TotalDps += A.AttackDamage / A.AttackInterval; } }
+
+        const float DesiredRange = FMath::Max(60.f, S.AttackRange - W.ApproachBand);
+
+        // Standing in range of the thing you are shooting is dangerous by definition, so a bot repositioning
+        // mid-fight cannot weigh danger the way a retreating one does or it would simply leave. While fighting,
+        // danger picks between places to stand; it does not get a vote on whether to stand and fight.
+        const float DangerWeight = W.PositionDangerWeight * (Intent == EDMAIIntent::Reposition ? .35f : 1.f);
+
+        float BestScore = -MAX_flt;
+        FVector Best = S.Location;
+        for (const FVector& P : Candidates)
+        {
+            // Repositioning must not give up the ability to shoot. The limit is the actual attack range, not the
+            // band Engage stops at: clamping to that tighter figure left so few candidates that the bot usually
+            // had nowhere to go, and cost four of the six downs this saves.
+            if (Intent == EDMAIIntent::Reposition && Focus && FVector::Dist2D(P, Focus->Location) > S.AttackRange)
+            { continue; }
+            float Score = 0;
+
+            // What it costs to stand here: every hostile that can reach this point, weighted by its output.
+            if (TotalDps > 0 && W.PositionDangerRadius > 0)
+            {
+                float Danger = 0;
+                for (const FDMAIActorView& A : C.Actors)
+                {
+                    if (!Living(A) || A.bEnemy == S.bEnemy || A.AttackInterval <= 0) { continue; }
+                    const float Near = 1.f - FMath::Clamp(static_cast<float>(FVector::Dist2D(P, A.Location)) / W.PositionDangerRadius, 0.f, 1.f);
+                    Danger += (A.AttackDamage / A.AttackInterval) * Near;
+                }
+                Score -= DangerWeight * (Danger / TotalDps);
+            }
+
+            // Telegraphed ground. Deliberately heavy and depth-scaled, so the edge of a circle beats the middle
+            // of one and anywhere outside beats both.
+            float Depth = 0;
+            for (const FDMAIHazard& H : C.Hazards)
+            { Depth = FMath::Max(Depth, H.Radius + W.EvadeMargin - static_cast<float>(FVector::Dist2D(P, H.Center))); }
+            if (Depth > 0)
+            { Score -= W.PositionHazardWeight * FMath::Clamp(Depth / FMath::Max(1.f, W.EvadeMargin), 0.f, 1.f); }
+
+            // The distance this intent actually wants.
+            float Fit = 0;
+            switch (Intent)
+            {
+            case EDMAIIntent::Reposition:
+                if (Focus)
+                {
+                    const float D = FVector::Dist2D(P, Focus->Location);
+                    Fit = 1.f - FMath::Clamp(FMath::Abs(D - DesiredRange) / FMath::Max(1.f, DesiredRange), 0.f, 1.f);
+                }
+                break;
+            case EDMAIIntent::KeepDistance:
+                if (Focus)
+                {
+                    const float Want = FMath::Max(1.f, S.AttackRange * W.KeepDistanceExit);
+                    Fit = FMath::Clamp(static_cast<float>(FVector::Dist2D(P, Focus->Location)) / Want, 0.f, 1.f);
+                }
+                break;
+            case EDMAIIntent::Flee:
+            {
+                float Nearest = MAX_flt;
+                for (const FDMAIActorView& A : C.Actors)
+                { if (Living(A) && A.bEnemy != S.bEnemy) { Nearest = FMath::Min(Nearest, static_cast<float>(FVector::Dist2D(P, A.Location))); } }
+                Fit = Nearest == MAX_flt ? 1.f : FMath::Clamp(Nearest / FMath::Max(1.f, W.FleeSafeRadius), 0.f, 1.f);
+                break;
+            }
+            case EDMAIIntent::Evade:
+                break;
+            }
+            Score += W.PositionRangeWeight * Fit;
+
+            // Teammates: near enough to support, far enough that one shell does not take two of us.
+            {
+                float NearestAlly = MAX_flt;
+                for (const FDMAIActorView& A : C.Actors)
+                { if (Living(A) && A.bEnemy == S.bEnemy) { NearestAlly = FMath::Min(NearestAlly, static_cast<float>(FVector::Dist2D(P, A.Location))); } }
+                if (NearestAlly < MAX_flt)
+                {
+                    Score += W.PositionAllyWeight * (1.f - FMath::Clamp(NearestAlly / FMath::Max(1.f, W.AllyRadius), 0.f, 1.f));
+                    if (NearestAlly < W.PositionClumpRadius)
+                    { Score -= W.PositionClumpWeight * (1.f - NearestAlly / FMath::Max(1.f, W.PositionClumpRadius)); }
+                }
+            }
+
+            // Prepared ground: this bot's own traps, and the ones teammates have called out. Falling back across
+            // a wire someone laid is the whole point of hearing about it.
+            if ((Intent == EDMAIIntent::Flee || Intent == EDMAIIntent::Reposition) && W.PositionGroundRadius > 0)
+            {
+                float NearestGround = MAX_flt;
+                for (const FDMAIMarkerView& M : C.Markers)
+                {
+                    if (!M.bArmed || M.Kind == FDMAIMarkerView::Spirit) { continue; }
+                    NearestGround = FMath::Min(NearestGround, DMKitRules::DistanceToSegment2D(M.Location, M.WireEnd.IsNearlyZero() ? M.Location : M.WireEnd, P));
+                }
+                for (const FDMAIClaimView& Claim : C.Claims)
+                {
+                    if (Claim.Kind != EDMClaimKind::Ground) { continue; }
+                    NearestGround = FMath::Min(NearestGround, DMKitRules::DistanceToSegment2D(Claim.Location, Claim.Location2.IsNearlyZero() ? Claim.Location : Claim.Location2, P));
+                }
+                if (NearestGround < MAX_flt)
+                { Score += W.PositionGroundWeight * (1.f - FMath::Clamp(NearestGround / W.PositionGroundRadius, 0.f, 1.f)); }
+            }
+
+            Score -= W.PositionTravelWeight * FMath::Clamp(static_cast<float>(FVector::Dist2D(P, S.Location)) / FMath::Max(1.f, W.PositionStep), 0.f, 1.f);
+
+            if (Score > BestScore) { BestScore = Score; Best = P; }
+        }
+        return Best;
+    }
+
     void BuildOptions(const FDMAIContext& C, int32 Focus, TArray<FDMAIOption>& Out) { BuildOptionsWith(C, Focus, C.Memory, Out); }
 
     void Select(TArray<FDMAIOption>& Options, FDMAIDecision& Out)
@@ -1352,6 +1525,15 @@ namespace DMUtilityAI
             {
                 FDMSquadClaim& Claim = D.Claims.AddDefaulted_GetRef();
                 Claim.Kind = EDMClaimKind::Rescue; Claim.TargetIndex = Rescue->Target; Claim.Location = Rescue->Point;
+            }
+            // Where this bot has laid something. Republished while it stands, so a trap whose owner goes down
+            // stops being part of anyone's plan within two ticks. Spirits are not ground to fall back onto.
+            for (const FDMAIMarkerView& Marker : C.Markers)
+            {
+                if (!Marker.bArmed || Marker.Kind == FDMAIMarkerView::Spirit) { continue; }
+                FDMSquadClaim& Claim = D.Claims.AddDefaulted_GetRef();
+                Claim.Kind = EDMClaimKind::Ground; Claim.Location = Marker.Location;
+                Claim.Location2 = Marker.WireEnd; Claim.Radius = Marker.Radius; Claim.Serial = Marker.Serial;
             }
         }
 

@@ -43,6 +43,7 @@ enum class EDMAIAction : uint8
     // Named kits (GDD Appendix K, A nodes), in W/E/R order per investigator.
     SuppressingFire, Tripwire, DeadGround, Flashbulb, Develop, ImpossiblePhotograph,
     Beckon, Intercession, OpenSeance, ShoulderThrough, DigIn, DrownedMan,
+    Reposition,
     Count UMETA(Hidden)
 };
 
@@ -263,6 +264,26 @@ struct DREADMERIDIAN_API FDMAIWeights
     UPROPERTY(EditAnywhere) float HelpArriveRadius = 200;
     UPROPERTY(EditAnywhere) int32 BotPingCooldownTicks = 50;
 
+    // Positional scoring. ChoosePosition samples points and scores them on these; see DMUtilityAI.cpp.
+    /** How far out along each whisker a candidate stand-point is sampled. */
+    UPROPERTY(EditAnywhere) float PositionStep = 320;
+    /** Hostiles beyond this contribute no danger to a candidate point. */
+    UPROPERTY(EditAnywhere) float PositionDangerRadius = 750;
+    UPROPERTY(EditAnywhere) float PositionDangerWeight = 1.4f;
+    /** Standing in a telegraphed circle. Large: this is a switch, not a preference. */
+    UPROPERTY(EditAnywhere) float PositionHazardWeight = 4;
+    /** How strongly a point is wanted at the distance the current intent asks for. */
+    UPROPERTY(EditAnywhere) float PositionRangeWeight = 1.6f;
+    UPROPERTY(EditAnywhere) float PositionAllyWeight = .45f;
+    /** Closer than this to a teammate is crowding: one bomb, two casualties. */
+    UPROPERTY(EditAnywhere) float PositionClumpRadius = 170;
+    UPROPERTY(EditAnywhere) float PositionClumpWeight = .8f;
+    /** Pull toward armed traps and zones, the team's or this bot's own, when falling back or repositioning. */
+    UPROPERTY(EditAnywhere) float PositionGroundRadius = 420;
+    UPROPERTY(EditAnywhere) float PositionGroundWeight = .7f;
+    /** Cost of walking there at all: the hysteresis that stops a bot skating between equally good points. */
+    UPROPERTY(EditAnywhere) float PositionTravelWeight = .55f;
+
     /** Reserved: weighted random within this fraction of the top score, drawn from EDMRandomStream::AIChoice. 0 = argmax. */
     UPROPERTY(EditAnywhere) float TopBandFraction = 0;
 
@@ -429,6 +450,14 @@ struct DREADMERIDIAN_API FDMAIContext
     TArray<FDMAIPingView> Pings;
     /** The deciding bot's own satchels, wires, zones and spirits, so kit options can reason about their geometry. */
     TArray<FDMAIMarkerView> Markers;
+    /**
+     * Distance to the first blocker along each of Clearance.Num() rays, evenly spaced from +X counter-clockwise,
+     * capped at the longest step the brain will take. The pure layer cannot trace, and the arena has no nav mesh:
+     * a bot steers straight at its goal and grinds into whatever is in the way. These whiskers are how a candidate
+     * stand-point is known to be reachable, and a short one is also the only usable hint that there is cover there.
+     * Empty when unsensed, which every candidate then treats as open ground.
+     */
+    TArray<float> Clearance;
     /** What teammates have said they are doing. Never contains the deciding bot's own claims. */
     TArray<FDMAIClaimView> Claims;
     FVector PlayableExtent = FVector(2900, 2400, 0);
@@ -500,6 +529,15 @@ struct DREADMERIDIAN_API FDMAIDecision
 
 // ---------------------------------------------------------------------------------------------- API
 
+/** What a movement option is trying to achieve, which is what decides whether a stand-point is any good. */
+enum class EDMAIIntent : uint8
+{
+    KeepDistance, // stand outside the focus's reach
+    Flee,         // get away from the nearest hostile, toward help and prepared ground
+    Evade,        // out of the fire, and nothing else matters much
+    Reposition,   // already in range: stand somewhere better while shooting
+};
+
 namespace DMUtilityAI
 {
     /** Mark's compensation: each score s becomes s + (1 - s) * (1 - 1/n) * s; then the product. Any zero gives zero. */
@@ -553,6 +591,16 @@ namespace DMUtilityAI
     DREADMERIDIAN_API float ExpectedHealthAtResolve(const FDMAIContext& Context, int32 TargetIndex, int32 CastDelayTicks);
     /** Strongest live ping weight of the given kind(s) on a roster index (Focus and Enemy both count for PingFocusOnTarget). */
     DREADMERIDIAN_API float PingWeightOnTarget(const FDMAIContext& Context, int32 TargetIndex, EDMPingKind Kind);
+
+    /**
+     * Best stand-point for an intent, by scoring sampled candidates on incoming danger, hazards, the distance the
+     * intent wants, teammate spacing, prepared ground and the cost of walking there.
+     *
+     * Candidates are the bot's current position, Fallback (what the fixed geometry would have chosen, so this can
+     * never do worse than the formula it replaces), and points along each whisker clamped to its clearance.
+     * Pure and deterministic: no RNG, and ties break on candidate order.
+     */
+    DREADMERIDIAN_API FVector ChoosePosition(const FDMAIContext& Context, EDMAIIntent Intent, const FDMAIActorView* Focus, const FVector& Fallback);
 
     DREADMERIDIAN_API const TCHAR* ActionName(EDMAIAction Action);
     DREADMERIDIAN_API const TCHAR* RankName(EDMAIRank Rank);

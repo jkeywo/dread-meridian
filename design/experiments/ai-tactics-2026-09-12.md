@@ -193,3 +193,75 @@ already total. The peak sits near one other bot - pair up, but leave the third a
 their own target.
 
 All four terms are hand-picked and remain untuned; they are new knobs for the tuning campaign.
+
+## Slice 3 — choosing where to stand
+
+Whiskers (12 traces per companion per tick) tell the pure scorer how far it can actually walk in each
+direction; `ChoosePosition` scores sampled stand-points on incoming danger, hazards, the distance the
+intent wants, teammate spacing, prepared ground and travel cost. Wired into fleeing, hazard evasion
+and a new `Reposition` action. Six seeds:
+
+| seed | outcome | tick | dmg taken | downs | overkill | hazard | trap kills |
+|---|---|---|---|---|---|---|---|
+| 1 | victory | 701 | 426 | 1 | 270 | 48 | 5 |
+| 2 | victory | 599 | 293 | 0 | 156 | 31 | 6 |
+| 3 | victory | 555 | 316 | 1 | 143 | 35 | 8 |
+| 4 | victory | 625 | 372 | 1 | 102 | 19 | 6 |
+| 5 | victory | 507 | 313 | 0 | 120 | 27 | 5 |
+| 6 | victory | 579 | 293 | 0 | 216 | 29 | 4 |
+
+### Approaching and repositioning are not the same problem
+
+The first build scored the approach as well, and it was the worst result of the whole exercise: three
+of six seeds timed out at 1801 ticks with **five kills between them**, taking almost no damage. Given a
+say in whether to close, bots declined. Danger opposes engaging, and for an Engage intent engaging is
+the job.
+
+Constraining it so every candidate must close on the focus fixed the standing-off and was still worse
+than walking straight in - 8 downs against 5, and 3019 damage taken against 2201.
+
+| Engage | wins | downs | dmg taken |
+|---|---|---|---|
+| scored freely | 3 (3 timeouts, 5 kills total on two seeds) | - | - |
+| scored, must close | 6 | 8 | 3019 |
+| **straight at the focus** | **6** | **5** | **2201** |
+
+This arena has no cover. The shortest path is therefore also the least time under fire, and every
+prettier approach is only a longer one. `EDMAIIntent::Engage` was removed rather than left unused.
+
+Repositioning *once already in range* is the opposite result, because it costs no shooting: the Move
+channel is free while the Attack channel keeps firing. Adding it took downs from 5 to 2. The range
+limit matters more than expected - clamping candidates to Engage's stop band rather than the full
+attack range left so few options that the bot usually had nowhere to go, and gave back four of the six
+downs it had saved.
+
+| Reposition | downs | dmg taken |
+|---|---|---|
+| none | 5 | 2201 |
+| clamped to the stop band | 6 | 2277 |
+| **clamped to attack range** | **3** | **2013** |
+
+### Against the baseline
+
+| metric | baseline | now | |
+|---|---|---|---|
+| victories | 5/6 | **6/6** | |
+| investigator downs | 11 | **3** | -73% |
+| damage taken | 3331 | **2013** | -40% |
+| overkill damage | 1293 | **1008** | -22% |
+| hazard ticks | 385 | **189** | -51% |
+| unanswered peril ticks | 1707 | **665** | -61% |
+| trap ground kills | 31 | **34** | +10% |
+
+Every enemy dies on every seed and all four investigators are standing at the end of all six.
+
+Damage taken fell 40% while downs fell 73%: the squad is not merely taking less, it is spreading what
+it takes, which is what the spacing terms are for.
+
+`Foundation.UtilityAI.Positioning` covers the case this work started from - a companion falling back is
+pulled toward a wire a *teammate* laid. Before the squad board that was not merely unchosen but
+unknowable, since markers were private to the bot that placed them.
+
+Positional weights are hand-picked and untuned. The danger weight is deliberately cut to 35% for
+repositioning: standing in range of what you are shooting is dangerous by definition, and a bot that
+weighed it the way a retreating one does would simply leave.

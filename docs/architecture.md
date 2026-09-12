@@ -98,6 +98,22 @@ The company term is a bell rather than a slope because companions already conver
 on one enemy unaided, so rewarding company on a slope only buys overkill. Enemies
 keep the threat-table formula until their own port.
 
+Companion movement scores where to stand rather than deriving one point from a
+formula. `BuildContext` traces twelve whiskers per companion per tick, since the
+pure layer cannot trace and the arena has no nav mesh - a bot steers straight at
+its goal, so a point behind a crate is a point it grinds into. `ChoosePosition`
+then scores sampled stand-points on incoming danger, hazard overlap, the distance
+the intent wants, teammate spacing, prepared ground and travel cost. Standing
+still and the old formula's point always compete, so it cannot do worse than what
+it replaces. Ground claims put a Sapper's armed wire on the board, so a companion
+falling back is pulled across prepared ground a teammate laid.
+
+It applies to leaving a fight, not joining one. Scoring the approach was measured
+and reverted: with no cover, the shortest path is the least time under fire, and
+bots given a say in whether to close declined. `Reposition` (Routine, Move, below
+Engage, latched) moves a bot that is already in range to a better spot while it
+keeps shooting, which costs no damage output because the Attack channel stays free.
+
 `ADMCombatGameMode` owns a pure `FDMPingBoard` (limits, lifetimes, fulfilment,
 acknowledge, cancel, respond) and steps it before the Think loop so bots see a
 settled board. `ADMGameState::Pings` replicates the live pings as the public

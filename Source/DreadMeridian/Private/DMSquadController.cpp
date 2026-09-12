@@ -14,6 +14,12 @@ namespace
 {
     /** Ticks a rejected cast option stays vetoed ('cooldown') after the world refused it. */
     constexpr int32 RejectCooldownTicks = 10;
+    /**
+     * Directions sampled per companion per tick for the positional scorer. Twelve is 30 degrees apart: fine enough
+     * to find a way past a crate, coarse enough that four bots cost about 480 traces a second against the two per
+     * bot the controller already spends. Revisit before enemies start using it and the count triples.
+     */
+    constexpr int32 WhiskerRays = 12;
 }
 
 void ADMSquadController::ConfigureEncounter(int32 Group, FVector Home, bool bPatrol, int32 Slot)
@@ -163,6 +169,26 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
         }
     }
 
+    // Whiskers: how far this bot could actually walk in each direction before something stops it. The pure layer
+    // cannot trace, and there is no nav mesh - a bot steers straight at its goal - so without these the positional
+    // scorer would happily pick a point behind a crate and grind into the crate forever. Companions only: this is
+    // the only per-tick cost the positioning work adds, and enemies do not use it yet.
+    if (!Self->bIsEnemy && W.PositionStep > 0)
+    {
+        FCollisionQueryParams Query(SCENE_QUERY_STAT(DMWhisker), false, Self);
+        for (ADMCombatant* Other : Roster) { Query.AddIgnoredActor(Other); }
+        const float Reach = W.PositionStep + 60.f;
+        Out.Clearance.SetNumUninitialized(WhiskerRays);
+        for (int32 Ray = 0; Ray < WhiskerRays; ++Ray)
+        {
+            const float Angle = 2.f * PI * Ray / WhiskerRays;
+            const FVector End = SelfLoc + FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0) * Reach;
+            FHitResult Hit;
+            Out.Clearance[Ray] = GetWorld()->LineTraceSingleByChannel(Hit, SelfLoc, End, ECC_Visibility, Query)
+                ? static_cast<float>(FVector::Dist2D(SelfLoc, Hit.ImpactPoint)) : Reach;
+        }
+    }
+
     // The bot's own persistent markers, so kit options can reason about where its traps, zones and spirits are.
     // Only its own: another Sapper's wire is not this one's to plan around.
     auto AddMarker = [&](const ADMAbilityMarker* M, FDMAIMarkerView::EKind Kind)
@@ -286,6 +312,7 @@ FString ADMSquadController::Execute(ADMCombatGameMode& Mode, const FDMAIContext&
         case EDMAIAction::KeepDistance: case EDMAIAction::SeekPickup: case EDMAIAction::SeekPingedPickup: case EDMAIAction::RallyToPing:
         case EDMAIAction::DefendPing: case EDMAIAction::HelpPing: case EDMAIAction::Strafe: case EDMAIAction::Engage:
         case EDMAIAction::InvestigatePing: case EDMAIAction::Anchor: case EDMAIAction::FollowLeader:
+        case EDMAIAction::Reposition:
             Move(O.Point); break;
         case EDMAIAction::BasicAttack: break; // the game mode fires TryAttack after Think; the hold gate is already open
         case EDMAIAction::Signature:

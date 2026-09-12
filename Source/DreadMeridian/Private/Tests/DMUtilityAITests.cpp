@@ -970,4 +970,105 @@ bool FDMUtilityAIFocusTermsTest::RunTest(const FString& Parameters)
     return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FDMUtilityAIPositioningTest, "DreadMeridian.Foundation.UtilityAI.Positioning", EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+bool FDMUtilityAIPositioningTest::RunTest(const FString& Parameters)
+{
+    // Open ground in every direction unless a test says otherwise.
+    auto Open = [](FRig& R, float Reach = 400.f) { R.C.Clearance.Init(Reach, 12); };
+
+    // Pure and deterministic: the same context must give the same answer, or a replay is worth nothing.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        Open(R);
+        R.Add(FVector(300, 0, 0), true);
+        R.Refresh();
+        const FVector A = DMUtilityAI::ChoosePosition(R.C, EDMAIIntent::Flee, &R.C.Actors[1], FVector(-400, 0, 0));
+        const FVector B = DMUtilityAI::ChoosePosition(R.C, EDMAIIntent::Flee, &R.C.Actors[1], FVector(-400, 0, 0));
+        TestEqual(TEXT("same context, same point"), A, B);
+    }
+
+    // Fleeing goes away from the threat, not merely somewhere.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        Open(R);
+        R.Add(FVector(300, 0, 0), true);
+        R.Refresh();
+        const FVector P = DMUtilityAI::ChoosePosition(R.C, EDMAIIntent::Flee, &R.C.Actors[1], FVector(-400, 0, 0));
+        TestTrue(TEXT("puts ground between itself and the enemy"),
+            FVector::Dist2D(P, R.C.Actors[1].Location) > FVector::Dist2D(R.C.Self.Location, R.C.Actors[1].Location));
+    }
+
+    // The headline: a companion falling back is drawn across ground a teammate called out. Before the squad board
+    // this was not merely unchosen, it was unknowable - markers were private to the bot that placed them.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        Open(R);
+        R.Add(FVector(300, 0, 0), true);
+        R.Refresh();
+        const FVector Bare = DMUtilityAI::ChoosePosition(R.C, EDMAIIntent::Flee, &R.C.Actors[1], FVector(-400, 0, 0));
+        // An ally's armed wire, off to one side of the open retreat.
+        FDMAIClaimView& Ground = R.Claim(EDMClaimKind::Ground, 0, INDEX_NONE, FVector(-260, -260, 0));
+        Ground.Location2 = FVector(-260, -260, 0);
+        const FVector Wired = DMUtilityAI::ChoosePosition(R.C, EDMAIIntent::Flee, &R.C.Actors[1], FVector(-400, 0, 0));
+        TestNotEqual(TEXT("the wire changes where it falls back to"), Wired, Bare);
+        TestTrue(TEXT("and pulls it toward the prepared ground"),
+            FVector::Dist2D(Wired, Ground.Location) < FVector::Dist2D(Bare, Ground.Location));
+    }
+
+    // Standing in fire is worth leaving even when nothing else is wrong.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        Open(R);
+        FDMAIHazard& H = R.C.Hazards.AddDefaulted_GetRef();
+        H.Center = FVector::ZeroVector; H.Radius = 180;
+        R.Refresh();
+        const FVector P = DMUtilityAI::ChoosePosition(R.C, EDMAIIntent::Evade, nullptr, FVector(260, 0, 0));
+        TestTrue(TEXT("steps clear of the circle"), FVector::Dist2D(P, H.Center) > H.Radius);
+    }
+
+    // A point behind a wall is not somewhere to stand: with no nav mesh the bot would walk into the wall forever.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        Open(R);
+        // Block everything except due -X, and put the threat due +X so fleeing wants to go -X anyway.
+        for (int32 Ray = 0; Ray < R.C.Clearance.Num(); ++Ray) { R.C.Clearance[Ray] = 10.f; }
+        R.C.Clearance[6] = 400.f;
+        R.Add(FVector(300, 0, 0), true);
+        R.Refresh();
+        const FVector P = DMUtilityAI::ChoosePosition(R.C, EDMAIIntent::Flee, &R.C.Actors[1], R.C.Self.Location);
+        TestTrue(TEXT("does not choose a blocked direction"), P.X <= 1.f);
+    }
+
+    // Repositioning keeps the bot able to shoot: somewhere out of range is not somewhere better.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        Open(R, 900.f);
+        R.Add(FVector(250, 0, 0), true);
+        R.Refresh();
+        const FVector P = DMUtilityAI::ChoosePosition(R.C, EDMAIIntent::Reposition, &R.C.Actors[1], R.C.Self.Location);
+        TestTrue(TEXT("stays in range of the focus"), FVector::Dist2D(P, R.C.Actors[1].Location) <= R.C.Self.AttackRange);
+    }
+
+    // Spacing: with a teammate underfoot, the chosen point is not on top of them.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        Open(R);
+        R.Add(FVector(600, 0, 0), true);
+        R.Add(FVector(40, 0, 0), false);
+        R.Refresh();
+        const FVector P = DMUtilityAI::ChoosePosition(R.C, EDMAIIntent::Reposition, &R.C.Actors[1], R.C.Self.Location);
+        TestTrue(TEXT("does not crowd the teammate"), FVector::Dist2D(P, R.C.Actors[2].Location) > 40.f);
+    }
+
+    // With no whiskers sensed, the scorer still answers, choosing between standing still and the old geometry.
+    {
+        FRig R(EDMSmuggler::None, EDMInvestigator::Smuggler, false);
+        R.Add(FVector(300, 0, 0), true);
+        R.Refresh();
+        const FVector P = DMUtilityAI::ChoosePosition(R.C, EDMAIIntent::Flee, &R.C.Actors[1], FVector(-400, 0, 0));
+        TestTrue(TEXT("falls back on the formula's point"), P.Equals(FVector(-400, 0, 0)) || P.Equals(R.C.Self.Location));
+    }
+    return true;
+}
+
 #endif
