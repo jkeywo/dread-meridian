@@ -39,6 +39,7 @@ public:
     float SpendMedal(ADMCombatant* Target,const FString& AbilityId,bool bBasic);
     void ClearBreakContributions() { Runtime.Contributions.Reset(); }
     void Step(int32 Tick);
+    float ReviveFactor() const { return Has(EDMRelic::Morphine) ? .65f : 1.f; }
     void ShieldSpent(float Amount) { if (Self() && GetOwner()->HasAuthority()) { Runtime.OwnedShield=FMath::Max(0.f,Runtime.OwnedShield-Amount); } }
     FDMRelicControlEvent AcceptedControl;
     FDMRelicBreakEvent AcceptedBreak;

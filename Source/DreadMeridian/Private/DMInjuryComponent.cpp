@@ -1,5 +1,6 @@
 #include "DMInjuryComponent.h"
 #include "DMCombatant.h"
+#include "DMRelicComponent.h"
 #include "DMCombatGameMode.h"
 #include "DMGameState.h"
 #include "Net/UnrealNetwork.h"
@@ -46,8 +47,10 @@ void UDMInjuryComponent::RecordLoss(float Loss, bool bDown, bool bHazard, ADMCom
     const float Recent = State.RecentLoss(Now(), Settings.WindowTicks) + Loss;
     if (State.RecordLoss(Loss, Self()->MaxHealth(), Now(), bDown, bHazard, Settings))
     {
-        const uint32 Draw = State.Specific.Num() < FDMInjuryState::Capacity ? M->DrawRandom(EDMRandomStream::Injury) : 0;
-        const EDMInjury Kind = State.Gain(Draw); Project();
+        const bool Morphine=Self()->Relics->Has(EDMRelic::Morphine);
+        const uint32 Draw = !Morphine && State.Specific.Num() < FDMInjuryState::Capacity ? M->DrawRandom(EDMRandomStream::Injury) : 0;
+        const EDMInjury Kind = Morphine ? EDMInjury::Count : State.Gain(Draw);
+        if (Morphine) { ++State.Grievous; } Project();
         auto D = MakeShared<FJsonObject>(); D->SetStringField(TEXT("entity_id"), Self()->EntityId);
         D->SetStringField(TEXT("injury_id"), DMInjuryRules::Id(Kind)); D->SetStringField(TEXT("ability_id"), AbilityId);
         if (Source) { D->SetStringField(TEXT("source_id"), Source->EntityId); }
@@ -73,6 +76,14 @@ bool UDMInjuryComponent::Treat()
     Project(); auto D = MakeShared<FJsonObject>(); D->SetStringField(TEXT("entity_id"), Self()->EntityId);
     D->SetStringField(TEXT("injury_id"), DMInjuryRules::Id(Removed)); D->SetNumberField(TEXT("grievous"), State.Grievous);
     M->Emit(TEXT("injury.treated"), D); return true;
+}
+bool UDMInjuryComponent::ApplyMorphine()
+{
+    if (!Self()->HasAuthority() || Self()->bIsEnemy || !Self()->Relics->Has(EDMRelic::Morphine) || State.Specific.IsEmpty()) { return false; }
+    const EDMInjury Removed=State.Specific[0]; State.Specific.RemoveAt(0); Project();
+    if (auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>())
+    { auto D=MakeShared<FJsonObject>(); D->SetStringField(TEXT("entity_id"),Self()->EntityId); D->SetStringField(TEXT("injury_id"),DMInjuryRules::Id(Removed)); D->SetStringField(TEXT("reason"),TEXT("morphine_acquired")); M->Emit(TEXT("injury.treated"),D); }
+    return true;
 }
 FString UDMInjuryComponent::Summary() const
 {

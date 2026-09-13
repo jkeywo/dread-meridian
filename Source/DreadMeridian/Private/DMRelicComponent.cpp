@@ -76,6 +76,7 @@ bool UDMRelicComponent::Acquire(EDMRelic R,const FString& AwardId)
 {
     if (!Self() || !Self()->HasAuthority() || !CanAcquire(R) || AwardId.IsEmpty() || Inventory.AwardIds.Contains(AwardId)) { return false; }
     Inventory.Items.Add(R); Inventory.AwardIds.Add(AwardId); Self()->ForceNetUpdate();
+    if (R==EDMRelic::Morphine) { Self()->Injuries->ApplyMorphine(); }
     if (auto* M = GetWorld()->GetAuthGameMode<ADMCombatGameMode>())
     { auto D = MakeShared<FJsonObject>(); D->SetStringField(TEXT("entity_id"),Self()->EntityId); D->SetStringField(TEXT("award_id"),AwardId); D->SetStringField(TEXT("relic"),Name(R)); M->Emit(TEXT("relic.acquired"),D); }
     return true;

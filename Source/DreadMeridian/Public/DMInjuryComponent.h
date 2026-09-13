@@ -25,6 +25,7 @@ public:
     float Incoming(float Unshielded, bool bHazard) const;
     void OnCast(); void OnAttack(); void OnDisplacement(float Distance);
     bool Treat();
+    bool ApplyMorphine();
     bool CanCast() const; bool CanAttack() const;
     FString Summary() const;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const override;

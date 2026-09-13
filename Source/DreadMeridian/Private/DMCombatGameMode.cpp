@@ -670,7 +670,7 @@ void ADMCombatGameMode::StepCombat()
         if (!Ally || !Ally->IsDown() || Actor->IsDown() || Actor->IsStunned() || Actor->IsRestrained() || Actor->LastDamageTick >= Started
             || FVector::DistSquared(Actor->GetActorLocation(), Ally->GetActorLocation()) > FMath::Square(160.f))
         { Revives.Remove(Actor); continue; }
-        const int32 Duration = Ally->Progression->ReviveTicks(ReviveDurationTicks(Ally->GrievousCount), CombatTick);
+        const int32 Duration = FMath::Max(1,FMath::CeilToInt(Ally->Progression->ReviveTicks(ReviveDurationTicks(Ally->GrievousCount), CombatTick)*Ally->Relics->ReviveFactor()*Actor->Relics->ReviveFactor()));
         Ally->SetReviveChannel(Actor->EntityId, static_cast<float>(CombatTick - Started) / Duration);
         if (CombatTick - Started >= Duration)
         {
