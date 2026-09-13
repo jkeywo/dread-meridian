@@ -9,6 +9,7 @@ void UDMRelicComponent::BeginPlay()
     AcceptedControl.AddUObject(this,&UDMRelicComponent::OnControl);
     AcceptedBreak.AddUObject(this,&UDMRelicComponent::OnBreak);
     ExcessHealing.AddUObject(this,&UDMRelicComponent::StoreOverheal);
+    TierEntered.AddUObject(this,&UDMRelicComponent::BoostResource);
 }
 void UDMRelicComponent::PromoteThreat(ADMCombatant* Target)
 {
@@ -67,11 +68,19 @@ void UDMRelicComponent::Step(int32 Tick)
     auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
     if (!Self()->HasAuthority() || !M || !M->IsCombatActive() || Tick<=LastStepTick) { return; } LastStepTick=Tick;
     Runtime.OwnedShield=FMath::Min(Runtime.OwnedShield,Self()->Shield());
+    if (Tick>=Runtime.RosaryUntil) { Runtime.RosaryUntil=0; }
     if (Runtime.OwnedShield>0 && Tick>=Runtime.ShieldHoldUntil)
     { const float Decay=FMath::Min(.5f,Runtime.OwnedShield); Runtime.OwnedShield-=Decay; Self()->RemoveShield(Decay); }
 }
 bool UDMRelicComponent::CanAcquire(EDMRelic R) const
 { return Self() && !Self()->bIsEnemy && static_cast<uint8>(R)<static_cast<uint8>(EDMRelic::Count) && !Has(R) && Inventory.Items.Num()<FMath::Clamp(Capacity,1,8); }
+void UDMRelicComponent::BoostResource(int32 Before,int32 After)
+{
+    auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    if (Self()->HasAuthority() && M && Has(EDMRelic::Rosary) && After>Before) { Runtime.RosaryUntil=M->GetCombatTick()+50; }
+}
+float UDMRelicComponent::ResourceMultiplier() const
+{ const auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>(); return M && Has(EDMRelic::Rosary) && Runtime.RosaryUntil>M->GetCombatTick() ? 2.f : 1.f; }
 bool UDMRelicComponent::Acquire(EDMRelic R,const FString& AwardId)
 {
     if (!Self() || !Self()->HasAuthority() || !CanAcquire(R) || AwardId.IsEmpty() || Inventory.AwardIds.Contains(AwardId)) { return false; }

@@ -1,5 +1,6 @@
 #include "DMInvestigatorComponent.h"
 #include "DMCombatant.h"
+#include "DMRelicComponent.h"
 #include "DMCombatGameMode.h"
 #include "Dom/JsonObject.h"
 #include "Net/UnrealNetwork.h"
@@ -80,7 +81,7 @@ float UDMInvestigatorComponent::Stickiness() const
 void UDMInvestigatorComponent::Pressure(int32 Tick, float Amount)
 {
     if (!Authority() || Kind != EDMInvestigator::Smuggler || Amount < 1) { return; }
-    Momentum = FMath::Min(100.f, Momentum + FMath::Min(10.f, Amount)); LastPressureTick = Tick;
+    Momentum = FMath::Min(100.f, Momentum + FMath::Min(10.f, Amount)*CastChecked<ADMCombatant>(GetOwner())->Relics->ResourceMultiplier()); LastPressureTick = Tick;
 }
 void UDMInvestigatorComponent::Step(int32 Tick, const FString& EngagedId)
 {
@@ -143,7 +144,7 @@ bool UDMInvestigatorComponent::OnHit(const FString& TargetId, int32 Tick)
     if (Kind == EDMInvestigator::Medium)
     {
         for (int32 I = 0; I < Spirits.Num(); ++I)
-        { if (SpiritTargets[I] == TargetId) { Spirits[I].Value = FMath::Min(100.f, Spirits[I].Value + 12); } }
+        { if (SpiritTargets[I] == TargetId) { Spirits[I].Value = FMath::Min(100.f, Spirits[I].Value + 12*CastChecked<ADMCombatant>(GetOwner())->Relics->ResourceMultiplier()); } }
     }
     if (Kind != EDMInvestigator::Smuggler) { return false; }
     if (LastTarget != TargetId) { Combo = 0; }
@@ -162,7 +163,8 @@ float UDMInvestigatorComponent::DamageMultiplier(const FString& TargetId, bool b
 bool UDMInvestigatorComponent::CollectComponent()
 {
     if (!Authority() || Kind != EDMInvestigator::Sapper || Charges >= ChargeCapacity) { return false; }
-    if (++Components >= 2) { Components -= 2; ++Charges; }
+    Components+=FMath::RoundToInt(CastChecked<ADMCombatant>(GetOwner())->Relics->ResourceMultiplier());
+    if (Components >= 2) { Components -= 2; ++Charges; }
     return true;
 }
 void UDMInvestigatorComponent::AddExposure(const FString& TargetId, float Amount, bool bVisibleCommitment, int32 Tick)
@@ -170,7 +172,7 @@ void UDMInvestigatorComponent::AddExposure(const FString& TargetId, float Amount
     if (!Authority() || Kind != EDMInvestigator::Photographer || TargetId.IsEmpty() || !FMath::IsFinite(Amount) || Amount <= 0) { return; }
     FDMSubjectResource* Subject = Exposure.FindByPredicate([&](const auto& S) { return S.Id == TargetId; });
     if (!Subject) { Subject = &Exposure.AddDefaulted_GetRef(); Subject->Id = TargetId; }
-    Subject->Value = FMath::Min(100.f, Subject->Value + Amount * (bVisibleCommitment ? 1.5f : 1.f));
+    Subject->Value = FMath::Min(100.f, Subject->Value + Amount * (bVisibleCommitment ? 1.5f : 1.f)*CastChecked<ADMCombatant>(GetOwner())->Relics->ResourceMultiplier());
     Subject->LastEngagedTick = Tick;
 }
 void UDMInvestigatorComponent::BindSpirit(const FString& SpiritId, const FString& TargetId, FVector Location)
@@ -188,7 +190,7 @@ void UDMInvestigatorComponent::ThinPlace(FVector Location, float Strength)
 {
     if (!Authority() || Kind != EDMInvestigator::Medium || !FMath::IsFinite(Strength) || Strength <= 0) { return; }
     for (auto& Spirit : Spirits)
-    { if (FVector::DistSquared(Location, Spirit.Location) <= FMath::Square(600.f)) { Spirit.Value = FMath::Min(100.f, Spirit.Value + Strength * 1.5f); } }
+    { if (FVector::DistSquared(Location, Spirit.Location) <= FMath::Square(600.f)) { Spirit.Value = FMath::Min(100.f, Spirit.Value + Strength * 1.5f*CastChecked<ADMCombatant>(GetOwner())->Relics->ResourceMultiplier()); } }
 }
 FString UDMInvestigatorComponent::ResourceSummary(const FString& TargetId) const
 {
@@ -220,5 +222,5 @@ void UDMInvestigatorComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 void UDMInvestigatorComponent::AddAttention(const FString& SpiritId, float Amount)
 {
     if (!Authority() || Kind != EDMInvestigator::Medium || !FMath::IsFinite(Amount) || Amount <= 0) { return; }
-    for (auto& Spirit : Spirits) { if (Spirit.Id == SpiritId) { Spirit.Value = FMath::Min(100.f, Spirit.Value + Amount); } }
+    for (auto& Spirit : Spirits) { if (Spirit.Id == SpiritId) { Spirit.Value = FMath::Min(100.f, Spirit.Value + Amount*CastChecked<ADMCombatant>(GetOwner())->Relics->ResourceMultiplier()); } }
 }

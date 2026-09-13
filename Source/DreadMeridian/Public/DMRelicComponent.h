@@ -40,6 +40,7 @@ public:
     void ClearBreakContributions() { Runtime.Contributions.Reset(); }
     void Step(int32 Tick);
     float ReviveFactor() const { return Has(EDMRelic::Morphine) ? .65f : 1.f; }
+    float ResourceMultiplier() const;
     void ShieldSpent(float Amount) { if (Self() && GetOwner()->HasAuthority()) { Runtime.OwnedShield=FMath::Max(0.f,Runtime.OwnedShield-Amount); } }
     FDMRelicControlEvent AcceptedControl;
     FDMRelicBreakEvent AcceptedBreak;
@@ -69,4 +70,5 @@ private:
     bool bResolvingKnot=false;
     int32 LastStepTick=-1;
     void StoreOverheal(float Amount);
+    void BoostResource(int32 Before,int32 After);
 };
