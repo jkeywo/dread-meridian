@@ -13,6 +13,7 @@
 #include "DMBreakComponent.h"
 #include "DMSmugglerComponent.h"
 #include "DMProgressionComponent.h"
+#include "DMThreat.h"
 #include "DMCombatant.generated.h"
 
 class UDMHealthAttributes;
@@ -126,7 +127,7 @@ public:
     bool bProfileRange = false;
     static constexpr int32 AttackCooldownTicks = 10;
     UPROPERTY(Replicated) int32 AttackIntervalTicks = AttackCooldownTicks;
-    TMap<FString, float> Threat;
+    FDMThreat Threat;
     UPROPERTY(Replicated) int32 NextAttackTick = 0;
     int32 LastDamageTick = -1;
 private:

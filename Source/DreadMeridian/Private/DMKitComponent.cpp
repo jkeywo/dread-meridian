@@ -1212,7 +1212,7 @@ void UDMKitComponent::MarkRival(ADMCombatant* Target, float Strength, int32 Dura
     if(!Self()->HasAuthority() || !Mode() || !Mode()->IsCombatActive() || !IsValid(Target) || !Target->bIsEnemy || Target->IsDown()
         || Self()->IsDown() || !FMath::IsFinite(Strength) || Strength<=0 || Duration<=0) { return; }
     Rivals.Add(Target,TPair<int32,float>(Now()+Duration,FMath::Min(1.f,Strength)));
-    Self()->Threat.FindOrAdd(Target->EntityId)+=100;
+    Self()->Threat.Add(Target->EntityId,100);
 }
 float UDMKitComponent::OutgoingTo(const ADMCombatant* Target) const
 {

@@ -212,7 +212,7 @@ bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FS
     const float Absorbed = FMath::Min(ShieldBefore, ResolvedDamage);
     if (Absorbed > 0) { Target->ApplyAttributeDelta(UDMHealthAttributes::GetShieldAttribute(), -Absorbed); }
     Target->ApplyAttributeDelta(UDMHealthAttributes::GetHealthAttribute(), -(ResolvedDamage - Absorbed));
-    Target->Threat.FindOrAdd(EntityId) += Before - Target->Health();
+    Target->Threat.Add(EntityId, Before - Target->Health());
     Target->LastDamageTick = Mode->GetCombatTick();
     Target->Kit->RecordBraceHit(this, Incoming > 0 ? BaseDamage / Incoming : Damage, BaseDamage);
     Mode->NoteDamage(*this, *Target, ResolvedDamage, Before + ShieldBefore);
@@ -273,7 +273,7 @@ bool ADMCombatant::Revive(ADMCombatant* Ally)
     Ally->ApplyAttributeDelta(UDMHealthAttributes::GetHealthAttribute(), Ally->Attributes->GetMaxHealth() * .5f);
     for (ADMCombatant* Enemy : Mode->GetCombatants())
     {
-        if (Enemy->bIsEnemy) { Enemy->Threat.FindOrAdd(Ally->EntityId) *= .25f; }
+        if (Enemy->bIsEnemy) { Enemy->Threat.Scale(Ally->EntityId,.25f); }
     }
     TSharedRef<FJsonObject> Data = MakeShared<FJsonObject>();
     Data->SetStringField(TEXT("actor_id"), EntityId);

@@ -31,6 +31,9 @@ void ADMSquadController::Think(ADMCombatGameMode& Mode)
 {
     ADMCombatant* Self = Cast<ADMCombatant>(GetPawn());
     if (!Self || Self->IsDown() || Self->IsRestrained()) { return; }
+    Self->Threat.Cleanup([&](const FString& Id) { const auto* A=Mode.FindCombatant(Id); return A && !A->IsDown(); },Mode.GetCombatTick());
+    if (auto* Forced=Mode.FindCombatant(Self->Threat.Forced(Mode.GetCombatTick())); Forced && Forced->bIsEnemy!=Self->bIsEnemy && !Forced->IsDown())
+    { Self->SetAttackTarget(Forced); Self->MoveToward(Forced->GetActorLocation()); return; }
     if (!Profile) { Profile = Mode.ProfileFor(*Self); }
     if (!Profile) { UE_LOG(LogTemp, Warning, TEXT("ADMSquadController: no AI profile for %s"), *Self->EntityId); return; }
     FDMAIContext Context;
