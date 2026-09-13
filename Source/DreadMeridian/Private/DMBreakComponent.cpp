@@ -31,6 +31,7 @@ FString UDMBreakComponent::ReplicationSummary() const
 
 void UDMBreakComponent::Reset()
 {
+    if (Self()->HasAuthority()) { Self()->Relics->ClearBreakContributions(); }
     if (!Self()->HasAuthority()) { return; }
     Settings.Sanitize(); Meter = FDMBreakMeter(); Meter.Settings = Settings;
     InterruptUntilTick = 0; Project(0);
@@ -47,6 +48,7 @@ void UDMBreakComponent::Step(int32 Tick)
     Project(Tick);
     if (bRecovered)
     {
+        Self()->Relics->ClearBreakContributions();
         // A hold accepted late in Broken cannot extend the vulnerability window.
         if (Self()->HeldBy) { Self()->HeldBy->Primary->ReleaseClinch(); }
         Record(TEXT("break.recovered"));
@@ -78,6 +80,12 @@ void UDMBreakComponent::OpenInterruptWindow(int32 DurationTicks)
     const int32 Until = Mode->GetCombatTick() + FMath::Min(DurationTicks, 1000000);
     if (Until <= InterruptUntilTick) { return; }
     InterruptUntilTick = Until; Self()->ForceNetUpdate(); Record(TEXT("break.interrupt_window_opened"));
+}
+bool UDMBreakComponent::ExtendBroken(int32 Ticks)
+{
+    auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    if (!Self()->HasAuthority() || !M || !M->IsCombatActive() || Ticks<=0 || !Meter.IsBroken(M->GetCombatTick())) { return false; }
+    Meter.BrokenUntil+=FMath::Min(Ticks,3); Project(M->GetCombatTick()); Record(TEXT("break.extended")); return true;
 }
 
 void UDMBreakComponent::Record(const TCHAR* Event, ADMCombatant* Source, const FString& AbilityId, float Applied)

@@ -24,6 +24,7 @@ public:
     void AddPressure(float Amount, ADMCombatant* Source = nullptr, const FString& AbilityId = FString());
     /** Encounter-authored, independent interrupt permission; does not grant roots, holds or displacement. */
     void OpenInterruptWindow(int32 DurationTicks);
+    bool ExtendBroken(int32 Ticks);
     bool IsProtected() const;
     FString ReplicationSummary() const;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const override;

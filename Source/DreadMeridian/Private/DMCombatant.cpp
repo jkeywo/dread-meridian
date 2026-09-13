@@ -207,6 +207,7 @@ bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FS
     if (!HasAuthority() || !Mode || !Mode->IsCombatActive() || IsDown() || !IsValid(Target) || Target->IsDown()
         || Target->bIsEnemy == bIsEnemy || !FMath::IsFinite(Damage) || Damage <= 0) { return false; }
     const float Before = Target->Health();
+    Damage*=Relics->SpendMedal(Target,AbilityId,bBasic);
     const float ShieldBefore = Target->Shield();
     const float Incoming = Target->IncomingUntilTick > Mode->GetCombatTick() ? FMath::Clamp(Target->IncomingMultiplier, 0.f, 2.f) : 1.f;
     const float BaseDamage = Damage * Kit->OutgoingTo(Target) * Target->Progression->IncomingFrom(this) * MadnessCore->Outgoing(Target) * (1 - FMath::Clamp(Target->SpiritProtection, 0.f, .5f)) * Incoming;
@@ -375,7 +376,11 @@ void ADMCombatant::ApplyControl(const FDMControl& Control, ADMCombatant* Source,
         || (Source && (!IsValid(Source) || Source->GetWorld() != GetWorld() || Source->IsDown() || Source->bIsEnemy == bIsEnemy))) { return; }
     const int32 Tick = Mode->GetCombatTick(); StepControl(Tick);
     // The breaking hit opens the window for subsequent control; it resolves against the preceding state.
-    FDMControl R = DMKitRules::ResolveControl(Control, !Resolve->IsProtected(), bBreakVulnerable,
+    FDMControl Empowered=Control;
+    const float Medal=Source ? Source->Relics->SpendMedal(this,AbilityId,false) : 1.f;
+    Empowered.Damage*=Medal; Empowered.BreakPressure*=Medal;
+    Empowered.StunTicks=FMath::CeilToInt(Empowered.StunTicks*Medal); Empowered.StaggerTicks=FMath::CeilToInt(Empowered.StaggerTicks*Medal);
+    FDMControl R = DMKitRules::ResolveControl(Empowered, !Resolve->IsProtected(), bBreakVulnerable,
         Resolve->Settings.ProtectedSlowFactor, Resolve->InterruptUntilTick > Tick);
     if (R.Damage > 0 && Source) { Source->DealCombatDamage(this, R.Damage, AbilityId); }
     if (IsDown()) { return; }

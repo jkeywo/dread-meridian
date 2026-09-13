@@ -17,7 +17,26 @@ void UDMRelicComponent::PromoteThreat(ADMCombatant* Target)
 void UDMRelicComponent::OnControl(ADMCombatant* Target,const FDMControl& C)
 { if (C.StunTicks>0 || C.StaggerTicks>0 || !C.Displacement.IsNearlyZero() || (Target && Target->HeldBy==Self())) { PromoteThreat(Target); } }
 void UDMRelicComponent::OnBreak(ADMCombatant* Source,float Amount,bool bBroke)
-{ if (Source && Amount>=5) { Source->Relics->PromoteThreat(Self()); } }
+{
+    if (!Self()->HasAuthority()) { return; }
+    if (IsValid(Source))
+    { if (Amount>=5) { Source->Relics->PromoteThreat(Self()); } Runtime.Contributions.FindOrAdd(Source->EntityId)+=Amount; }
+    if (bBroke)
+    {
+        auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>(); if (!M) { return; }
+        for (const auto& Pair : Runtime.Contributions)
+        { if (auto* A=M->FindCombatant(Pair.Key); A && Pair.Value>=5 && A->Relics->Has(EDMRelic::Medal))
+          { A->Relics->Runtime.PrimedTarget=Self()->EntityId; A->Relics->Runtime.PrimeUntil=Self()->BrokenUntilTick; } }
+        Runtime.Contributions.Reset();
+    }
+}
+float UDMRelicComponent::SpendMedal(ADMCombatant* Target,const FString& AbilityId,bool bBasic)
+{
+    auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    if (!Self()->HasAuthority() || !M || !Has(EDMRelic::Medal) || !IsValid(Target) || bBasic || AbilityId.StartsWith(TEXT("ability.basic")) || AbilityId.StartsWith(TEXT("relic."))
+        || Runtime.PrimedTarget!=Target->EntityId || M->GetCombatTick()>=Runtime.PrimeUntil || !Target->bBreakVulnerable) { return 1; }
+    Runtime.PrimedTarget.Reset(); Runtime.PrimeUntil=0; Target->Resolve->ExtendBroken(3); return 1.5f;
+}
 float UDMRelicComponent::BreakMultiplierAgainst(const ADMCombatant* Target) const
 {
     if (!Target) { return 1; }

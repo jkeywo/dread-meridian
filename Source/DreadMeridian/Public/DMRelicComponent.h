@@ -36,6 +36,8 @@ public:
     UDMRelicComponent();
     virtual void BeginPlay() override;
     float BreakMultiplierAgainst(const ADMCombatant* Target) const;
+    float SpendMedal(ADMCombatant* Target,const FString& AbilityId,bool bBasic);
+    void ClearBreakContributions() { Runtime.Contributions.Reset(); }
     FDMRelicControlEvent AcceptedControl;
     FDMRelicBreakEvent AcceptedBreak;
     FDMRelicOverhealEvent ExcessHealing;
