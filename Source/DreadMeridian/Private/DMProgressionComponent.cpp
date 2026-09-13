@@ -82,3 +82,19 @@ void UDMProgressionComponent::ChooseForBot()
         if (!Choose(BestSlot, BestNode)) { break; }
     }
 }
+
+void UDMProgressionComponent::Cover(float Strength, int32 Until)
+{
+    if (!GetOwner() || !GetOwner()->HasAuthority() || !FMath::IsFinite(Strength)) { return; }
+    const auto* M = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    if (!M || Until <= M->GetCombatTick()) { return; }
+    if (CoverUntil <= M->GetCombatTick()) { CoverStrength = 0; }
+    CoverStrength = FMath::Max(CoverStrength, FMath::Clamp(Strength, 0.f, .6f));
+    CoverUntil = FMath::Max(CoverUntil, Until);
+}
+float UDMProgressionComponent::IncomingFrom(const ADMCombatant* Source) const
+{
+    const auto* M = GetWorld() ? GetWorld()->GetAuthGameMode<ADMCombatGameMode>() : nullptr;
+    const bool bRanged = Source && FVector::Dist2D(Source->GetActorLocation(), GetOwner()->GetActorLocation()) > 250;
+    return M && bRanged && CoverUntil > M->GetCombatTick() ? 1.f - CoverStrength : 1.f;
+}

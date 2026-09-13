@@ -27,6 +27,7 @@ float UDMPrimaryComponent::Range() const
 { return Self()->Investigator->Kind == EDMInvestigator::Smuggler ? (HeldTarget ? 650 : 180) : Self()->Investigator->Kind == EDMInvestigator::Photographer ? 850 : 650; }
 FString UDMPrimaryComponent::Name() const
 {
+    if (Self()->Progression->Node(0) > 0 && !HeldTarget) { return Self()->Progression->Name(0); }
     switch (Self()->Investigator->Kind) {
     case EDMInvestigator::Sapper: return TEXT("Satchel Charge");
     case EDMInvestigator::Photographer: return TEXT("Frame the Subject");
@@ -110,14 +111,16 @@ bool UDMPrimaryComponent::Resolve()
     auto* R = Actor->Investigator.Get();
     if (bRequestedDetonate)
     {
-        for (int32 I = Satchels.Num() - 1; I >= 0; --I) { DetonateSatchel(I); }
+        if (Actor->Progression->Node(0) == 5)
+        { if (!TriggerNearbySatchel(RequestedPoint, 650)) { LastFailure = TEXT("No eligible charge near aim"); return false; } }
+        else { for (int32 I = Satchels.Num() - 1; I >= 0; --I) { DetonateSatchel(I); } }
     }
     else if (R->Kind == EDMInvestigator::Sapper)
     {
         FVector Floor; if (!Ground(RequestedPoint, Floor)) { return false; }
         auto* Charge = GetWorld()->SpawnActor<ADMAbilityMarker>(Floor, FRotator::ZeroRotator);
         if (!Charge) { LastFailure = TEXT("Placement failed"); return false; }
-        Charge->SetOwner(Actor); Charge->ArmedTick = Now() + 5; Charge->Radius = SatchelRadius; Charge->Serial = ++ChargeSerial;
+        Charge->SetOwner(Actor); Charge->ArmedTick = Now() + 5; Charge->Radius = EvolvedSatchelRadius(); Charge->Serial = ++ChargeSerial;
         Satchels.Add(Charge); --R->Charges; NextCastTick = Now() + 8; Emit(TEXT("place_satchel"));
     }
     else if (R->Kind == EDMInvestigator::Photographer)
@@ -181,7 +184,7 @@ bool UDMPrimaryComponent::Resolve()
 bool UDMPrimaryComponent::SatchelCanHit(const ADMAbilityMarker* Charge, ADMCombatant* Enemy) const
 {
     if (!IsValid(Charge) || !IsValid(Enemy) || !Enemy->bIsEnemy || Enemy->IsDown()
-        || FVector::DistSquared(Charge->GetActorLocation() + FVector(0, 0, 70), Enemy->GetActorLocation()) > FMath::Square(SatchelRadius)) { return false; }
+        || FVector::DistSquared(Charge->GetActorLocation() + FVector(0, 0, 70), Enemy->GetActorLocation()) > FMath::Square(EvolvedSatchelRadius())) { return false; }
     const auto* Mode = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
     if (!Mode) { return false; }
     FCollisionQueryParams Query(SCENE_QUERY_STAT(SatchelBlast), false, Self());
@@ -200,10 +203,11 @@ bool UDMPrimaryComponent::DetonateSatchel(int32 Index)
     Self()->Kit->DropTrap(FDMDeadGroundLedger::Satchel, Charge->Serial);
     Emit(TEXT("detonate"));
     for (ADMCombatant* Enemy : Mode->GetCombatants())
-    { if (SatchelCanHit(Charge, Enemy)) { Self()->DealCombatDamage(Enemy, 55, TEXT("ability.q.satchel")); } }
+    { if (SatchelCanHit(Charge, Enemy)) { ApplySatchel(Enemy, Center); } }
     Self()->MulticastAttackFX(Center, Center + FVector(0, 0, 60), Self()->Investigator->Color(), 4);
     Self()->MulticastPresentation(4, Center);
     Charge->Destroy(); Satchels.RemoveAt(Index); Self()->ForceNetUpdate();
+    if (Self()->Progression->Node(0) == 5) { TriggerNearbySatchel(Center, 550); }
     return true;
 }
 void UDMPrimaryComponent::ConsumeSatchels(const TSet<int32>& Serials)
@@ -253,7 +257,7 @@ void UDMPrimaryComponent::Step(int32 Tick)
     const bool bDeferring = Actor->Kit->IsDeadGroundActive();
     for (int32 I = Satchels.Num() - 1; I >= 0; --I)
     {
-        const auto* Charge = Satchels[I].Get();
+        const auto* Charge = Satchels.IsValidIndex(I) ? Satchels[I].Get() : nullptr;
         if (!IsValid(Charge) || Charge->ArmedTick > Tick) { continue; }
         if (bDeferring)
         {
@@ -333,4 +337,45 @@ FString UDMPrimaryComponent::ReplicationSummary() const
     for (const auto& R : Self()->Investigator->Exposure) { Result += FString::Printf(TEXT(" E:%s=%.3f"), *R.Id, R.Value); }
     for (const auto& R : Self()->Investigator->Spirits) { Result += FString::Printf(TEXT(" A:%s=%.3f"), *R.Id, R.Value); }
     return Result;
+}
+
+
+float UDMPrimaryComponent::EvolvedSatchelRadius() const
+{
+    const uint8 N = Self()->Progression->Node(0);
+    return N == 1 || N == 3 ? 160.f : N == 2 || N == 5 ? 300.f : N == 4 ? 240.f : SatchelRadius;
+}
+void UDMPrimaryComponent::ApplySatchel(ADMCombatant* Enemy, FVector Center)
+{
+    if (!Self()->HasAuthority() || !IsValid(Enemy)) { return; }
+    const uint8 N = Self()->Progression->Node(0);
+    const bool bCenter = FVector::Dist2D(Center, Enemy->GetActorLocation()) < 120;
+    const bool bKillZone = Self()->Progression->Node(1) == 4 && Enemy->bSuppressed;
+    FDMControl C;
+    C.Damage = N == 1 ? (bCenter ? 95 : 65) : N == 3 ? (Enemy->bCommonEnemy ? 95 : 135)
+        : N == 2 || N == 5 ? 45 : N == 4 ? 65 : 55;
+    C.BreakPressure = N == 0 ? 0 : N == 3 ? 60 : N == 1 ? (bCenter ? 40 : 20) : 15;
+    if (N == 2 || N == 5 || (N == 4 && bCenter))
+    { C.Displacement = (Enemy->GetActorLocation() - Center).GetSafeNormal2D() * (N == 4 ? 260 : 180); C.StaggerTicks = N == 4 ? 15 : 5; }
+    if (bKillZone) { C.BreakPressure += 25; C.StaggerTicks += 5; }
+    Enemy->ApplyControl(C, Self(), TEXT("ability.q.satchel"));
+}
+bool UDMPrimaryComponent::TriggerNearbySatchel(FVector Point, float Distance)
+{
+    auto* M = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    if (!Self()->HasAuthority() || !M || !M->IsCombatActive()) { return false; }
+    for (int32 I = 0; I < Satchels.Num(); ++I)
+    {
+        ADMAbilityMarker* C = Satchels[I].Get();
+        if (!IsValid(C) || C->ArmedTick > Now() || FVector::Dist2D(Point, C->GetActorLocation()) > Distance) { continue; }
+        bool bEligible = false;
+        for (ADMCombatant* Enemy : M->GetCombatants())
+        {
+            if (!SatchelCanHit(C, Enemy)) { continue; }
+            bEligible = true;
+            if (Self()->Kit->IsDeadGroundActive()) { Self()->Kit->TagTrap(FDMDeadGroundLedger::Satchel, C->Serial, Enemy); }
+        }
+        if (bEligible) { return Self()->Kit->IsDeadGroundActive() || DetonateSatchel(I); }
+    }
+    return false;
 }

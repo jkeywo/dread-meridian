@@ -123,7 +123,8 @@ void UDMKitComponent::EndPlay(const EEndPlayReason::Type Reason)
     Super::EndPlay(Reason);
 }
 
-FString UDMKitComponent::Name(EDMKitSlot Slot) const { return Spec(Self()->Investigator->Kind, Slot).Name; }
+FString UDMKitComponent::Name(EDMKitSlot Slot) const
+{ return Slot < EDMKitSlot::R && Self()->Progression->Node(uint8(Slot)+1) > 0 ? Self()->Progression->Name(uint8(Slot)+1) : Spec(Self()->Investigator->Kind, Slot).Name; }
 float UDMKitComponent::Range(EDMKitSlot Slot) const { return Spec(Self()->Investigator->Kind, Slot).Range; }
 bool UDMKitComponent::IsSelfCast(EDMKitSlot Slot) const { return Spec(Self()->Investigator->Kind, Slot).bSelfCast; }
 bool UDMKitComponent::IsTwoPoint(EDMKitSlot Slot) const { return Spec(Self()->Investigator->Kind, Slot).bTwoPoint; }
@@ -157,7 +158,9 @@ FString UDMKitComponent::Validate(EDMKitSlot Slot, ADMCombatant* Target, FVector
     if (Actor->IsDown() || (Actor->IsRestrained() || Actor->IsStunned()) || Actor->bIsEnemy) { return TEXT("Cannot cast in this state"); }
     if (Actor->Investigator->Kind == EDMInvestigator::None || Name(Slot).IsEmpty()) { return TEXT("No ability available"); }
     if (IsCharging()) { return TEXT("Charging"); }
-    if (CooldownSeconds(Slot) > 0 || (Actor->HasAuthority() && NextCastTick[Index(Slot)] > Now()))
+    const bool bSweep = Actor->Investigator->Kind == EDMInvestigator::Sapper && Slot == EDMKitSlot::W
+        && Actor->Progression->Node(1) == 5 && Zones.ContainsByPredicate([&](const ADMAbilityMarker* Z) { return IsValid(Z) && Z->ExpiresTick > CurrentTick(); });
+    if (!bSweep && (CooldownSeconds(Slot) > 0 || (Actor->HasAuthority() && NextCastTick[Index(Slot)] > Now())))
     { return FString::Printf(TEXT("%s is cooling down"), *FString(SlotKey(Slot)).ToUpper()); }
     return ValidateAbility(Slot, Target, Point);
 }
@@ -869,7 +872,7 @@ FString UDMKitComponent::ValidateSapper(EDMKitSlot Slot, FVector Point) const
         if (!bWirePending) { return TEXT(""); }
         const float Length = FVector::Dist2D(PendingWireStart, Ground);
         if (Length < WireMinLength) { return TEXT("Wire is too short"); }
-        if (Length > WireMaxLength) { return TEXT("Wire is too long"); }
+        if (Length > (Actor->Progression->Node(2) == 1 || Actor->Progression->Node(2) == 3 || Actor->Progression->Node(2) == 4 ? 700 : WireMaxLength)) { return TEXT("Wire is too long"); }
         if (!Sight(PendingWireStart + FVector(0, 0, 40), Ground + FVector(0, 0, 40))) { return TEXT("Wire is obstructed"); }
         return TEXT("");
     }
@@ -890,7 +893,11 @@ bool UDMKitComponent::ResolveSapper(EDMKitSlot Slot, FVector Point)
     {
     case EDMKitSlot::W:
     {
-        // Fire-and-forget: the cone stays where it was cast and the Sapper keeps moving and shooting.
+        const uint8 N = Actor->Progression->Node(1);
+        if (N == 5)
+        { for (ADMAbilityMarker* Z : Zones)
+          { if (IsValid(Z) && Z->ExpiresTick > Tick) { Z->Direction = (Point - Z->GetActorLocation()).GetSafeNormal2D(); Z->ForceNetUpdate(); Emit(Slot, TEXT("walking_fire_reaimed")); return true; } } }
+        // One suppression area, with branch-specific footprint.
         for (ADMAbilityMarker* Old : Zones) { if (IsValid(Old)) { Old->Destroy(); } }
         Zones.Reset();
         const FVector Origin = Actor->GetActorLocation();
@@ -899,8 +906,9 @@ bool UDMKitComponent::ResolveSapper(EDMKitSlot Slot, FVector Point)
         Zone->SetOwner(Actor);
         Zone->Shape = EDMMarkerShape::Cone;
         Zone->Direction = (Point - Origin).GetSafeNormal2D();
-        Zone->HalfAngle = ZoneHalfAngle; Zone->Length = ZoneLength;
-        Zone->ArmedTick = Tick; Zone->ExpiresTick = Tick + Kit.DurationTicks; Zone->Serial = ++MarkerSerial;
+        Zone->HalfAngle = N == 1 || N == 3 ? 35 : N == 2 || N == 5 ? 18 : ZoneHalfAngle;
+        Zone->Length = N == 1 || N == 3 ? 750 : ZoneLength;
+        Zone->ArmedTick = Tick; Zone->ExpiresTick = Tick + Kit.DurationTicks + (N == 1 || N == 3 ? 20 : 0); Zone->Serial = ++MarkerSerial;
         Zones.Add(Zone);
         StartCooldown(Slot, Kit.CooldownTicks);
         TSharedPtr<FJsonObject> Extra = MakeShared<FJsonObject>();
@@ -938,10 +946,25 @@ bool UDMKitComponent::ResolveSapper(EDMKitSlot Slot, FVector Point)
 
 void UDMKitComponent::TriggerWire(ADMAbilityMarker* Wire, ADMCombatant* Enemy)
 {
+    const uint8 N = Self()->Progression->Node(2);
     FDMControl Control;
-    Control.Damage = WireDamage; Control.Slow = 1; Control.SlowTicks = WireSlowTicks;
+    Control.Damage = N == 3 ? 45 : WireDamage; Control.Slow = 1; Control.SlowTicks = WireSlowTicks;
     Control.StaggerTicks = WireStaggerTicks; Control.bInterrupt = true; Control.BreakPressure = WireBreakPressure;
+    if (N == 1 || N == 3 || N == 4) { Control.BreakPressure += 25; Control.StaggerTicks += 5; }
+    if (Self()->Progression->Node(1) == 4 && Enemy->bSuppressed) { Control.BreakPressure += 25; }
+    if (N == 3)
+    {
+        const FVector* Previous = LastPositions.Find(Enemy);
+        const FVector Approach = Previous ? Enemy->GetActorLocation() - *Previous : Enemy->GetVelocity();
+        const float Speed = Approach.Size2D() * 10;
+        Control.Displacement = -Approach.GetSafeNormal2D() * (Speed > 450 ? 350 : 220);
+        if (Speed > 450) { Control.Damage += 25; }
+    }
     Enemy->ApplyControl(Control, Self(), TEXT("ability.e.tripwire"));
+    if (N == 4 && Mode())
+    { for (ADMCombatant* Other : Mode()->GetCombatants())
+      { if (Other->bIsEnemy && !Other->IsDown() && FVector::Dist2D(Enemy->GetActorLocation(), Other->GetActorLocation()) < 240) { Other->ApplySuppression(Now()+25, Self()); } } }
+    if ((N == 2 || N == 5) && !IsDeadGroundActive() && !bResolvingLedger) { Self()->Primary->TriggerNearbySatchel(Enemy->GetActorLocation(), 350); }
     Emit(EDMKitSlot::E, TEXT("wire_triggered"), Enemy);
     Enemy->MulticastPresentation(12, Enemy->GetActorLocation());
 }
@@ -953,6 +976,7 @@ void UDMKitComponent::ResolveDeadGround()
     if (!M) { Ledger.Clear(); return; }
     const TArray<TObjectPtr<ADMCombatant>>& Roster = M->GetCombatants();
     int32 Resolved = 0;
+    bResolvingLedger = true;
     for (const FDMDeadGroundLedger::FTag& Tag : Ledger.Tags)
     {
         ADMCombatant* Enemy = Roster.IsValidIndex(Tag.Enemy) ? Roster[Tag.Enemy].Get() : nullptr;
@@ -965,7 +989,8 @@ void UDMKitComponent::ResolveDeadGround()
         else
         {
             // The tag was the legitimate trigger; the blast resolves against the enemy that earned it.
-            Actor->DealCombatDamage(Enemy, SatchelDamage, TEXT("ability.q.satchel"));
+            const auto* Charge = Actor->Primary->Satchels.FindByPredicate([&](const TObjectPtr<ADMAbilityMarker>& C) { return IsValid(C) && C->Serial == Tag.Serial; });
+            if (Charge) { Actor->Primary->ApplySatchel(Enemy, (*Charge)->GetActorLocation()); }
             Actor->MulticastPresentation(4, Enemy->GetActorLocation());
             ++Resolved;
         }
@@ -977,13 +1002,16 @@ void UDMKitComponent::ResolveDeadGround()
     for (int32 I = Wires.Num() - 1; I >= 0; --I)
     {
         ADMAbilityMarker* Wire = Wires[I].Get();
-        if (!IsValid(Wire) || SpentWires.Contains(Wire->Serial)) { if (IsValid(Wire)) { Wire->Destroy(); } Wires.RemoveAt(I); }
+        if (IsValid(Wire) && SpentWires.Contains(Wire->Serial) && Actor->Progression->Node(2) == 5)
+        { Wire->ArmedTick = Now() + 30; Wire->CustomLabel.Reset(); Wire->ForceNetUpdate(); }
+        else if (!IsValid(Wire) || SpentWires.Contains(Wire->Serial)) { if (IsValid(Wire)) { Wire->Destroy(); } Wires.RemoveAt(I); }
     }
     Actor->Primary->ConsumeSatchels(SpentSatchels);
     TSharedPtr<FJsonObject> Extra = MakeShared<FJsonObject>();
     Extra->SetNumberField(TEXT("count"), Resolved);
     Emit(EDMKitSlot::R, TEXT("dead_ground_resolved"), nullptr, Extra);
     Ledger.Clear();
+    bResolvingLedger = false;
     Actor->ForceNetUpdate();
 }
 
@@ -1005,6 +1033,12 @@ void UDMKitComponent::StepSapper(int32 Tick)
         }
         if ((Tick - Zone->ArmedTick) % ZoneTickInterval != 0) { continue; }
         const FVector Origin = Zone->GetActorLocation() + FVector(0, 0, 70);
+        const uint8 N = Actor->Progression->Node(1);
+        if (N == 1 || N == 3)
+        { for (ADMCombatant* Ally : M->GetCombatants())
+          { if (!Ally->bIsEnemy && !Ally->IsDown() && (DMKitRules::PointInCone(Origin, Zone->Direction, Zone->HalfAngle, Zone->Length, Ally->GetActorLocation())
+              || (N == 3 && Ally == Actor && FVector::Dist2D(Origin, Actor->GetActorLocation()) < 200)))
+            { Ally->Progression->Cover(N == 3 && Ally == Actor ? .5f : .25f, Tick+6); } } }
         for (ADMCombatant* Enemy : M->GetCombatants())
         {
             if (!IsValid(Enemy) || !Enemy->bIsEnemy || Enemy->IsDown()) { continue; }
@@ -1012,7 +1046,8 @@ void UDMKitComponent::StepSapper(int32 Tick)
             if (!Sight(Origin, Enemy->GetActorLocation())) { continue; }
             Actor->DealCombatDamage(Enemy, ZoneDamage, TEXT("ability.w.suppressing_fire"));
             if (Enemy->IsDown()) { continue; }
-            Enemy->ApplySuppression(Tick + ZoneSuppressionTicks, Actor);
+            Enemy->ApplySuppression(Tick + ZoneSuppressionTicks + (N == 2 || N == 5 ? 10 : 0), Actor);
+            if (N == 2 || N == 5) { FDMControl C; C.Slow = .65f; C.SlowTicks = 12; C.BreakPressure = 10; Enemy->ApplyControl(C, Actor, TEXT("ability.w.pin")); }
             Actor->MulticastAttackFX(Origin, Enemy->GetActorLocation(), Actor->Investigator->Color(), 1);
             Enemy->MulticastPresentation(10, Enemy->GetActorLocation());
         }
@@ -1035,11 +1070,14 @@ void UDMKitComponent::StepSapper(int32 Tick)
             if (!DMKitRules::CrossesWire(Wire->GetActorLocation(), Wire->WireEnd, *Last, Enemy->GetActorLocation(), WireSlack)) { continue; }
             if (bDeferring)
             {
-                if (TagTrap(FDMDeadGroundLedger::Wire, Wire->Serial, Enemy)) { Wire->CustomLabel = TEXT("TAGGED"); Wire->ForceNetUpdate(); }
+                if (TagTrap(FDMDeadGroundLedger::Wire, Wire->Serial, Enemy))
+                { Wire->CustomLabel = TEXT("TAGGED"); Wire->ForceNetUpdate();
+                  if (Actor->Progression->Node(2) == 2 || Actor->Progression->Node(2) == 5) { Actor->Primary->TriggerNearbySatchel(Enemy->GetActorLocation(), 350); } }
                 break;
             }
             TriggerWire(Wire, Enemy);
-            Wire->Destroy(); Wires.RemoveAt(I);
+            if (Actor->Progression->Node(2) == 5) { Wire->ArmedTick = Tick + 30; Wire->ForceNetUpdate(); }
+            else { Wire->Destroy(); Wires.RemoveAt(I); }
             break;
         }
     }

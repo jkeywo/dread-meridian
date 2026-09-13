@@ -207,7 +207,7 @@ bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FS
     const float Before = Target->Health();
     const float ShieldBefore = Target->Shield();
     const float Incoming = Target->IncomingUntilTick > Mode->GetCombatTick() ? FMath::Clamp(Target->IncomingMultiplier, 0.f, 2.f) : 1.f;
-    const float BaseDamage = Damage * MadnessCore->Outgoing(Target) * (1 - FMath::Clamp(Target->SpiritProtection, 0.f, .5f)) * Incoming;
+    const float BaseDamage = Damage * Target->Progression->IncomingFrom(this) * MadnessCore->Outgoing(Target) * (1 - FMath::Clamp(Target->SpiritProtection, 0.f, .5f)) * Incoming;
     const float ResolvedDamage = BaseDamage * Target->Injuries->Incoming(FMath::Max(0.f, BaseDamage - ShieldBefore), bHazard);
     const float Absorbed = FMath::Min(ShieldBefore, ResolvedDamage);
     if (Absorbed > 0) { Target->ApplyAttributeDelta(UDMHealthAttributes::GetShieldAttribute(), -Absorbed); }

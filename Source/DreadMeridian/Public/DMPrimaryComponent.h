@@ -50,6 +50,10 @@ public:
     UPROPERTY(Replicated) TArray<TObjectPtr<ADMAbilityMarker>> Satchels;
     UPROPERTY(Replicated) TArray<TObjectPtr<ADMAbilityMarker>> Bindings;
     FString LastFailure;
+    float EvolvedSatchelRadius() const;
+    void ApplySatchel(ADMCombatant* Enemy, FVector Center);
+    bool TriggerNearbySatchel(FVector Point, float Distance);
+
 private:
     bool SatchelCanHit(const ADMAbilityMarker* Charge, ADMCombatant* Enemy) const;
     bool DetonateSatchel(int32 Index);

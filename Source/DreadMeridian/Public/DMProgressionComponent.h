@@ -60,6 +60,12 @@ public:
     uint8 Node(uint8 Slot) const { return State.Node(Slot); }
     FString Name(uint8 Slot) const;
     void ChooseForBot();
+    void Cover(float Strength, int32 Until);
+    float IncomingFrom(const class ADMCombatant* Source) const;
+private:
+    float CoverStrength = 0;
+    int32 CoverUntil = 0;
+public:
 
 private:
     UPROPERTY(Replicated) FDMProgressionState State;

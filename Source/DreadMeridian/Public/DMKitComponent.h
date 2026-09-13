@@ -128,6 +128,7 @@ private:
     /** The wire's control effect, applied to whoever crossed it. */
     void TriggerWire(ADMAbilityMarker* Wire, ADMCombatant* Enemy);
     /** Resolves every tag the ledger holds, then consumes the traps that carried one. */
+    bool bResolvingLedger = false;
     void ResolveDeadGround();
     /** Line of sight between two world points, ignoring combatant bodies. */
     bool Sight(const FVector& From, const FVector& To) const;
