@@ -41,6 +41,9 @@ void ADMCombatPlayerController::SetupInputComponent()
     CycleAction = NewObject<UInputAction>(this);
     ReviveAction = NewObject<UInputAction>(this);
     PerceptionAction = NewObject<UInputAction>(this);
+    EvolutionAction = NewObject<UInputAction>(this);
+    Mapping->MapKey(EvolutionAction, EKeys::U); Mapping->MapKey(EvolutionAction, EKeys::Gamepad_Special_Left);
+    Input->BindAction(EvolutionAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::ToggleEvolution);
     Mapping->MapKey(PerceptionAction, EKeys::J); Mapping->MapKey(PerceptionAction, EKeys::Gamepad_RightThumbstick);
     Input->BindAction(PerceptionAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::StartPerceptionInteraction);
     GroundAction = NewObject<UInputAction>(this);
@@ -117,6 +120,7 @@ void ADMCombatPlayerController::Move(const FInputActionValue& Value)
 }
 void ADMCombatPlayerController::Click()
 {
+    if (bEvolutionOpen) {  return; }
     if (bAiming) { CancelQ(); return; }
     ServerCancelFrame();
     ADMCombatant* Actor = Cast<ADMCombatant>(GetPawn());
@@ -134,6 +138,7 @@ void ADMCombatPlayerController::Click()
 }
 void ADMCombatPlayerController::Cycle()
 {
+    if (bEvolutionOpen) { EvolutionSelection = (EvolutionSelection + 1) % FMath::Max(1, EvolutionChoices().Num()); return; }
     TArray<ADMCombatant*> Targets;
     for (TActorIterator<ADMCombatant> It(GetWorld()); It; ++It)
     {
@@ -149,6 +154,7 @@ void ADMCombatPlayerController::Cycle()
 }
 void ADMCombatPlayerController::Attack()
 {
+    if (bEvolutionOpen) { ConfirmEvolution(); return; }
     if (bAiming) { ConfirmQ(); return; }
     StartAutoAttack(SelectedTarget.Get());
 }
@@ -170,6 +176,7 @@ void ADMCombatPlayerController::StartAutoAttack(ADMCombatant* Target)
 }
 void ADMCombatPlayerController::StartRevive()
 {
+    if (bEvolutionOpen) {  return; }
     CancelQ(); ServerCancelFrame();
     ADMCombatant* Actor = Cast<ADMCombatant>(GetPawn());
     if (!Actor || Actor->IsDown()) { return; }
@@ -388,6 +395,7 @@ void ADMCombatPlayerController::ClientVerifyCombatState_Implementation(const FSt
                 Check(TEXT("shield"), bHasNumbers && FMath::IsNearlyEqual(It->Shield(), static_cast<float>(Shield)), FString::SanitizeFloat(It->Shield()), FString::SanitizeFloat(Shield));
                 Check(TEXT("name"), Expected->GetStringField(It->EntityId + TEXT(".name")) == It->DisplayName(), It->DisplayName(), Expected->GetStringField(It->EntityId + TEXT(".name")));
                 Check(TEXT("resources"), Expected->GetStringField(It->EntityId + TEXT(".resources")) == It->Investigator->ResourceSummary(), It->Investigator->ResourceSummary(), Expected->GetStringField(It->EntityId + TEXT(".resources")));
+                Check(TEXT("progression"), Expected->GetStringField(It->EntityId + TEXT(".progression")) == It->Progression->Summary(), It->Progression->Summary(), Expected->GetStringField(It->EntityId + TEXT(".progression")));
                 Check(TEXT("primary"), Expected->GetStringField(It->EntityId + TEXT(".primary")) == It->Primary->ReplicationSummary(), It->Primary->ReplicationSummary(), Expected->GetStringField(It->EntityId + TEXT(".primary")));
                 Check(TEXT("injuries"), Expected->GetStringField(It->EntityId + TEXT(".injuries")) == It->Injuries->Summary(), It->Injuries->Summary(), Expected->GetStringField(It->EntityId + TEXT(".injuries")));
                 Check(TEXT("resolve"), Expected->GetStringField(It->EntityId + TEXT(".resolve")) == It->Resolve->ReplicationSummary(), It->Resolve->ReplicationSummary(), Expected->GetStringField(It->EntityId + TEXT(".resolve")));
@@ -409,6 +417,7 @@ void ADMCombatPlayerController::BeginE() { BeginSlot(2); }
 void ADMCombatPlayerController::BeginR() { BeginSlot(3); }
 void ADMCombatPlayerController::BeginSlot(int32 Slot)
 {
+    if (bEvolutionOpen) { return; }
     auto* Actor = Cast<ADMCombatant>(GetPawn());
     if (!Actor || Actor->IsDown() || (Actor->IsRestrained() || Actor->IsStunned())) { return; }
     // Pressing the slot that is already aiming cancels it; pressing a different one switches.
@@ -470,6 +479,7 @@ void ADMCombatPlayerController::GetAim(ADMCombatant*& Target, FVector& Point) co
 }
 void ADMCombatPlayerController::ConfirmQ()
 {
+    if (bEvolutionOpen) { ConfirmEvolution(); return; }
     if (!bAiming)
     {
         FHitResult Hit;
@@ -488,13 +498,15 @@ void ADMCombatPlayerController::ConfirmQ()
 }
 void ADMCombatPlayerController::CancelQ()
 {
+    if (bEvolutionOpen) { bEvolutionOpen = false; return; }
     auto* Actor = Cast<ADMCombatant>(GetPawn());
     // Any client-side cancel must also drop a half-placed wire, or the next E press would use the stale first end.
     if (Actor && Actor->Kit->bWirePending) { ServerCancelWire(); }
     bAiming = false;
 }
 void ADMCombatPlayerController::Detonate()
-{ if (GetPawn()) { ServerCastQ(nullptr, GetPawn()->GetActorLocation(), true); } }
+{
+    if (bEvolutionOpen) {  return; } if (GetPawn()) { ServerCastQ(nullptr, GetPawn()->GetActorLocation(), true); } }
 void ADMCombatPlayerController::ServerCastQ_Implementation(ADMCombatant* Target, FVector Point, bool bDetonate)
 {
     auto* Actor = Cast<ADMCombatant>(GetPawn());
@@ -557,6 +569,7 @@ int32 ADMCombatPlayerController::GetPingRadialHover() const
 }
 void ADMCombatPlayerController::PingPressed()
 {
+    if (bEvolutionOpen) {  return; }
     if (!Cast<ADMCombatant>(GetPawn())) { return; }
     bPingHeld = true; bPingRadialOpen = false;
     PingPressedAt = GetWorld()->GetTimeSeconds();
@@ -653,7 +666,7 @@ void ADMCombatPlayerController::ServerPing_Implementation(uint8 Kind, FVector Lo
     { ClientQFeedback(TEXT("Ping rejected")); }
 }
 
-void ADMCombatPlayerController::StartTreatment() { ServerTreatment(); }
+void ADMCombatPlayerController::StartTreatment() { if (!bEvolutionOpen) { ServerTreatment(); } }
 void ADMCombatPlayerController::ServerTreatment_Implementation()
 {
     ADMCombatant* Actor = Cast<ADMCombatant>(GetPawn());
@@ -676,7 +689,7 @@ FDMMadnessView ADMCombatPlayerController::PrivateMadness() const
     if (!A || A->EntityId != MadnessView.EntityId) { return FDMMadnessView(); }
     return MadnessView;
 }
-void ADMCombatPlayerController::StartGrounding() { ServerGround(); }
+void ADMCombatPlayerController::StartGrounding() { if (!bEvolutionOpen) { ServerGround(); } }
 void ADMCombatPlayerController::ServerGround_Implementation()
 {
     auto* A = Cast<ADMCombatant>(GetPawn());
@@ -700,6 +713,7 @@ void ADMCombatPlayerController::ClientVerifyMadness_Implementation(const FDMMadn
 
 void ADMCombatPlayerController::StartPerceptionInteraction()
 {
+    if (bEvolutionOpen) {  return; }
     const auto* A = Cast<ADMCombatant>(GetPawn()); if (!A) { return; }
     const auto V = PrivateMadness(); float Best = MAX_flt; FString Id;
     for (const auto& C : V.Cues)
@@ -713,4 +727,33 @@ void ADMCombatPlayerController::ServerInteractPerception_Implementation(const FS
 {
     auto* A = Cast<ADMCombatant>(GetPawn());
     if (!A || !A->MadnessCore->InteractPerception(CueId)) { ClientQFeedback(TEXT("No reachable private manifestation")); }
+}
+
+
+TArray<FIntPoint> ADMCombatPlayerController::EvolutionChoices() const
+{
+    TArray<FIntPoint> Result;
+    const auto* Actor = Cast<ADMCombatant>(GetPawn());
+    if (!Actor) { return Result; }
+    for (uint8 Slot = 0; Slot < 3; ++Slot)
+    { for (uint8 To = 1; To < 6; ++To)
+      { if (FDMProgressionState::Edge(Actor->Progression->Node(Slot), To)) { Result.Add(FIntPoint(Slot, To)); } } }
+    return Result;
+}
+void ADMCombatPlayerController::ToggleEvolution()
+{
+    if (!bEvolutionOpen) { CancelQ(); }
+    bEvolutionOpen = !bEvolutionOpen; EvolutionSelection = 0;
+}
+void ADMCombatPlayerController::ConfirmEvolution()
+{
+    const auto Choices = EvolutionChoices();
+    if (Choices.IsValidIndex(EvolutionSelection)) { ServerEvolve(Choices[EvolutionSelection].X, Choices[EvolutionSelection].Y); }
+    bEvolutionOpen = false;
+}
+void ADMCombatPlayerController::ServerEvolve_Implementation(uint8 Slot, uint8 Node)
+{
+    auto* Actor = Cast<ADMCombatant>(GetPawn());
+    if (!Actor || !Actor->Progression->Choose(Slot, Node)) { ClientQFeedback(TEXT("Evolution unavailable: earn an opportunity and choose a valid next node.")); }
+    else { ClientQFeedback(Actor->Progression->Name(Slot)); }
 }

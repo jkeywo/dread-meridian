@@ -17,6 +17,29 @@ bool FDMProgressionTest::RunTest(const FString&)
     const auto Saved = S; TestFalse(TEXT("Cap stable"), S.Add(5));
     TestEqual(TEXT("Copy retains progression"), Saved.Level(), S.Level());
     TestTrue(TEXT("Ordinary levels improve basic attack"), S.BasicMultiplier() > 1.f);
+    TSet<FString> Ids;
+    for (uint8 K = 1; K <= 4; ++K)
+    { for (uint8 Slot = 0; Slot < 3; ++Slot)
+      {
+          for (uint8 N = 0; N < 6; ++N)
+          {
+              const auto* Entry = DMEvolution::Find(static_cast<EDMInvestigator>(K), Slot, N);
+              TestNotNull(TEXT("All catalog entries exist"), Entry);
+              if (Entry) { TestFalse(TEXT("Stable IDs unique"), Ids.Contains(Entry->Id)); Ids.Add(Entry->Id); }
+          }
+          FDMProgressionState B; B.Add(1200);
+          TestFalse(TEXT("No tier skip"), B.Choose(Slot, 3));
+          TestTrue(TEXT("First branch B"), B.Choose(Slot, 1));
+          TestFalse(TEXT("No cross branch F"), B.Choose(Slot, 5));
+          TestTrue(TEXT("Hybrid E from B"), B.Choose(Slot, 4));
+          TestFalse(TEXT("No repeat charge"), B.Choose(Slot, 4));
+          FDMProgressionState C; C.Add(1200); C.Choose(Slot, 2);
+          TestTrue(TEXT("Hybrid E from C"), C.Choose(Slot, 4));
+          TestEqual(TEXT("Shared hybrid state"), B.Node(Slot), C.Node(Slot));
+      } }
+    TestFalse(TEXT("Invalid slot rejected"), S.Choose(255, 1));
+    TestFalse(TEXT("Invalid node rejected"), S.Choose(0, 255));
+    FDMProgressionState Empty; TestFalse(TEXT("Cannot spend unearned opportunity"), Empty.Choose(0, 1));
     return true;
 }
 #endif

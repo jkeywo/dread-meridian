@@ -321,6 +321,7 @@ float ADMCombatant::EffectiveResistance() const { return FMath::Max(Investigator
 void ADMCombatant::StepInvestigator(int32 Tick)
 {
     if (!HasAuthority()) { return; }
+    Progression->ChooseForBot();
     Investigator->Step(Tick, !IsDown() && AttackTarget.IsValid() && !AttackTarget->IsDown() ? AttackTarget->EntityId : TEXT(""));
     RecordResources(TEXT("resource_step"));
     if (IsDown() || IsRestrained() || IsStunned()) { bTelegraphActive = false; }

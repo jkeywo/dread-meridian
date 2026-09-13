@@ -683,6 +683,7 @@ void ADMCombatGameMode::CompleteCombat(bool bVictory)
             Expected->SetNumberField(Actor->EntityId + TEXT(".shield"), Actor->Shield());
             Expected->SetStringField(Actor->EntityId + TEXT(".name"), Actor->DisplayName());
             Expected->SetStringField(Actor->EntityId + TEXT(".resources"), Actor->Investigator->ResourceSummary());
+            Expected->SetStringField(Actor->EntityId + TEXT(".progression"), Actor->Progression->Summary());
             Expected->SetStringField(Actor->EntityId + TEXT(".primary"), Actor->Primary->ReplicationSummary());
             Expected->SetStringField(Actor->EntityId + TEXT(".injuries"), Actor->Injuries->Summary());
             Expected->SetStringField(Actor->EntityId + TEXT(".resolve"), Actor->Resolve->ReplicationSummary());

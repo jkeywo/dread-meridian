@@ -16,6 +16,11 @@ class DREADMERIDIAN_API ADMCombatPlayerController : public APlayerController
     GENERATED_BODY()
 public:
     ADMCombatPlayerController();
+    UFUNCTION(Server, Reliable) void ServerEvolve(uint8 Slot, uint8 Node);
+    bool EvolutionOpen() const { return bEvolutionOpen; }
+    int32 EvolutionCursor() const { return EvolutionSelection; }
+    TArray<FIntPoint> EvolutionChoices() const;
+
     virtual void OnPossess(APawn* InPawn) override;
     UFUNCTION(Client, Reliable) void ClientMadness(const FDMMadnessView& View);
     UFUNCTION(Client, Reliable) void ClientVerifyMadness(const FDMMadnessView& Expected);
@@ -66,6 +71,11 @@ public:
     static constexpr float PingHoldSeconds = .3f;
     static constexpr float PingRadialDeadZone = 28.f;
 private:
+    bool bEvolutionOpen = false;
+    int32 EvolutionSelection = 0;
+    void ToggleEvolution();
+    void ConfirmEvolution();
+    UPROPERTY() TObjectPtr<UInputAction> EvolutionAction;
     FDMMadnessView MadnessView;
     void StartGrounding();
     void StartPerceptionInteraction();

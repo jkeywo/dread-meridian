@@ -9,3 +9,8 @@ Repeated event identifiers never award again; downed investigators share team pr
 This is live run state, not a host-migration save format.
 
 Verification: foundation cadence/overflow/bankability test, Unreal Test and Smoke; editor tests added alongside evolution choice integration.
+
+Evolution framework: Q/W/E nodes are publicly replicated; server validates earned token, predecessor, slot, node, ownership and living pawn. R has no normal-level branch.
+U / gamepad View opens the selector; Tab / RB cycles, Space / A (or left-click) accepts, U / B closes. Combat actions are suppressed while selecting; movement remains available.
+Catalog contains 72 unique stable IDs including 12 bases and 60 evolved nodes, semantic GDD descriptions, and situational offense/control/protection valuation hooks. Bots evaluate nearby enemies, elites and team danger.
+This framework commit exposes choices; evolved runtime effects follow as separate investigator commits. No claim of controller parity or host-migration restoration.

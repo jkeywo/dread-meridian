@@ -553,7 +553,37 @@ void ADMCombatHUD::DrawInvestigator(const FDMHudModel& Model)
         }
     }
 
-    // Basic plus the four named abilities. Evolution nodes are not implemented, so no slot advertises one.
+    if (Actor)
+    {
+        Label(Actor->Progression->Summary() + TEXT(" | U / View: evolve"), DMHud::Brass, X, Y - 36 * S, .85f);
+        const auto* P = Cast<ADMCombatPlayerController>(GetOwningPlayerController());
+        if (P && P->EvolutionOpen())
+        {
+            const auto Choices = P->EvolutionChoices();
+            const float MenuY = Y - 270 * S;
+            Panel(X, MenuY, W, 228 * S, DMHud::Brass);
+            Label(TEXT("EVOLUTION | Tab / RB next | Space / A choose | U / B close"), DMHud::Bone, X + 10*S, MenuY + 8*S, .85f);
+            for (int32 I = 0; I < Choices.Num(); ++I)
+            {
+                const auto C = Choices[I];
+                const auto* Entry = DMEvolution::Find(Actor->Investigator->Kind, C.X, C.Y);
+                if (!Entry) { continue; }
+                Label(FString::Printf(TEXT("%s %c > %s"), I == P->EvolutionCursor() ? TEXT(">") : TEXT(" "), TEXT("QWE")[C.X], *Entry->Name),
+                    I == P->EvolutionCursor() ? DMHud::Bone : DMHud::Muted, X + 10*S, MenuY + (32 + I*21)*S, .95f);
+                if (I == P->EvolutionCursor())
+                {
+                    // Two short lines keep the selector usable at the HUD's minimum scale.
+                    FString Text = Entry->Description;
+                    int32 Cut = FMath::Min(86, Text.Len());
+                    while (Cut > 0 && Cut < Text.Len() && Text[Cut] != TCHAR(' ')) { --Cut; }
+                    Label(Text.Left(Cut), DMHud::Brass, X+10*S, MenuY+166*S, .8f);
+                    Label(Text.Mid(Cut).Left(86), DMHud::Brass, X+10*S, MenuY+182*S, .8f);
+                }
+            }
+            Label(TEXT("Earned choices are permanent. Choose an ability to evolve."), DMHud::Muted, X+10*S, MenuY+207*S, .8f);
+        }
+    }
+    // Basic plus four named abilities.
     const float SlotY = Y + 78 * S;
     const float Size = 44 * S;
     Slot(X + 24 * S, SlotY, Size, TEXT("LMB"), TEXT("basic"), DMHud::Brass, Model.BasicCooldown);
