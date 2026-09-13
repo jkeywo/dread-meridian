@@ -21,6 +21,7 @@ public:
     UFUNCTION(Exec) void DMObjectiveRelease();
     UFUNCTION(Exec) void DMSpawnObjective(const FString& TemplateId, int32 Difficulty = 0);
     UFUNCTION(Exec) void DMStartShub();
+    UFUNCTION(Exec) void DMSpawnSwamp(int32 Kind=1);
     UFUNCTION(Server,Reliable) void ServerRelicVote(class ADMRelicDrop* Drop,uint8 Choice);
     ADMRelicDrop* PendingRelic() const;
     bool RelicMenuOpen() const { return bRelicOpen; }

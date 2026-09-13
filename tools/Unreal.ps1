@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Generate', 'GenerateMap', 'GenerateShellMap', 'GenerateAIProfiles', 'Python', 'Build', 'Test', 'EditorTest', 'Smoke', 'CombatSmoke', 'SmugglerSmoke', 'ShellSmoke', 'Editor', 'Play', 'Shell', 'NetworkTest')]
+    [ValidateSet('Generate', 'GenerateMap', 'GenerateShellMap', 'GenerateAIProfiles', 'Python', 'Build', 'Test', 'EditorTest', 'Smoke', 'CombatSmoke', 'SmugglerSmoke', 'SwampSmoke', 'ShellSmoke', 'Editor', 'Play', 'Shell', 'NetworkTest')]
     [string]$Action = 'Build',
     [string]$EngineRoot = $env:UE_ROOT,
     [int]$Seed = 1927,
@@ -11,7 +11,8 @@ param(
     [string]$Script,
     # Overrides the automation filter for Test (default DreadMeridian.Foundation) and EditorTest (default DreadMeridian.Editor).
     [string]$Filter,
-    [switch]$RenderOffscreen
+    [switch]$RenderOffscreen,
+    [switch]$SwampEnemies
 )
 
 $ErrorActionPreference = 'Stop'
@@ -126,9 +127,15 @@ if ($Action -in @('Shell', 'ShellSmoke')) { $map = '/Game/DreadMeridian/Maps/L_S
 $launchArgs = @($projectFile, $map, '-PlaytraceCapture', "-DMInvestigator=$Investigator", "-DMSeed=$Seed",
     "-DMGameRevision=$revision", "-DMSourceDigest=$sourceDigest", "-DMGDDDigest=$gddDigest")
 if ($status) { $launchArgs += '-DMDirty' }
+if ($SwampEnemies -or $Action -eq 'SwampSmoke') { $launchArgs += '-DMSwampProbe' }
 
 if ($Action -eq 'NetworkTest') {
     & (Join-Path $PSScriptRoot 'NetworkTest.ps1') -EngineRoot $EngineRoot -LaunchArguments $launchArgs
+} elseif ($Action -eq 'SwampSmoke') {
+    $swampLog = Join-Path $projectRoot ('Saved\Logs\swamp-' + [guid]::NewGuid().ToString('N') + '.log')
+    & $cmdEditor @launchArgs -server -unattended -nop4 -nosplash -nullrhi -nosound "-abslog=$swampLog"
+    if ($LASTEXITCODE -ne 0 -or -not (Select-String -LiteralPath $swampLog -SimpleMatch 'DREAD_SWAMP_COMPLETE' -Quiet)) { throw "Swamp simulation did not finish: $swampLog" }
+    Write-Output "Swamp simulation completed. Outcome and capture path: $swampLog"
 } elseif ($Action -eq 'SmugglerSmoke') {
     $factionLog = Join-Path $projectRoot ('Saved\Logs\smuggler-soak-' + [guid]::NewGuid().ToString('N') + '.log')
     & $cmdEditor @launchArgs -server -unattended -nop4 -nosplash -nullrhi -nosound -DMSmugglerSoak "-abslog=$factionLog"

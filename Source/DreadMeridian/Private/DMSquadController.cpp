@@ -34,9 +34,10 @@ void ADMSquadController::Think(ADMCombatGameMode& Mode)
     ADMCombatant* Self = Cast<ADMCombatant>(GetPawn());
     if (!Self || Self->IsDown() || Self->IsRestrained()) { return; }
     if (Self->ActorHasTag(TEXT("ShubBoss"))) { return; }
+    if (Self->bSwampThing) { return; } // Native role state machine owns movement and target selection.
     if (auto* Minion=Self->FindComponentByClass<UDMShubMinion>(); Minion && Minion->ControlsMovement()) { return; }
     Self->Threat.Cleanup([&](const FString& Id) { const auto* A=Mode.FindCombatant(Id); return A && !A->IsDown(); },Mode.GetCombatTick());
-    if (auto* Forced=Mode.FindCombatant(Self->Threat.Forced(Mode.GetCombatTick())); Forced && Forced->bIsEnemy!=Self->bIsEnemy && !Forced->IsDown())
+    if (auto* Forced=Mode.FindCombatant(Self->Threat.Forced(Mode.GetCombatTick())); Forced && Self->IsHostileTo(Forced) && !Forced->IsDown())
     { Self->SetAttackTarget(Forced); Self->MoveToward(Forced->GetActorLocation()); return; }
     if (!Profile) { Profile = Mode.ProfileFor(*Self); }
     if (!Profile) { UE_LOG(LogTemp, Warning, TEXT("ADMSquadController: no AI profile for %s"), *Self->EntityId); return; }
@@ -136,7 +137,7 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
         const FVector Loc = C->GetActorLocation();
         FDMAIActorView& V = Out.Actors.AddDefaulted_GetRef();
         V.Index = I; V.EntityId = C->EntityId;
-        V.bEnemy = C->bIsEnemy; V.bDown = C->IsDown(); V.bRestrained = C->IsRestrained();
+        V.bEnemy = Self->IsHostileTo(C) ? !Self->bIsEnemy : Self->bIsEnemy; V.bDown = C->IsDown(); V.bRestrained = C->IsRestrained();
         V.bPlayerControlled = C->IsPlayerControlled(); V.bCommon = C->bCommonEnemy; V.bBreakVulnerable = C->bBreakVulnerable;
         V.bForced = C == Forced; V.bMarked = C == Marked; V.bDiver = C == Diver;
         V.bBoundByMe = Self->Primary->Bindings.ContainsByPredicate([&](const ADMAbilityMarker* M) { return IsValid(M) && M->BoundTarget == C; });
@@ -160,7 +161,7 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
         V.Exposure = Self->Investigator->PeekExposure(C->EntityId);
         V.bSuppressed = C->bSuppressed; V.bCommitted = C->bTelegraphActive; V.Break = C->Break;
         V.bGroupEngaged = false; V.bVisible = true;
-        const bool bHostile = C->bIsEnemy != Self->bIsEnemy && !V.bDown;
+        const bool bHostile = Self->IsHostileTo(C) && !V.bDown;
         if (S.bLocalEnemy && bHostile)
         {
             // Group alert: same loop as the previous cascade, so camp-mates acquire together.

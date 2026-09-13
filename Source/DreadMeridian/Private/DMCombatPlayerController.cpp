@@ -90,6 +90,16 @@ void ADMCombatPlayerController::DMStartShub()
     if (!Encounter->Begin(Arena)) { Encounter->Destroy(); ClientQFeedback(TEXT("Shub cannot start: use -DMElderOne=Shub and a valid arena during active combat.")); }
 #endif
 }
+void ADMCombatPlayerController::DMSpawnSwamp(int32 Kind)
+{
+#if !UE_BUILD_SHIPPING
+    auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    if (!HasAuthority() || !M || !M->IsCombatActive() || !GetPawn() || Kind<1 || Kind>5) { return; }
+    const FString Id=FString::Printf(TEXT("swamp.fixture.%d"),M->GetCombatants().Num());
+    auto* A=M->SpawnEncounterActor(Id,GetPawn()->GetActorLocation()+FVector(500,0,0),Kind==5 ? 350 : 90,Kind==5 ? 14 : 8);
+    if (A) { A->Swamp->Initialize(static_cast<EDMSwampThing>(Kind)); }
+#endif
+}
 void ADMCombatPlayerController::SetupInputComponent()
 {
     Super::SetupInputComponent();
@@ -478,6 +488,8 @@ void ADMCombatPlayerController::ClientVerifyCombatState_Implementation(const FSt
                 Check(TEXT("kit"), Expected->GetStringField(It->EntityId + TEXT(".kit")) == It->Kit->ReplicationSummary(), It->Kit->ReplicationSummary(), Expected->GetStringField(It->EntityId + TEXT(".kit")));
                 Check(TEXT("relics"), Expected->GetStringField(It->EntityId + TEXT(".relics")) == It->Relics->Summary(), It->Relics->Summary(), Expected->GetStringField(It->EntityId + TEXT(".relics")));
                 Check(TEXT("relic_capacity"), Expected->GetIntegerField(It->EntityId + TEXT(".relic_capacity")) == It->Relics->Capacity, FString::FromInt(It->Relics->Capacity), FString::FromInt(Expected->GetIntegerField(It->EntityId + TEXT(".relic_capacity"))));
+                Check(TEXT("swamp_role"),Expected->GetIntegerField(It->EntityId+TEXT(".swamp_role"))==static_cast<uint8>(It->Swamp->Capture().Role),FString::FromInt(static_cast<uint8>(It->Swamp->Capture().Role)),FString::FromInt(Expected->GetIntegerField(It->EntityId+TEXT(".swamp_role"))));
+                bPassed &= Expected->GetBoolField(It->EntityId+TEXT(".swamp_faction"))==It->bSwampThing;
             }
             const ADMGameState* State = GetWorld()->GetGameState<ADMGameState>();
             bool RelicResolved=false;
@@ -486,7 +498,7 @@ void ADMCombatPlayerController::ClientVerifyCombatState_Implementation(const FSt
             bPassed &= RelicResolved;
             bPassed &= State && Expected->GetStringField(TEXT("phase")) == StaticEnum<EDMRunPhase>()->GetNameStringByValue(static_cast<int64>(State->GetRunState().Phase));
         }
-        bPassed &= Count == 7;
+        bPassed &= Expected.IsValid() && Count == Expected->GetIntegerField(TEXT("actor_count"));
         UE_LOG(LogTemp, Display, TEXT("DREAD_NETWORK_PROBE_%s actors=%d"), bPassed ? TEXT("PASSED") : TEXT("FAILED"), Count);
         FPlatformMisc::RequestExitWithStatus(false, bPassed ? 0 : 1);
     }), 3.f, false);

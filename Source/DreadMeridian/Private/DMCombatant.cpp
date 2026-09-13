@@ -27,6 +27,7 @@
 
 ADMCombatant::ADMCombatant()
 {
+    Swamp=CreateDefaultSubobject<UDMSwampThing>(TEXT("SwampThing"));
     Relics=CreateDefaultSubobject<UDMRelicComponent>(TEXT("Relics"));
     PrimaryActorTick.bCanEverTick = true;
     bReplicates = true;
@@ -158,7 +159,7 @@ bool ADMCombatant::TryAttack(ADMCombatant* Target)
     AttackTarget = Target;
     ADMCombatGameMode* Mode = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
     if (!Mode || !Mode->IsCombatActive() || IsDown() || !IsValid(Target) || Target->IsDown()
-        || Target->bIsEnemy == bIsEnemy || NextAttackTick > Mode->GetCombatTick()
+        || !IsHostileTo(Target) || NextAttackTick > Mode->GetCombatTick()
         || FVector::DistSquared(GetActorLocation(), Target->GetActorLocation()) > FMath::Square(GetAttackRange())) { bTelegraphActive = false; return false; }
     // Bot brain attack-channel gate: the target projection above still updates while held.
     if (bAttackHold) { bTelegraphActive = false; return false; }
@@ -191,7 +192,7 @@ bool ADMCombatant::ResolveAttack()
     ADMCombatant* Target = AttackTarget.Get();
     ADMCombatGameMode* Mode = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
     if (!HasAuthority() || !Mode || !Mode->IsCombatActive() || IsDown() || bAttackHold || !Target || Target->IsDown()
-        || Target->bIsEnemy == bIsEnemy || Mode->GetCombatTick() < NextAttackTick
+        || !IsHostileTo(Target) || Mode->GetCombatTick() < NextAttackTick
         || FVector::DistSquared(GetActorLocation(), Target->GetActorLocation()) > FMath::Square(GetAttackRange())) { return false; }
     FHitResult Hit;
     FCollisionQueryParams Query(SCENE_QUERY_STAT(BasicAttack), false, this);
@@ -207,9 +208,10 @@ bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FS
 {
     auto* Mode = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
     if (!HasAuthority() || !Mode || !Mode->IsCombatActive() || IsDown() || !IsValid(Target) || Target->IsDown()
-        || Target->bIsEnemy == bIsEnemy || !FMath::IsFinite(Damage) || Damage <= 0) { return false; }
+        || Target->GetWorld()!=GetWorld() || !IsHostileTo(Target) || !FMath::IsFinite(Damage) || Damage <= 0) { return false; }
     const float Before = Target->Health();
     Damage*=Relics->SpendMedal(Target,AbilityId,bBasic);
+    if (bBasic && bSwampThing) { Damage*=Swamp->DamageMultiplier(Target); }
     const float ShieldBefore = Target->Shield();
     const float Incoming = Target->IncomingUntilTick > Mode->GetCombatTick() ? FMath::Clamp(Target->IncomingMultiplier, 0.f, 2.f) : 1.f;
     const float BaseDamage = Damage * Kit->OutgoingTo(Target) * Target->Progression->IncomingFrom(this) * Target->Relics->IncomingMultiplier() * MadnessCore->Outgoing(Target) * (1 - FMath::Clamp(Target->SpiritProtection, 0.f, .5f)) * Incoming;
@@ -312,6 +314,7 @@ void ADMCombatant::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
     DOREPLIFETIME(ADMCombatant, EncounterLabel);
     DOREPLIFETIME(ADMCombatant, ReviveProgress);
     DOREPLIFETIME(ADMCombatant, AttackIntervalTicks);
+    DOREPLIFETIME(ADMCombatant, bSwampThing);
     DOREPLIFETIME(ADMCombatant, NextAttackTick);
 }
 
@@ -323,7 +326,13 @@ void ADMCombatant::InitializeInvestigator(EDMInvestigator Kind, bool bUseProfile
 FString ADMCombatant::DisplayName() const
 { return !EncounterLabel.IsEmpty() ? EncounterLabel : bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Name() : bIsEnemy ? Investigator->DisplayName() + TEXT(" ") + EntityId.Mid(EntityId.Find(TEXT(".")) + 1) : Investigator->DisplayName(); }
 float ADMCombatant::GetAttackRange() const
-{ return (bProfileRange ? 420 : bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Range() : Investigator->Range()) + ReachBonus; }
+{ return (bSwampThing ? Swamp->Range() : bProfileRange ? 420 : bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Range() : Investigator->Range()) + ReachBonus; }
+bool ADMCombatant::IsHostileTo(const ADMCombatant* Other) const
+{
+    if (!IsValid(Other) || Other==this) { return false; }
+    if (bIsEnemy!=Other->bIsEnemy) { return true; }
+    return bIsEnemy && bSwampThing!=Other->bSwampThing && (bSwampThing ? Other->bHumanEnemy : bHumanEnemy);
+}
 float ADMCombatant::EffectiveResistance() const { return FMath::Max(FMath::Max3(Investigator->Resistance(), BraceResistance, Kit->ChargeResistance()),Relics->ProtectsObjective() ? .75f : 0.f); }
 void ADMCombatant::StepInvestigator(int32 Tick)
 {
@@ -336,7 +345,7 @@ void ADMCombatant::StepInvestigator(int32 Tick)
     if (IncomingUntilTick > 0 && Tick >= IncomingUntilTick) { IncomingUntilTick = 0; IncomingMultiplier = 1; }
     Slows.RemoveAll([&](const FDMSlow& S) { return S.UntilTick <= Tick; });
     const float Slow = FMath::Max(DMKitRules::EffectiveSlow(Slows, Tick), SpiritSlow);
-    ReplicatedMoveSpeed = (bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Speed() : 420) * (1 + Investigator->Stickiness() * .25f) * (1 - Slow * (1 - EffectiveResistance())) * Injuries->MovementFactor * Relics->MovementMultiplier();
+    ReplicatedMoveSpeed = (bSwampThing ? Swamp->Speed() : bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Speed() : 420) * (1 + Investigator->Stickiness() * .25f) * (1 - Slow * (1 - EffectiveResistance())) * Injuries->MovementFactor * Relics->MovementMultiplier();
 }
 void ADMCombatant::StepControl(int32 Tick)
 {
@@ -377,7 +386,7 @@ void ADMCombatant::ApplyControl(const FDMControl& Control, ADMCombatant* Source,
         || Control.Displacement.ContainsNaN() || Control.SlowTicks < 0 || Control.SlowTicks > 1000000
         || Control.StaggerTicks < 0 || Control.StaggerTicks > 1000000 || Control.StunTicks < 0 || Control.StunTicks > 1000000
         || Control.Damage < 0 || Control.BreakPressure < 0 || Control.Slow < 0 || Control.Slow > 1
-        || (Source && (!IsValid(Source) || Source->GetWorld() != GetWorld() || Source->IsDown() || Source->bIsEnemy == bIsEnemy))) { return; }
+        || (Source && (!IsValid(Source) || Source->GetWorld() != GetWorld() || Source->IsDown() || !IsHostileTo(Source)))) { return; }
     const int32 Tick = Mode->GetCombatTick(); StepControl(Tick);
     // The breaking hit opens the window for subsequent control; it resolves against the preceding state.
     FDMControl Empowered=Control;

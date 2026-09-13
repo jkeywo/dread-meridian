@@ -75,7 +75,7 @@ public:
     bool IsCombatActive() const { return bCombatActive; }
     void UseBossOutcome() { if (HasAuthority()) { bBossOutcome=true; } }
     void CompleteBossEncounter(bool bVictory) { if (HasAuthority() && bBossOutcome && bCombatActive) { CompleteCombat(bVictory); } }
-    bool UsesEncounterLayout() const { return SmokeOutcome.IsEmpty() && !bNetworkTest; }
+    bool UsesEncounterLayout() const { return SmokeOutcome.IsEmpty() && !bNetworkTest && !bSwampTest; }
     const TArray<TObjectPtr<ADMCombatant>>& GetCombatants() const { return Combatants; }
     ADMCombatant* FindCombatant(const FString& EntityId) const;
     /** Call between combat iterations, never while iterating the roster. */
@@ -136,6 +136,7 @@ private:
     FString SmokeOutcome;
     FString AIWeightsPath;
     bool bNetworkTest = false;
+    bool bSwampTest = false;
     int32 RevivesCompleted = 0;
     bool bGuardChecksPassed = true;
     FDMSmugglerWave SmugglerWave;

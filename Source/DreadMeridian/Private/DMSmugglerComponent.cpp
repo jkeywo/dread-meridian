@@ -75,7 +75,7 @@ void UDMSmugglerComponent::Record(ADMCombatGameMode& Mode, const FString& Stage,
 }
 ADMCombatant* UDMSmugglerComponent::FocusTarget(const ADMCombatGameMode& Mode, const ADMCombatant* Recipient, bool bBossOnly)
 {
-    if (!Recipient || !Recipient->bIsEnemy) { return nullptr; }
+    if (!Recipient || !Recipient->bIsEnemy || Recipient->bSwampThing) { return nullptr; }
     // Stable roster order resolves simultaneous calls; a boss command always outranks a lookout mark.
     for (ADMCombatant* A : Mode.GetCombatants())
     {
@@ -96,7 +96,7 @@ ADMCombatant* UDMSmugglerComponent::DiverTarget(const ADMCombatGameMode& Mode, c
     ADMCombatant* Best = nullptr; float Nearest = MAX_flt;
     for (ADMCombatant* Diver : Mode.GetCombatants())
     {
-        if (Diver->bIsEnemy || Diver->IsDown()) { continue; }
+        if (!Bodyguard->IsHostileTo(Diver) || Diver->IsDown()) { continue; }
         for (ADMCombatant* Ally : Mode.GetCombatants())
         {
             if (Ally == Bodyguard || !Ally->bIsEnemy || Ally->IsDown() || !Ally->Smuggler->IsRanged()
@@ -120,7 +120,7 @@ bool UDMSmugglerComponent::CanSignature(const ADMCombatGameMode& Mode, const ADM
     if (!A->HasAuthority()) { Why = TEXT("authority"); }
     else if (!Mode.IsCombatActive()) { Why = TEXT("inactive"); }
     else if (!A->bIsEnemy || A->IsDown() || A->IsRestrained() || A->IsStunned()) { Why = TEXT("state"); }
-    else if (!IsValid(Target) || Target->bIsEnemy || Target->IsDown()) { Why = TEXT("target"); }
+    else if (!IsValid(Target) || !A->IsHostileTo(Target) || Target->IsDown()) { Why = TEXT("target"); }
     else if (IsCasting()) { Why = TEXT("casting"); }
     else if (Tick < NextSignatureTick) { Why = TEXT("cooldown"); }
     else if (FireUntil > Tick) { Why = TEXT("burning"); }
@@ -195,7 +195,7 @@ void UDMSmugglerComponent::Step(ADMCombatGameMode& Mode)
             if (Marker) { Marker->CustomLabel = TEXT("BURNING GROUND"); Marker->ForceNetUpdate(); }
             A->MulticastPresentation(4, BlastPoint - FVector(0,0,60));
             for (ADMCombatant* T : Mode.GetCombatants())
-            { if (!T->bIsEnemy && !T->IsDown() && FVector::DistSquared2D(T->GetActorLocation(), BlastPoint) <= FMath::Square(180.f)
+            { if (A->IsHostileTo(T) && !T->IsDown() && FVector::DistSquared2D(T->GetActorLocation(), BlastPoint) <= FMath::Square(180.f)
                 && Sight(BlastPoint, T->GetActorLocation())) { A->DealCombatDamage(T, 14, TEXT("ability.smuggler.firebomb")); } }
         }
         Record(Mode, TEXT("resolved"), PendingTarget); PendingTarget = nullptr;
@@ -207,7 +207,7 @@ void UDMSmugglerComponent::Step(ADMCombatGameMode& Mode)
         {
             NextFireTick = Tick + 10;
             for (ADMCombatant* T : Mode.GetCombatants())
-            { if (!T->bIsEnemy && !T->IsDown() && FVector::DistSquared2D(T->GetActorLocation(), BlastPoint) <= FMath::Square(180.f)
+            { if (A->IsHostileTo(T) && !T->IsDown() && FVector::DistSquared2D(T->GetActorLocation(), BlastPoint) <= FMath::Square(180.f)
                 && Sight(BlastPoint, T->GetActorLocation())) { A->DealCombatDamage(T, 4, TEXT("ability.smuggler.burning_ground"), false, true); } }
         }
     }

@@ -45,6 +45,7 @@ void ADMCombatGameMode::InitGame(const FString& MapName, const FString& Options,
     FParse::Value(FCommandLine::Get(), TEXT("DMCombatSmoke="), SmokeOutcome);
     FParse::Value(FCommandLine::Get(), TEXT("DMAIWeights="), AIWeightsPath);
     bNetworkTest = FParse::Param(FCommandLine::Get(), TEXT("DMNetworkTest"));
+    bSwampTest = FParse::Param(FCommandLine::Get(), TEXT("DMSwampProbe"));
 #endif
 }
 
@@ -52,9 +53,10 @@ void ADMCombatGameMode::ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& 
 {
     Metadata->SetStringField(TEXT("scenario_id"), TEXT("combat-sandbox"));
     Metadata->SetStringField(TEXT("run_kind"), TEXT("combat_sandbox"));
-    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.12.0"));
+    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.13.0"));
     if (UsesEncounterLayout()) { Metadata->SetStringField(TEXT("native_faction"), TEXT("smugglers")); }
-    Metadata->SetStringField(TEXT("combat_rules_version"), TEXT("objectives-shub-relics-v1"));
+    Metadata->SetStringField(TEXT("combat_rules_version"), TEXT("swamp-things-v1"));
+    if (bSwampTest) { Metadata->SetStringField(TEXT("native_faction"),TEXT("swamp_things")); }
     Metadata->SetStringField(TEXT("bot_policy"), TEXT("squad-utility-v5"));
     Metadata->SetStringField(TEXT("test_profile"), bNetworkTest ? TEXT("network_probe") : (SmokeOutcome.IsEmpty() ? TEXT("interactive") : SmokeOutcome));
     Metadata->SetNumberField(TEXT("initial_bot_count"), 4);
@@ -83,7 +85,7 @@ void ADMCombatGameMode::BeginEncounter()
     FParse::Value(FCommandLine::Get(), TEXT("DMSeed="), Seed);
     FDMRandomStreams Layout(Seed);
     const bool bSmoke = !SmokeOutcome.IsEmpty();
-    for (int32 Index = 0; Index < (UsesEncounterLayout() ? 4 + DMEncounterLayout::EnemyCount : 7); ++Index)
+    for (int32 Index = 0; Index < (bSwampTest ? 9 : UsesEncounterLayout() ? 4 + DMEncounterLayout::EnemyCount : 7); ++Index)
     {
         const bool bEnemy = Index >= 4;
         const float X = bEnemy ? (bSmoke ? 170.f : 650.f) : (bSmoke ? -170.f : -650.f);
@@ -113,6 +115,11 @@ void ADMCombatGameMode::BeginEncounter()
             Actor->InitializeCombatant(Actor->EntityId, true, Actor->Smuggler->BaseHealth(), Actor->Smuggler->BaseDamage());
         }
         Actor->bProfileRange = bSmoke;
+        if (bSwampTest && bEnemy)
+        {
+            Actor->InitializeCombatant(Actor->EntityId,true,Index==8 ? 350 : 90,Index==8 ? 14 : 8);
+            Actor->Swamp->Initialize(static_cast<EDMSwampThing>(Index-3));
+        }
         if (!bEnemy) { Actor->InitializeInvestigator(static_cast<EDMInvestigator>(Index + 1), bSmoke); }
         if (bReviveTest && bEnemy)
         {
@@ -637,6 +644,8 @@ void ADMCombatGameMode::StepCombat()
     }
     if (FParse::Param(FCommandLine::Get(),TEXT("DMSmugglerSoak")) && CombatTick > 1800)
     { UE_LOG(LogTemp,Error,TEXT("DREAD_SMUGGLER_SOAK_TIMEOUT")); LogResult(TEXT("timeout")); FPlatformMisc::RequestExitWithStatus(false,1); return; }
+    if (bSwampTest && CombatTick>1800)
+    { UE_LOG(LogTemp,Error,TEXT("DREAD_SWAMP_TIMEOUT")); LogResult(TEXT("timeout")); FPlatformMisc::RequestExitWithStatus(false,1); return; }
 #endif
     for (ADMCombatant* Actor : Combatants) { Actor->SpiritProtection = 0; Actor->SpiritSlow = 0; }
     // Settle the ping board before any bot reads it this tick.
@@ -655,7 +664,7 @@ void ADMCombatGameMode::StepCombat()
     if (!bCombatActive) { return; }
     for (TActorIterator<ADMObjective> It(GetWorld()); It; ++It) { It->Step(CombatTick); }
     for (TActorIterator<ADMRelicDrop> It(GetWorld()); It; ++It) { It->Step(CombatTick); }
-    for (ADMCombatant* Actor : Combatants) { Actor->Primary->Step(CombatTick); Actor->Kit->Step(CombatTick); Actor->Smuggler->Step(*this); }
+    for (ADMCombatant* Actor : Combatants) { Actor->Primary->Step(CombatTick); Actor->Kit->Step(CombatTick); Actor->Smuggler->Step(*this); Actor->Swamp->Step(CombatTick); }
     if (ADMGameState* Projection = GetGameState<ADMGameState>()) { Projection->SetCombatTick(CombatTick); }
     for (ADMCombatant* Actor : Combatants)
     {
@@ -728,17 +737,20 @@ void ADMCombatGameMode::CompleteCombat(bool bVictory)
       { if (Hero && !Hero->bIsEnemy) { Hero->Progression->Award(TEXT("encounter:victory"), 650); } } }
     bCombatActive = false;
     GetWorldTimerManager().ClearTimer(CombatTimer);
-    for (ADMCombatant* Actor : Combatants) { Actor->Smuggler->Cancel(); Actor->StopGoal(); Actor->Primary->CancelChannel(); Actor->Primary->ReleaseClinch(); Actor->Kit->Cancel(true); Actor->GetCharacterMovement()->StopMovementImmediately(); }
+    for (ADMCombatant* Actor : Combatants) { Actor->Swamp->Stop(); Actor->Smuggler->Cancel(); Actor->StopGoal(); Actor->Primary->CancelChannel(); Actor->Primary->ReleaseClinch(); Actor->Kit->Cancel(true); Actor->GetCharacterMovement()->StopMovementImmediately(); }
     FinishRun(bVictory);
     LogResult(bVictory ? TEXT("victory") : TEXT("defeat"));
     OnEncounterComplete(bVictory);
 #if !UE_BUILD_SHIPPING
     if (FParse::Param(FCommandLine::Get(),TEXT("DMSmugglerSoak")))
     { UE_LOG(LogTemp,Display,TEXT("DREAD_SMUGGLER_SOAK_COMPLETE outcome=%s tick=%d roster=%d"),bVictory?TEXT("victory"):TEXT("defeat"),CombatTick,Combatants.Num()); FPlatformMisc::RequestExit(false); }
+    if (bSwampTest && !bNetworkTest)
+    { UE_LOG(LogTemp,Display,TEXT("DREAD_SWAMP_COMPLETE outcome=%s tick=%d roster=%d"),bVictory?TEXT("victory"):TEXT("defeat"),CombatTick,Combatants.Num()); FPlatformMisc::RequestExit(false); }
 #endif
     if (bNetworkTest)
     {
         TSharedRef<FJsonObject> Expected = MakeShared<FJsonObject>();
+        Expected->SetNumberField(TEXT("actor_count"),Combatants.Num());
         for (ADMCombatant* Actor : Combatants)
         {
             Expected->SetNumberField(Actor->EntityId + TEXT(".health"), Actor->Health());
@@ -752,6 +764,8 @@ void ADMCombatGameMode::CompleteCombat(bool bVictory)
             Expected->SetStringField(Actor->EntityId + TEXT(".kit"), Actor->Kit->ReplicationSummary());
             Expected->SetStringField(Actor->EntityId + TEXT(".relics"), Actor->Relics->Summary());
             Expected->SetNumberField(Actor->EntityId + TEXT(".relic_capacity"), Actor->Relics->Capacity);
+            Expected->SetNumberField(Actor->EntityId + TEXT(".swamp_role"),static_cast<uint8>(Actor->Swamp->Capture().Role));
+            Expected->SetBoolField(Actor->EntityId + TEXT(".swamp_faction"),Actor->bSwampThing);
         }
         Expected->SetStringField(TEXT("phase"), bVictory ? TEXT("Victory") : TEXT("Defeat"));
         for (TActorIterator<ADMRelicDrop> It(GetWorld());It;++It)
