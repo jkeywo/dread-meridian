@@ -114,6 +114,7 @@ public:
     bool IsAttackHeld() const { return bAttackHold; }
 
     UPROPERTY(Replicated, BlueprintReadOnly) FString EntityId;
+    UPROPERTY(Replicated) FString EncounterLabel;
     UPROPERTY(Replicated, BlueprintReadOnly) bool bIsEnemy = false;
     UPROPERTY(Replicated, BlueprintReadOnly) int32 InjuryCount = 0;
     UPROPERTY(Replicated, BlueprintReadOnly) int32 GrievousCount = 0;
@@ -130,6 +131,7 @@ public:
     FDMThreat Threat;
     UPROPERTY(Replicated) int32 NextAttackTick = 0;
     int32 LastDamageTick = -1;
+    int32 ControlInterruptSerial = 0;
 private:
     UPROPERTY(VisibleAnywhere) TObjectPtr<UAbilitySystemComponent> AbilitySystem;
     UPROPERTY() TObjectPtr<UDMHealthAttributes> Attributes;

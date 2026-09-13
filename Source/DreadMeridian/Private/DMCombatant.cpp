@@ -304,6 +304,7 @@ void ADMCombatant::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
     DOREPLIFETIME(ADMCombatant, ControlKind);
     DOREPLIFETIME(ADMCombatant, AttackTargetId);
     DOREPLIFETIME(ADMCombatant, ReviverId);
+    DOREPLIFETIME(ADMCombatant, EncounterLabel);
     DOREPLIFETIME(ADMCombatant, ReviveProgress);
     DOREPLIFETIME(ADMCombatant, AttackIntervalTicks);
     DOREPLIFETIME(ADMCombatant, NextAttackTick);
@@ -315,7 +316,7 @@ void ADMCombatant::InitializeInvestigator(EDMInvestigator Kind, bool bUseProfile
     if (!bUseProfileTuning) { AttackDamage = Investigator->Damage(); AttackIntervalTicks = Investigator->Interval(); }
 }
 FString ADMCombatant::DisplayName() const
-{ return bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Name() : bIsEnemy ? Investigator->DisplayName() + TEXT(" ") + EntityId.Mid(EntityId.Find(TEXT(".")) + 1) : Investigator->DisplayName(); }
+{ return !EncounterLabel.IsEmpty() ? EncounterLabel : bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Name() : bIsEnemy ? Investigator->DisplayName() + TEXT(" ") + EntityId.Mid(EntityId.Find(TEXT(".")) + 1) : Investigator->DisplayName(); }
 float ADMCombatant::GetAttackRange() const
 { return (bProfileRange ? 420 : bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Range() : Investigator->Range()) + ReachBonus; }
 float ADMCombatant::EffectiveResistance() const { return FMath::Max3(Investigator->Resistance(), BraceResistance, Kit->ChargeResistance()); }
@@ -344,6 +345,7 @@ void ADMCombatant::StepControl(int32 Tick)
 void ADMCombatant::AddBreak(float Amount) { Resolve->AddPressure(Amount); }
 void ADMCombatant::InterruptControl()
 {
+    if (HasAuthority()) { ++ControlInterruptSerial; }
     if (!HasAuthority()) { return; }
     bTelegraphActive = false;
     Primary->CancelChannel(); Primary->ReleaseClinch();

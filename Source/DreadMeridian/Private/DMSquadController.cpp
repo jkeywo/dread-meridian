@@ -5,6 +5,7 @@
 #include "DMAIProfile.h"
 #include "DMAbilityMarker.h"
 #include "DMScroungePickup.h"
+#include "DMShubMinion.h"
 #include "DMPing.h"
 #include "EngineUtils.h"
 #include "Dom/JsonObject.h"
@@ -31,6 +32,7 @@ void ADMSquadController::Think(ADMCombatGameMode& Mode)
 {
     ADMCombatant* Self = Cast<ADMCombatant>(GetPawn());
     if (!Self || Self->IsDown() || Self->IsRestrained()) { return; }
+    if (auto* Minion=Self->FindComponentByClass<UDMShubMinion>(); Minion && Minion->ControlsMovement()) { return; }
     Self->Threat.Cleanup([&](const FString& Id) { const auto* A=Mode.FindCombatant(Id); return A && !A->IsDown(); },Mode.GetCombatTick());
     if (auto* Forced=Mode.FindCombatant(Self->Threat.Forced(Mode.GetCombatTick())); Forced && Forced->bIsEnemy!=Self->bIsEnemy && !Forced->IsDown())
     { Self->SetAttackTarget(Forced); Self->MoveToward(Forced->GetActorLocation()); return; }
