@@ -21,6 +21,7 @@ struct FDMShubMinionSnapshot
     UPROPERTY() int32 LastInterrupt=0;
     UPROPERTY() FString CorpseId;
     UPROPERTY() FVector Destination=FVector::ZeroVector;
+    UPROPERTY() TArray<FString> HitIds;
 };
 UCLASS()
 class DREADMERIDIAN_API UDMShubMinion : public UActorComponent
@@ -40,4 +41,6 @@ private:
     void BroodStep(int32 Tick);
     void GoatStep(int32 Tick);
     void Event(const FString& Action);
+    UPROPERTY() TObjectPtr<class ADMAbilityMarker> ChargeMarker;
+    void ProjectCharge();
 };

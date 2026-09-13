@@ -2,6 +2,7 @@
 #include "DMCombatant.h"
 #include "DMCombatGameMode.h"
 #include "DMCorpse.h"
+#include "DMAbilityMarker.h"
 #include "DMHealthAttributes.h"
 #include "AbilitySystemComponent.h"
 #include "EngineUtils.h"
@@ -10,9 +11,9 @@ UDMShubMinion::UDMShubMinion() { SetIsReplicatedByDefault(true); }
 ADMCombatant* UDMShubMinion::Self() const { return CastChecked<ADMCombatant>(GetOwner()); }
 void UDMShubMinion::Initialize(EDMShubMinionKind Kind,bool bOffspring)
 {
-    if (!Self()->HasAuthority() || !Self()->bIsEnemy || Kind!=EDMShubMinionKind::Broodling) { return; }
+    if (!Self()->HasAuthority() || !Self()->bIsEnemy || Kind==EDMShubMinionKind::None || Kind>EDMShubMinionKind::Goat) { return; }
     State={}; State.Kind=Kind; State.bHealing=bOffspring; State.LastDamage=Self()->LastDamageTick;
-    Self()->EncounterLabel=TEXT("Broodling");
+    Self()->EncounterLabel=Kind==EDMShubMinionKind::Broodling ? TEXT("Broodling") : TEXT("Spawn of the Black Goat");
     Self()->Tags.AddUnique(TEXT("ShubLinked"));
     if (Kind==EDMShubMinionKind::Broodling) { Self()->Tags.AddUnique(TEXT("Broodling")); }
     Self()->bCommonEnemy=Kind==EDMShubMinionKind::Broodling; Self()->Resolve->Reset();
@@ -66,7 +67,40 @@ void UDMShubMinion::BroodStep(int32 Tick)
     if (State.Action!=EDMShubMinionAction::Feeding) { State.Action=EDMShubMinionAction::Feeding; State.Until=Tick+20; Event(TEXT("feeding_started")); }
     else if (Tick>=State.Until) { State.Feeding+=Corpse->Consume(); State.CorpseId.Reset(); State.Action=EDMShubMinionAction::Hunting; Event(TEXT("fed")); }
 }
-void UDMShubMinion::GoatStep(int32 Tick) { }
+void UDMShubMinion::ProjectCharge()
+{
+    if (ChargeMarker) { ChargeMarker->Destroy(); ChargeMarker=nullptr; }
+    if (State.Action!=EDMShubMinionAction::ChargeWindup && State.Action!=EDMShubMinionAction::Charging) { return; }
+    ChargeMarker=GetWorld()->SpawnActor<ADMAbilityMarker>(Self()->GetActorLocation(),FRotator::ZeroRotator);
+    ChargeMarker->bHostile=true; ChargeMarker->Shape=EDMMarkerShape::Wire; ChargeMarker->WireEnd=State.Destination;
+    ChargeMarker->Radius=110; ChargeMarker->ArmedTick=State.Until; ChargeMarker->ExpiresTick=State.Until+30; ChargeMarker->CustomLabel=TEXT("Black Goat charge - Break!");
+}
+void UDMShubMinion::GoatStep(int32 Tick)
+{
+    auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>(); if (!M) { return; }
+    if (Self()->bBreakVulnerable || Self()->IsStunned() || Self()->IsRestrained() || Self()->ControlInterruptSerial!=State.LastInterrupt)
+    { State.LastInterrupt=Self()->ControlInterruptSerial; State.Action=EDMShubMinionAction::Hunting; State.Until=Tick+30; Self()->StopGoal(); Self()->SetAttackHold(false); ProjectCharge(); Event(TEXT("charge_interrupted")); return; }
+    if (State.Action==EDMShubMinionAction::ChargeWindup)
+    { if (Tick>=State.Until) { State.Action=EDMShubMinionAction::Charging; State.Until=Tick+30; Event(TEXT("charge_started")); } return; }
+    if (State.Action==EDMShubMinionAction::Charging)
+    {
+        const FVector Before=Self()->GetActorLocation(); const FVector Next=FMath::VInterpConstantTo(Before,State.Destination,.1f,800.f);
+        FHitResult Hit; Self()->SetActorLocation(Next,true,&Hit);
+        for (ADMCombatant* A : M->GetCombatants())
+        { if (!A->bIsEnemy && !A->IsDown() && !State.HitIds.Contains(A->EntityId) && FVector::DistSquared2D(A->GetActorLocation(),Self()->GetActorLocation())<FMath::Square(170.f))
+          { State.HitIds.Add(A->EntityId); FDMControl C; C.Damage=18; C.Displacement=(State.Destination-Before).GetSafeNormal2D()*200; C.StaggerTicks=4; A->ApplyControl(C,Self(),TEXT("shub.goat_charge")); } }
+        if (Hit.bBlockingHit || Tick>=State.Until || FVector::DistSquared2D(Self()->GetActorLocation(),State.Destination)<FMath::Square(30.f))
+        { State.Action=EDMShubMinionAction::Hunting; State.Until=Tick+40; Self()->SetAttackHold(false); ProjectCharge(); Event(TEXT("charge_ended")); }
+        return;
+    }
+    if (Tick<State.Until) { return; }
+    ADMCombatant* Target=nullptr; float Best=FMath::Square(1100.f);
+    for (ADMCombatant* A : M->GetCombatants())
+    { const float D=FVector::DistSquared2D(A->GetActorLocation(),Self()->GetActorLocation()); if (!A->bIsEnemy && !A->IsDown() && D<Best) { Best=D; Target=A; } }
+    if (!Target) { return; }
+    State.Destination=Target->GetActorLocation(); State.Action=EDMShubMinionAction::ChargeWindup; State.Until=Tick+15; State.HitIds.Reset();
+    Self()->StopGoal(); Self()->SetAttackHold(true); Self()->Resolve->OpenInterruptWindow(15); ProjectCharge(); Event(TEXT("charge_windup"));
+}
 void UDMShubMinion::Event(const FString& Action)
 {
     Self()->EncounterLabel=State.Kind==EDMShubMinionKind::Broodling ? TEXT("Broodling") : TEXT("Spawn of the Black Goat");
@@ -75,6 +109,6 @@ void UDMShubMinion::Event(const FString& Action)
     if (auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>()) { auto D=MakeShared<FJsonObject>(); D->SetStringField(TEXT("entity_id"),Self()->EntityId); D->SetStringField(TEXT("action"),Action); M->Emit(TEXT("boss.minion"),D); } Self()->ForceNetUpdate();
 }
 bool UDMShubMinion::Restore(const FDMShubMinionSnapshot& S)
-{ if (!Self()->HasAuthority() || S.Version!=1 || S.Kind>EDMShubMinionKind::Goat || S.Action>EDMShubMinionAction::Retired || !FMath::IsFinite(S.Feeding) || S.Feeding<0 || S.Feeding>2 || S.Until<0 || S.Destination.ContainsNaN()) { return false; } State=S; Self()->SetAttackHold(ControlsMovement()); Self()->ForceNetUpdate(); return true; }
+{ if (!Self()->HasAuthority() || S.Version!=1 || S.Kind>EDMShubMinionKind::Goat || S.Action>EDMShubMinionAction::Retired || !FMath::IsFinite(S.Feeding) || S.Feeding<0 || S.Feeding>2 || S.Until<0 || S.Destination.ContainsNaN()) { return false; } State=S; Self()->SetAttackHold(ControlsMovement()); ProjectCharge(); Self()->ForceNetUpdate(); return true; }
 void UDMShubMinion::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 { Super::GetLifetimeReplicatedProps(OutLifetimeProps); DOREPLIFETIME(UDMShubMinion,State); }
