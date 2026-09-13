@@ -5,6 +5,7 @@
 #include "DMObjective.h"
 #include "DMElderOne.h"
 #include "DMCorruption.h"
+#include "DMGrowthNetwork.h"
 #include "DMCombatPlayerController.h"
 #include "DMCombatHUD.h"
 #include "DMSquadController.h"
@@ -631,6 +632,7 @@ void ADMCombatGameMode::StepCombat()
     for (ADMCombatant* Actor : Combatants) { Actor->StepControl(CombatTick); }
     for (TActorIterator<ADMRecoverySupply> It(GetWorld()); It; ++It) { It->Step(); }
     for (TActorIterator<ADMCorruption> It(GetWorld()); It; ++It) { It->Step(CombatTick); }
+    for (TActorIterator<ADMGrowthNetwork> It(GetWorld()); It; ++It) { It->Step(CombatTick); }
     for (TActorIterator<ADMObjective> It(GetWorld()); It; ++It) { It->Step(CombatTick); }
     for (ADMCombatant* Actor : Combatants) { Actor->Primary->Step(CombatTick); Actor->Kit->Step(CombatTick); Actor->Smuggler->Step(*this); }
     if (ADMGameState* Projection = GetGameState<ADMGameState>()) { Projection->SetCombatTick(CombatTick); }
