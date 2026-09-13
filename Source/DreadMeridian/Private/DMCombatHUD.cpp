@@ -83,6 +83,8 @@ void ADMCombatHUD::DrawHUD()
     const ADMCombatant* Pawn = Player ? Cast<ADMCombatant>(Player->GetPawn() ? Player->GetPawn() : Player->GetViewTarget()) : nullptr;
     const FDMHudModel Model = FDMHudModel::Build(GetWorld(), Pawn, Player ? Player->GetSelectedTarget() : nullptr);
 
+    if (Player && Player->PrivateMadness().Family == EDMMadnessFamily::Perception && Player->PrivateMadness().CrisisUntil > 0)
+    { DrawRect(FLinearColor(.08f,.04f,.12f,.06f),0,0,Canvas->ClipX,Canvas->ClipY); }
     DrawWorldLayer(Model);
     DrawParty(Model);
     DrawRitual(Model);
@@ -484,6 +486,7 @@ void ADMCombatHUD::DrawCondition(const FDMHudModel& Model)
         Label(StaticEnum<EDMMadnessFamily>()->GetNameStringByValue(static_cast<int64>(V.Family)), DMHud::Bone, X + 130*S, Y + 7*S, .7f);
         for (const auto& C : V.Cues)
         {
+            if (C.Id.StartsWith(TEXT("perception.hazard"))) { DrawRing(C.Location + FVector(0,0,5), 65, DMHud::Danger, true); }
             FVector2D Screen;
             if (P->ProjectWorldLocationToScreen(C.Location + FVector(0,0,120), Screen))
             {

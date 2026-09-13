@@ -9,7 +9,7 @@ class ADMCombatPlayerController;
 /**
  * Canvas combat HUD for the sandbox slice: world-space rings and overhead bars plus the
  * always-visible screen layer. It draws only simulated state; unimplemented systems
- * (Madness families, objectives) are shown as explicit gaps, never as data.
+ * (boss resonance, objectives) are shown as explicit gaps, never as data.
  */
 UCLASS()
 class DREADMERIDIAN_API ADMCombatHUD : public AHUD

@@ -42,6 +42,7 @@ void UDMMadnessComponent::StepFamily(int32 Tick)
     if (bFamilyCrisis != !!State.CrisisUntil)
     { bFamilyCrisis = !!State.CrisisUntil; Cues.Reset(); NextFamilyTick = Tick; }
     if (State.Band(Settings) == 0 && !State.CrisisUntil) { Cues.Reset(); return; }
+    if (Family == EDMMadnessFamily::Perception) { StepPerception(Tick); return; }
     if (Family == EDMMadnessFamily::Compulsion) { StepCompulsion(Tick); return; }
     if (Family == EDMMadnessFamily::Obsession)
     {

@@ -20,6 +20,7 @@ public:
     UFUNCTION(Client, Reliable) void ClientMadness(const FDMMadnessView& View);
     UFUNCTION(Client, Reliable) void ClientVerifyMadness(const FDMMadnessView& Expected);
     UFUNCTION(Server, Reliable) void ServerGround();
+    UFUNCTION(Server, Reliable) void ServerInteractPerception(const FString& CueId);
     FDMMadnessView PrivateMadness() const;
     virtual void SetupInputComponent() override;
     virtual void PlayerTick(float DeltaTime) override;
@@ -67,6 +68,8 @@ public:
 private:
     FDMMadnessView MadnessView;
     void StartGrounding();
+    void StartPerceptionInteraction();
+    UPROPERTY() TObjectPtr<UInputAction> PerceptionAction;
     UPROPERTY() TObjectPtr<UInputAction> GroundAction;
     UPROPERTY() TObjectPtr<class UInputMappingContext> Mapping;
     UPROPERTY() TObjectPtr<UInputAction> MoveAction;

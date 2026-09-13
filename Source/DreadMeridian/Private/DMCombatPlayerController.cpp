@@ -40,6 +40,9 @@ void ADMCombatPlayerController::SetupInputComponent()
     AttackAction = NewObject<UInputAction>(this);
     CycleAction = NewObject<UInputAction>(this);
     ReviveAction = NewObject<UInputAction>(this);
+    PerceptionAction = NewObject<UInputAction>(this);
+    Mapping->MapKey(PerceptionAction, EKeys::J); Mapping->MapKey(PerceptionAction, EKeys::Gamepad_RightThumbstick);
+    Input->BindAction(PerceptionAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::StartPerceptionInteraction);
     GroundAction = NewObject<UInputAction>(this);
     Mapping->MapKey(GroundAction, EKeys::H); Mapping->MapKey(GroundAction, EKeys::Gamepad_DPad_Right);
     Input->BindAction(GroundAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::StartGrounding);
@@ -693,4 +696,21 @@ void ADMCombatPlayerController::ClientVerifyMadness_Implementation(const FDMMadn
     }
     UE_LOG(LogTemp, Display, TEXT("DREAD_MADNESS_PRIVACY_%s"), bGood ? TEXT("PASSED") : TEXT("FAILED"));
     if (!bGood) { FPlatformMisc::RequestExitWithStatus(false, 1); }
+}
+
+void ADMCombatPlayerController::StartPerceptionInteraction()
+{
+    const auto* A = Cast<ADMCombatant>(GetPawn()); if (!A) { return; }
+    const auto V = PrivateMadness(); float Best = MAX_flt; FString Id;
+    for (const auto& C : V.Cues)
+    {
+        const float D = FVector::DistSquared2D(A->GetActorLocation(),C.Location);
+        if (D < Best) { Best=D; Id=C.Id; }
+    }
+    if (!Id.IsEmpty()) { ServerInteractPerception(Id); }
+}
+void ADMCombatPlayerController::ServerInteractPerception_Implementation(const FString& CueId)
+{
+    auto* A = Cast<ADMCombatant>(GetPawn());
+    if (!A || !A->MadnessCore->InteractPerception(CueId)) { ClientQFeedback(TEXT("No reachable private manifestation")); }
 }

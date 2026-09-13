@@ -12,9 +12,10 @@ class DREADMERIDIAN_API UDMMadnessComponent : public UActorComponent
 public:
     UPROPERTY(Config, EditAnywhere) FDMMadnessSettings Settings;
     void Reset();
-    static constexpr int32 SupportedFamilies = 3;
+    static constexpr int32 SupportedFamilies = 4;
     void AssignFamily(EDMMadnessFamily Value);
     void ScheduleEcho(uint8 Slot, ADMCombatant* Target, FVector Point, float Strength = 0, FVector WireStart = FVector::ZeroVector);
+    bool InteractPerception(const FString& CueId);
     void OnDamage(ADMCombatant* Target, float HealthLoss);
     float Outgoing(ADMCombatant* Target) const;
     void ResolveCrisis(const FString& Reason);
@@ -45,6 +46,8 @@ private:
     TArray<FEcho> Echoes;
     void StepEchoes(int32 Tick);
     void ResolveEcho(const FEcho& E, int32 Tick);
+    void StepPerception(int32 Tick);
+    int32 NextPerceptionUse = 0, NextPerceptionHazard = 0, PerceptionSerial = 0;
     void StepCompulsion(int32 Tick);
     void Indulge(int32 Index);
     void FamilyEvent(const FString& Action, const FString& Target = TEXT(""));

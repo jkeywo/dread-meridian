@@ -63,7 +63,7 @@ public:
             Test->TestTrue(TEXT("Echo is weaker than original Develop"), Before-Enemy->Health()<28);
             Test->TestTrue(TEXT("No recursive echo"), C->View().Cues.IsEmpty());
             Test->TestTrue(TEXT("Echo does not reset original cooldown"), Hero->Kit->CooldownSeconds(EDMKitSlot::E)<5);
-            C->Add(100,TEXT("test.crisis"));
+            C->Add(100,TEXT("test.crisis")); C->Recover(1000,TEXT("test.recovery_during_crisis"));
             Hero->SetActorLocation(FVector(-1200,0,95));
             Test->TestTrue(TEXT("Crisis Q accepted"), Hero->Primary->Request(Enemy.Get(),Enemy->GetActorLocation()));
             Hero->Primary->CancelChannel();

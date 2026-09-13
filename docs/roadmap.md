@@ -8,14 +8,14 @@ and rescue, threat-based companions, four persistent investigator slots,
 human/bot handoffs, Enhanced Input mappings and local Play Trace source/telemetry
 ingestion. All four investigators now have Basic, Q and their named W/E/R at the
 A nodes, used by humans and companions alike; see [named kits](kits.md). The rows
-below retain the full GDD acceptance scope. Ability evolutions, Madness families/resonance, and
+below retain the full GDD acceptance scope. Ability evolutions, Madness boss resonance, and
 scenario-aware team planning remain outstanding. Break/CC now uses configurable
 Resolve, bounded control windows and recovery resistance; see [Break/CC](break-cc.md).
 [Injuries](injuries.md) now cover burst/down triggers, six effects, Grievous and finite
 recovery supplies. Objective-earned medical resources and authored food placement remain open.
 [Madness core](madness-core.md) now covers current/floor, thresholds, timed Crisis,
-grounding and private owner delivery. The next content slice can build one complete
-family on those APIs; assignment/resonance still depends on actual boss selection.
+grounding and private owner delivery. [All four families](madness-families.md) now have playable sandbox implementations.
+Boss resonance still depends on actual Elder One encounters.
 
 | Slice | Deliverable | Acceptance |
 |---|---|---|

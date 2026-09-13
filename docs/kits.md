@@ -28,7 +28,7 @@ Break uses the authoritative Resolve component described in [Break/CC](break-cc.
 provisional encounter data. Broken control durations and clinch end at recovery. An independent interrupt
 window permits interrupts without granting hard control. Ultimates feed the
 [Madness core](madness-core.md), with private current/floor and timed Crisis recovery.
-Family effects and actual Mythos boss encounters remain unimplemented.
+All four [Madness families](madness-families.md) now have sandbox effects; actual Mythos boss encounters remain unimplemented.
 
 Slows stack by strength rather than overwriting, so a root is not cut short by a weaker slow landing on top.
 

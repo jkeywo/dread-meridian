@@ -31,6 +31,7 @@ Use `-Action Editor` to edit the map and press Play inside Unreal.
 | Revive nearby downed ally | V | Left face button (X) |
 | Use nearby treatment supply | T | D-pad left |
 | Ground to reduce current Madness | H | D-pad right |
+| Examine / dispel nearest Perception manifestation | J | Right-stick click |
 | Ping (tap for context, hold for the radial) | G | D-pad up |
 
 Q/W/E/R take the conventional MOBA keys (GDD 3.2), so keyboard movement is
@@ -51,9 +52,10 @@ circles and answer [pings](docs/pings.md). Tuning lives in per-hero/role data
 assets with C++ defaults. It is a per-bot combat policy, not the GDD team planner.
 [Injuries](docs/injuries.md) now use recent Health loss, six named effects,
 Grievous overflow and finite treatment; food heals over time.
-Ability evolutions, Madness families/resonance, HTN/objectives, bosses, matchmaking and host
+Ability evolutions, Madness boss resonance, HTN/objectives, bosses, matchmaking and host
 migration remain explicit omissions in captures. Break/CC uses configurable Resolve and bounded control windows; see [Break/CC](docs/break-cc.md).
-[Madness core](docs/madness-core.md) now provides current/floor, Crisis recovery and private delivery. Sandbox and smoke-profile values are provisional tuning.
+[Madness core](docs/madness-core.md) provides current/floor, Crisis recovery and private delivery.
+All four [Madness families](docs/madness-families.md) now have playable sandbox effects. Sandbox and smoke-profile values are provisional tuning.
 
 ## Verify
 

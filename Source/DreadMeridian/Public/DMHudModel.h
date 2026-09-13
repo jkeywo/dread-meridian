@@ -89,7 +89,7 @@ struct DREADMERIDIAN_API FDMHudAbility
 /**
  * Everything the combat HUD draws, assembled once per frame from replicated state.
  * It reports only what the sandbox actually simulates: evolutions, objectives and the full
- * Madness family content remain gaps. Core Madness is private to the owner; Resolve is public combat state.
+ * boss resonance remain gaps. Madness and its family cues are private to the owner; Resolve is public combat state.
  */
 struct DREADMERIDIAN_API FDMHudModel
 {

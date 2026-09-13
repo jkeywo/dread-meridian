@@ -66,3 +66,8 @@ be current when bytes match, but retain their exact source/patch separately.
 Neither import nor validation approves hypotheses, edits sources or certifies
 balance. Full scenario/boss semantics, native-asset patching and deterministic
 replay remain future work.
+
+Family versions add `madness.family` observations for assignments, fixations, urges,
+echoes and Perception interactions. Cue IDs and subjective coordinates travel to
+owners separately; the observations remain developer evidence. Final family rules
+are `madness-families-v1` (capture `0.10.0`), with unchanged RNG stream schema 2.

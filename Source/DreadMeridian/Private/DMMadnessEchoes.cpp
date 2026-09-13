@@ -4,7 +4,7 @@
 
 void UDMMadnessComponent::ScheduleEcho(uint8 Slot, ADMCombatant* Target, FVector Point, float Strength, FVector WireStart)
 {
-    if (!Authority() || Family != EDMMadnessFamily::Dissociation || Slot > 2 || State.Band(Settings) == 0 || Echoes.Num() >= 8) { return; }
+    if (!Authority() || Family != EDMMadnessFamily::Dissociation || Slot > 2 || (State.Band(Settings) == 0 && !State.CrisisUntil) || Echoes.Num() >= 8) { return; }
     // Predictable pools: early Q, mid Q/W, high and Crisis Q/W/E. No random hidden proc rate.
     if (!State.CrisisUntil && Slot >= State.Band(Settings)) { return; }
     auto* A = CastChecked<ADMCombatant>(GetOwner());
