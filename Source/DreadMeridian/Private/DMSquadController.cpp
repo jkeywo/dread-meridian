@@ -6,6 +6,7 @@
 #include "DMAbilityMarker.h"
 #include "DMScroungePickup.h"
 #include "DMShubMinion.h"
+#include "DMCorruption.h"
 #include "DMPing.h"
 #include "EngineUtils.h"
 #include "Dom/JsonObject.h"
@@ -32,6 +33,7 @@ void ADMSquadController::Think(ADMCombatGameMode& Mode)
 {
     ADMCombatant* Self = Cast<ADMCombatant>(GetPawn());
     if (!Self || Self->IsDown() || Self->IsRestrained()) { return; }
+    if (Self->ActorHasTag(TEXT("ShubBoss"))) { return; }
     if (auto* Minion=Self->FindComponentByClass<UDMShubMinion>(); Minion && Minion->ControlsMovement()) { return; }
     Self->Threat.Cleanup([&](const FString& Id) { const auto* A=Mode.FindCombatant(Id); return A && !A->IsDown(); },Mode.GetCombatTick());
     if (auto* Forced=Mode.FindCombatant(Self->Threat.Forced(Mode.GetCombatTick())); Forced && Forced->bIsEnemy!=Self->bIsEnemy && !Forced->IsDown())
@@ -217,7 +219,16 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
         FDMAIHazard& H = Out.Hazards.AddDefaulted_GetRef();
         const FVector Centre = It->GetActorLocation();
         H.Center = FVector(Centre.X, Centre.Y, SelfLoc.Z); H.Radius = It->Radius;
+        if (It->Shape==EDMMarkerShape::Wire)
+        {
+            const int32 Samples=FMath::Clamp(FMath::CeilToInt(FVector::Dist2D(Centre,It->WireEnd)/150),1,20);
+            for (int32 I=1; I<=Samples; ++I) { auto& Segment=Out.Hazards.AddDefaulted_GetRef(); Segment.Center=FMath::Lerp(Centre,It->WireEnd,static_cast<float>(I)/Samples); Segment.Radius=It->Radius; }
+        }
     }
+    if (!Self->bIsEnemy)
+    { for (TActorIterator<ADMCorruption> It(GetWorld());It;++It)
+      { for (const FVector& Cell : It->Capture().Cells)
+        { if (FVector::DistSquared2D(Cell,SelfLoc)<FMath::Square(1200.f)) { auto& H=Out.Hazards.AddDefaulted_GetRef(); H.Center=FVector(Cell.X,Cell.Y,SelfLoc.Z); H.Radius=110; } } } }
 
     // Pings are a companion concern: enemies never read the board, so they can neither answer nor author pings.
     if (!Self->bIsEnemy)

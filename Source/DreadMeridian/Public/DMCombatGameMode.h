@@ -73,6 +73,8 @@ public:
     int32 GetCombatTick() const { return CombatTick; }
     EDMSmugglerWave GetEncounterStage() const { return SmugglerWave.Stage; }
     bool IsCombatActive() const { return bCombatActive; }
+    void UseBossOutcome() { if (HasAuthority()) { bBossOutcome=true; } }
+    void CompleteBossEncounter(bool bVictory) { if (HasAuthority() && bBossOutcome && bCombatActive) { CompleteCombat(bVictory); } }
     bool UsesEncounterLayout() const { return SmokeOutcome.IsEmpty() && !bNetworkTest; }
     const TArray<TObjectPtr<ADMCombatant>>& GetCombatants() const { return Combatants; }
     ADMCombatant* FindCombatant(const FString& EntityId) const;
@@ -130,6 +132,7 @@ private:
     FTimerHandle CombatTimer;
     int32 CombatTick = 0;
     bool bCombatActive = false;
+    bool bBossOutcome = false;
     FString SmokeOutcome;
     FString AIWeightsPath;
     bool bNetworkTest = false;

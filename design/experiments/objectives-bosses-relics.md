@@ -38,3 +38,14 @@ These subsystem snapshots are not a complete run or host-migration save.
   fixtures retain their explicit family coverage. Private resonance cues reuse
   owner-only Madness delivery, separate from the family symptom scheduler.
   Verified both bosses across 256 seed assignments, Foundation Test and Smoke.
+
+- Elder 3 and 5-10: shared arena contract, threat API, permanent corruption,
+  private genuine-growth membership/vulnerability, corpse markers, interruptible
+  Broodling feeding/splitting, Black Goat charge, and Shub phases/attacks.
+  Each step passed Foundation Test and Smoke; PIE covers growth privacy,
+  Broodling counterplay, Goat charge/Break, and Shub attacks/phase/victory.
+  Start a developer encounter with `-DMElderOne=Shub`, then `DMStartShub` during
+  active combat. Existing arena art is provisional. No automatic Ritual hookup,
+  complete swamp navigation, full-run balance or host-migration claim.
+  Subsystem snapshots restore into an existing actor roster; they are not a
+  replacement for a future full-run snapshot and actor reconstruction service.

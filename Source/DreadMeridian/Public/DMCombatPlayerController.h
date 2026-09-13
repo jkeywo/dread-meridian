@@ -20,6 +20,7 @@ public:
     UFUNCTION(Exec) void DMObjectiveInteract(int32 Symbol = -1);
     UFUNCTION(Exec) void DMObjectiveRelease();
     UFUNCTION(Exec) void DMSpawnObjective(const FString& TemplateId, int32 Difficulty = 0);
+    UFUNCTION(Exec) void DMStartShub();
     UFUNCTION(Server, Reliable) void ServerEvolve(uint8 Slot, uint8 Node);
     bool EvolutionOpen() const { return bEvolutionOpen; }
     int32 EvolutionCursor() const { return EvolutionSelection; }

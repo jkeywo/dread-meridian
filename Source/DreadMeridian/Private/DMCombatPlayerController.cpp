@@ -11,6 +11,8 @@
 #include "DMScroungePickup.h"
 #include "DMRecoverySupply.h"
 #include "DMObjective.h"
+#include "DMShubEncounter.h"
+#include "DMBossArena.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
@@ -52,6 +54,17 @@ void ADMCombatPlayerController::DMSpawnObjective(const FString& TemplateId, int3
     if (!HasAuthority() || !GetPawn()) { return; }
     auto* O = GetWorld()->SpawnActor<ADMObjective>();
     if (!O->ConfigureAuthored(TemplateId,GetPawn()->GetActorLocation() + FVector(120,0,-60),Difficulty,O->GetName())) { O->Destroy(); }
+#endif
+}
+void ADMCombatPlayerController::DMStartShub()
+{
+#if !UE_BUILD_SHIPPING
+    if (!HasAuthority()) { return; }
+    ADMBossArena* Arena=nullptr;
+    for (TActorIterator<ADMBossArena> It(GetWorld());It;++It) { Arena=*It; break; }
+    if (!Arena) { Arena=GetWorld()->SpawnActor<ADMBossArena>(); Arena->BuildFixture(FVector::ZeroVector); }
+    auto* Encounter=GetWorld()->SpawnActor<ADMShubEncounter>();
+    if (!Encounter->Begin(Arena)) { Encounter->Destroy(); ClientQFeedback(TEXT("Shub cannot start: use -DMElderOne=Shub and a valid arena during active combat.")); }
 #endif
 }
 void ADMCombatPlayerController::SetupInputComponent()

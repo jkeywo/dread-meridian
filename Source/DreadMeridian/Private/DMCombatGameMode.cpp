@@ -8,6 +8,7 @@
 #include "DMGrowthNetwork.h"
 #include "DMCorpse.h"
 #include "DMShubMinion.h"
+#include "DMShubEncounter.h"
 #include "DMCombatPlayerController.h"
 #include "DMCombatHUD.h"
 #include "DMSquadController.h"
@@ -640,6 +641,8 @@ void ADMCombatGameMode::StepCombat()
     const auto BeforeSpawns=Combatants;
     for (ADMCombatant* Actor : BeforeSpawns)
     { if (auto* Minion=Actor->FindComponentByClass<UDMShubMinion>()) { Minion->Step(CombatTick); } }
+    for (TActorIterator<ADMShubEncounter> It(GetWorld()); It; ++It) { It->Step(CombatTick); }
+    if (!bCombatActive) { return; }
     for (TActorIterator<ADMObjective> It(GetWorld()); It; ++It) { It->Step(CombatTick); }
     for (ADMCombatant* Actor : Combatants) { Actor->Primary->Step(CombatTick); Actor->Kit->Step(CombatTick); Actor->Smuggler->Step(*this); }
     if (ADMGameState* Projection = GetGameState<ADMGameState>()) { Projection->SetCombatTick(CombatTick); }
@@ -687,6 +690,7 @@ void ADMCombatGameMode::StepCombat()
     {
         if (!Actor->IsDown()) { if (Actor->bIsEnemy) { bEnemiesUp = true; } else { bInvestigatorsUp = true; } }
     }
+    if (bBossOutcome) { return; }
     if (UsesEncounterLayout())
     {
         const EDMWaveAction Action = SmugglerWave.Advance(bInvestigatorsUp,bEnemiesUp,CombatTick);
