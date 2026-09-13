@@ -115,6 +115,9 @@ private:
     bool ResolveMedium(EDMKitSlot Slot, FVector Point);
     /** Beckoned spirits travelling to their destination, and the pulse each one makes when it lands. */
     void StepMedium(int32 Tick);
+    TMap<FString,FVector> SpiritTravelLast;
+    TArray<TPair<int32,FVector>> SpiritArrivals;
+    bool bSeancePulsed = false;
     /** Highest-Attention bound spirit, or nullptr. Ties break on the lowest serial so the choice is stable. */
     ADMAbilityMarker* BestSpirit() const;
     FString ValidateSmuggler(EDMKitSlot Slot, FVector Point) const;

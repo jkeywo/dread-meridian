@@ -64,7 +64,7 @@ void ADMAbilityMarker::Tick(float DeltaSeconds)
         // read as the spirit flickering/juddering rather than moving.
         const FVector At = GetActorLocation();
         const FVector Delta = TravelGoal - At;
-        const float Step = TravelSpeed * DeltaSeconds;
+        const float Step = TravelRate * DeltaSeconds;
         SetActorLocation(Delta.SizeSquared2D() <= FMath::Square(Step) ? TravelGoal : At + Delta.GetSafeNormal2D() * Step);
     }
     if (HasAuthority() && !bTravelling && (bSpirit || bHostile))
@@ -185,6 +185,6 @@ void ADMAbilityMarker::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
     DOREPLIFETIME(ADMAbilityMarker, SpiritId); DOREPLIFETIME(ADMAbilityMarker, Radius); DOREPLIFETIME(ADMAbilityMarker, Attention);
     DOREPLIFETIME(ADMAbilityMarker, Shape); DOREPLIFETIME(ADMAbilityMarker, Direction); DOREPLIFETIME(ADMAbilityMarker, HalfAngle);
     DOREPLIFETIME(ADMAbilityMarker, Length); DOREPLIFETIME(ADMAbilityMarker, WireEnd);
-    DOREPLIFETIME(ADMAbilityMarker, bTravelling); DOREPLIFETIME(ADMAbilityMarker, TravelGoal);
+    DOREPLIFETIME(ADMAbilityMarker, bTravelling); DOREPLIFETIME(ADMAbilityMarker, TravelRate); DOREPLIFETIME(ADMAbilityMarker, TravelGoal);
     DOREPLIFETIME(ADMAbilityMarker, ArmedTick); DOREPLIFETIME(ADMAbilityMarker, ExpiresTick); DOREPLIFETIME(ADMAbilityMarker, Serial);
 }

@@ -65,6 +65,8 @@ public:
     UPROPERTY(Replicated) float Vulnerability = 0;
     UPROPERTY(Replicated) int32 VulnerableUntil = 0;
     UPROPERTY(Replicated) int32 FrameBonusUntil = 0;
+    UPROPERTY(Replicated) int32 RescueUntil = 0;
+    int32 ReviveTicks(int32 Base, int32 Tick) const { return RescueUntil > Tick ? FMath::Max(1,FMath::CeilToInt(Base*.6f)) : Base; }
 
     float IncomingFrom(const class ADMCombatant* Source) const;
 private:

@@ -56,6 +56,7 @@ public:
     bool TriggerNearbySatchel(FVector Point, float Distance);
 
 private:
+    TMap<FString, int32> SpiritPulseUntil;
     TMap<FString, int32> StudiedTells;
     TArray<FString> PortraitSubjects;
     int32 PortraitUntil = 0;

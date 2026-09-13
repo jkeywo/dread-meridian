@@ -27,7 +27,7 @@ FString UDMProgressionComponent::Summary() const
 void UDMProgressionComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 { Super::GetLifetimeReplicatedProps(OutLifetimeProps); DOREPLIFETIME(UDMProgressionComponent, State);
     DOREPLIFETIME(UDMProgressionComponent, Vulnerability); DOREPLIFETIME(UDMProgressionComponent, VulnerableUntil);
-    DOREPLIFETIME(UDMProgressionComponent, FrameBonusUntil); }
+    DOREPLIFETIME(UDMProgressionComponent, FrameBonusUntil); DOREPLIFETIME(UDMProgressionComponent, RescueUntil); }
 
 
 
@@ -99,7 +99,7 @@ float UDMProgressionComponent::IncomingFrom(const ADMCombatant* Source) const
     const auto* M = GetWorld() ? GetWorld()->GetAuthGameMode<ADMCombatGameMode>() : nullptr;
     const bool bRanged = Source && FVector::Dist2D(Source->GetActorLocation(), GetOwner()->GetActorLocation()) > 250;
     const float Weakness = M && VulnerableUntil > M->GetCombatTick() ? 1.f + Vulnerability : 1.f;
-    return Weakness * (M && bRanged && CoverUntil > M->GetCombatTick() ? 1.f - CoverStrength : 1.f);
+    return Weakness * (M && RescueUntil > M->GetCombatTick() ? .75f : 1.f) * (M && bRanged && CoverUntil > M->GetCombatTick() ? 1.f - CoverStrength : 1.f);
 }
 
 

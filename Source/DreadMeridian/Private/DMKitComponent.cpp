@@ -125,7 +125,12 @@ void UDMKitComponent::EndPlay(const EEndPlayReason::Type Reason)
 
 FString UDMKitComponent::Name(EDMKitSlot Slot) const
 { return Slot < EDMKitSlot::R && Self()->Progression->Node(uint8(Slot)+1) > 0 ? Self()->Progression->Name(uint8(Slot)+1) : Spec(Self()->Investigator->Kind, Slot).Name; }
-float UDMKitComponent::Range(EDMKitSlot Slot) const { return Spec(Self()->Investigator->Kind, Slot).Range; }
+float UDMKitComponent::Range(EDMKitSlot Slot) const
+{
+    if (Self()->Investigator->Kind == EDMInvestigator::Medium && Slot == EDMKitSlot::W)
+    { const uint8 N=Self()->Progression->Node(1); return N==1 || N==3 ? 850 : N==2 || N==5 ? 500 : N==4 ? 750 : 650; }
+    return Spec(Self()->Investigator->Kind, Slot).Range;
+}
 bool UDMKitComponent::IsSelfCast(EDMKitSlot Slot) const { return Spec(Self()->Investigator->Kind, Slot).bSelfCast; }
 bool UDMKitComponent::IsTwoPoint(EDMKitSlot Slot) const { return Spec(Self()->Investigator->Kind, Slot).bTwoPoint; }
 float UDMKitComponent::CooldownSeconds(EDMKitSlot Slot) const
@@ -585,7 +590,7 @@ FString UDMKitComponent::ValidateMedium(EDMKitSlot Slot, FVector Point) const
     case EDMKitSlot::W:
     {
         if (Actor->Primary->Bindings.IsEmpty()) { return TEXT("No spirits to call"); }
-        if (FVector::DistSquared2D(Actor->GetActorLocation(), Point) > FMath::Square(Kit.Range)) { return TEXT("Out of Beckon range"); }
+        if (FVector::DistSquared2D(Actor->GetActorLocation(), Point) > FMath::Square(Range(Slot))) { return TEXT("Out of Beckon range"); }
         FVector Ground;
         if (!Actor->Primary->Ground(Point, Ground)) { return TEXT("Choose clear ground in the arena"); }
         return TEXT("");
@@ -615,7 +620,9 @@ bool UDMKitComponent::ResolveMedium(EDMKitSlot Slot, FVector Point)
     {
         FVector Ground;
         if (!Actor->Primary->Ground(Point, Ground)) { LastFailure = TEXT("Choose clear ground in the arena"); return false; }
-        // Every spirit answers, and arrives as a ground presence: a called spirit leaves whatever it was attached to.
+        const uint8 N = Actor->Progression->Node(1);
+        SpiritArrivals.Reset(); SpiritTravelLast.Reset(); bSeancePulsed=false;
+        // Every spirit answers, and arrives as a ground presence.
         int32 Called = 0;
         const int32 Total = Actor->Primary->Bindings.Num();
         for (int32 I = 0; I < Total; ++I)
@@ -623,6 +630,15 @@ bool UDMKitComponent::ResolveMedium(EDMKitSlot Slot, FVector Point)
             ADMAbilityMarker* Spirit = Actor->Primary->Bindings[I].Get();
             if (!IsValid(Spirit)) { continue; }
             const float Angle = Total > 0 ? I * UE_TWO_PI / Total : 0.f;
+            if (N==3 || N==4)
+            {
+                auto* Route=GetWorld()->SpawnActor<ADMAbilityMarker>(Spirit->GetActorLocation(),FRotator::ZeroRotator);
+                if (Route)
+                { Route->SetOwner(Actor); Route->Shape=EDMMarkerShape::Wire; Route->WireEnd=Ground; Route->ExpiresTick=Tick+40;
+                  Route->CustomLabel= N==3 ? TEXT("Funeral March") : TEXT("Crossroads"); Zones.Add(Route); }
+            }
+            SpiritTravelLast.Add(Spirit->SpiritId,Spirit->GetActorLocation());
+            Spirit->TravelRate=N==1 || N==3 ? 1200 : N==2 || N==5 ? 700 : N==4 ? 1050 : ADMAbilityMarker::TravelSpeed;
             Spirit->BoundTarget = nullptr;
             Spirit->bTravelling = true;
             Spirit->TravelGoal = Ground + FVector(FMath::Cos(Angle) * BeckonRingRadius, FMath::Sin(Angle) * BeckonRingRadius, 0);
@@ -641,22 +657,28 @@ bool UDMKitComponent::ResolveMedium(EDMKitSlot Slot, FVector Point)
         ADMAbilityMarker* Spirit = BestSpirit();
         if (!Spirit) { LastFailure = TEXT("No spirit to call on"); return false; }
         const float Attention = Spirit->Attention;
+        const uint8 N = Actor->Progression->Node(2);
+        const float Protect = N==1 || N==3 ? 1.6f : N==4 ? 1.25f : 1.f;
+        const float Hostile = N==2 || N==5 ? 1.6f : N==4 ? 1.25f : 1.f;
         ADMCombatant* Bound = Spirit->BoundTarget.Get();
         const TCHAR* Mode2 = TEXT("ground");
         if (IsValid(Bound) && Bound->bIsEnemy && !Bound->IsDown())
         {
             Mode2 = TEXT("enemy");
             FDMControl Control;
-            Control.Damage = IntercessionDamage + Attention * IntercessionDamagePerAttention;
+            Control.Damage = (IntercessionDamage + Attention * IntercessionDamagePerAttention) * Hostile;
             Control.Slow = IntercessionSlow; Control.SlowTicks = IntercessionSlowTicks;
             Control.Displacement = (Bound->GetActorLocation() - Actor->GetActorLocation()).GetSafeNormal2D() * IntercessionPush;
-            Control.BreakPressure = IntercessionBreakPressure;
+            Control.BreakPressure = IntercessionBreakPressure * Hostile;
+            if (N==5 && Bound->bBreakVulnerable)
+            { Control.Displacement=(Actor->GetActorLocation()-Bound->GetActorLocation()).GetSafeNormal2D()*600;
+              Control.Slow=.85f; Control.SlowTicks=35; Control.StunTicks=10; }
             Bound->ApplyControl(Control, Actor, TEXT("ability.e.intercession"));
         }
         else if (IsValid(Bound) && !Bound->bIsEnemy && !Bound->IsDown())
         {
             Mode2 = TEXT("ally");
-            Bound->AddShield(IntercessionAllyShield + Attention * IntercessionAllyPerAttention);
+            Bound->AddShield((IntercessionAllyShield + Attention * IntercessionAllyPerAttention) * Protect);
             // Held for a few ticks by Step, because StepCombat clears SpiritProtection before any attack resolves.
             ProtectionTarget = Bound; ProtectionUntilTick = Tick + ProtectionTicks;
         }
@@ -670,11 +692,22 @@ bool UDMKitComponent::ResolveMedium(EDMKitSlot Slot, FVector Point)
                 if (Unit->bIsEnemy)
                 {
                     FDMControl Control;
-                    Control.Slow = ArrivalSlow; Control.SlowTicks = ArrivalSlowTicks; Control.BreakPressure = IntercessionBreakPressure * .5f;
+                    Control.Slow = ArrivalSlow; Control.SlowTicks = ArrivalSlowTicks; Control.BreakPressure = IntercessionBreakPressure * .5f * Hostile;
                     Unit->ApplyControl(Control, Actor, TEXT("ability.e.intercession"));
                 }
-                else { Unit->AddShield(IntercessionGroundShield + Attention * IntercessionGroundPerAttention); }
+                else { Unit->AddShield((IntercessionGroundShield + Attention * IntercessionGroundPerAttention) * Protect); }
             }
+        }
+        if (N==3)
+        {
+            for (ADMCombatant* Ally : M->GetCombatants())
+            { if (!Ally->bIsEnemy && (Ally==Bound || FVector::Dist2D(Spirit->GetActorLocation(),Ally->GetActorLocation())<Spirit->Radius))
+              { Ally->Progression->RescueUntil=Tick+60; Ally->ForceNetUpdate(); } }
+        }
+        if (N==4)
+        {
+            auto* Presence=GetWorld()->SpawnActor<ADMAbilityMarker>(Spirit->GetActorLocation(),FRotator::ZeroRotator);
+            if (Presence) { Presence->SetOwner(Actor); Presence->Radius=180; Presence->ExpiresTick=Tick+30; Presence->CustomLabel=TEXT("Between Worlds"); Zones.Add(Presence); }
         }
         // Open Seance is exactly the window where a spirit is not exhausted by being called upon.
         if (!IsRActive()) { Actor->Investigator->SpendAttention(Spirit->SpiritId, IntercessionSpend); }
@@ -705,16 +738,43 @@ void UDMKitComponent::StepMedium(int32 Tick)
     ADMCombatant* Actor = Self();
     ADMCombatGameMode* M = Mode();
     if (!M) { return; }
+    const uint8 N=Actor->Progression->Node(1);
+    for (int32 I=Zones.Num()-1; I>=0; --I)
+    {
+        ADMAbilityMarker* Z=Zones[I].Get();
+        if (!IsValid(Z) || Z->ExpiresTick<=Tick) { if(IsValid(Z)) { Z->Destroy(); } Zones.RemoveAt(I); continue; }
+        for (ADMCombatant* Unit : M->GetCombatants())
+        {
+            if (Unit->IsDown()) { continue; }
+            const float Dist=Z->Shape==EDMMarkerShape::Wire ? DMKitRules::DistanceToSegment2D(Z->GetActorLocation(),Z->WireEnd,Unit->GetActorLocation()) : FVector::Dist2D(Z->GetActorLocation(),Unit->GetActorLocation());
+            if(Dist>(Z->Shape==EDMMarkerShape::Wire ? 90 : Z->Radius)) { continue; }
+            if(Unit->bIsEnemy) { Unit->SpiritSlow=FMath::Max(Unit->SpiritSlow,.3f); }
+            else { Unit->SpiritProtection=FMath::Max(Unit->SpiritProtection,.2f); }
+        }
+    }
     for (ADMAbilityMarker* Spirit : Actor->Primary->Bindings)
     {
         if (!IsValid(Spirit) || !Spirit->bTravelling) { continue; }
         const FVector To = Spirit->TravelGoal;
+        if (N==1 || N==3 || N==4)
+        {
+            for (ADMCombatant* Enemy : M->GetCombatants())
+            { if(Enemy->bIsEnemy && !Enemy->IsDown() && DMKitRules::DistanceToSegment2D(SpiritTravelLast.FindRef(Spirit->SpiritId),Spirit->GetActorLocation(),Enemy->GetActorLocation())<110)
+              { FDMControl C; C.Slow=.4f; C.SlowTicks=10; Enemy->ApplyControl(C,Actor,TEXT("ability.w.procession")); } }
+        }
+        SpiritTravelLast.Add(Spirit->SpiritId,Spirit->GetActorLocation());
         // The marker glides toward To every frame in its own Tick(); this just watches for arrival.
         if (!Spirit->GetActorLocation().Equals(To, 1.f)) { continue; }
         // Arrival: the spirit settles as a ground presence and makes its one pulse.
         Spirit->SetActorLocation(To);
         Spirit->bTravelling = false;
         Actor->Investigator->UpdateSpiritLocationById(Spirit->SpiritId, To);
+        SpiritArrivals.RemoveAll([&](const auto& A) { return A.Key<Tick-5; });
+        SpiritArrivals.Add(TPair<int32,FVector>(Tick,To));
+        const int32 NearbyArrivals=SpiritArrivals.FilterByPredicate([&](const auto& A){return FVector::Dist2D(A.Value,To)<250;}).Num();
+        const bool bCombined=N==5 && NearbyArrivals>=2 && !bSeancePulsed;
+        if(bCombined) { bSeancePulsed=true; }
+        const float Arrival=(N==2 || N==5 ? 1.7f : N==4 ? 1.3f : 1.f) * (Actor->Progression->Node(0)==4 ? 1.3f : 1.f);
         for (ADMCombatant* Unit : M->GetCombatants())
         {
             if (!IsValid(Unit) || Unit->IsDown()) { continue; }
@@ -722,10 +782,10 @@ void UDMKitComponent::StepMedium(int32 Tick)
             if (Unit->bIsEnemy)
             {
                 FDMControl Control;
-                Control.Slow = ArrivalSlow; Control.SlowTicks = ArrivalSlowTicks; Control.BreakPressure = ArrivalBreakPressure;
+                Control.Slow = ArrivalSlow; Control.SlowTicks = FMath::RoundToInt(ArrivalSlowTicks * Arrival); Control.BreakPressure = ArrivalBreakPressure * Arrival + (bCombined ? 25 : 0);
                 Unit->ApplyControl(Control, Actor, TEXT("ability.w.beckon"));
             }
-            else { Unit->AddShield(ArrivalShield + Spirit->Attention * ArrivalShieldPerAttention); }
+            else { Unit->AddShield((ArrivalShield + Spirit->Attention * ArrivalShieldPerAttention)*Arrival + (bCombined ? 15 : 0)); }
         }
         TSharedPtr<FJsonObject> Extra = MakeShared<FJsonObject>();
         Extra->SetStringField(TEXT("spirit_id"), Spirit->SpiritId);

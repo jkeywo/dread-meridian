@@ -216,3 +216,9 @@ void UDMInvestigatorComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProper
     DOREPLIFETIME(UDMInvestigatorComponent, Combo); DOREPLIFETIME(UDMInvestigatorComponent, Exposure);
     DOREPLIFETIME(UDMInvestigatorComponent, Spirits); DOREPLIFETIME(UDMInvestigatorComponent, SpiritTargets);
 }
+
+void UDMInvestigatorComponent::AddAttention(const FString& SpiritId, float Amount)
+{
+    if (!Authority() || Kind != EDMInvestigator::Medium || !FMath::IsFinite(Amount) || Amount <= 0) { return; }
+    for (auto& Spirit : Spirits) { if (Spirit.Id == SpiritId) { Spirit.Value = FMath::Min(100.f, Spirit.Value + Amount); } }
+}

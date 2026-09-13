@@ -55,6 +55,7 @@ public:
     /** Intercession normally exhausts the spirit it calls on; Keep is the fraction of Attention left behind. */
     void SpendAttention(const FString& SpiritId, float Keep);
     float PeekAttention(const FString& SpiritId) const;
+    void AddAttention(const FString& SpiritId, float Amount);
     /** Compatibility entry for kit pressure; authoritative state lives in MadnessCore. */
     void AddMadness(float Amount, const FString& Reason);
     UPROPERTY(Replicated, BlueprintReadOnly) EDMInvestigator Kind = EDMInvestigator::None;

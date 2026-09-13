@@ -39,6 +39,7 @@ public:
     /** Units/second while travelling. Tick() does the actual per-frame movement so it glides instead of
      * stepping once per combat tick (10Hz); StepMedium only watches for arrival and fires its side effects. */
     static constexpr float TravelSpeed = 900.f;
+    UPROPERTY(Replicated) float TravelRate = TravelSpeed;
     /** Replicated so clients can draw arming and expiry; satchels keep using it for their server-side checks. */
     UPROPERTY(Replicated) int32 ArmedTick = 0;
     /** 0 = persistent. */

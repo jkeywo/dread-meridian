@@ -305,7 +305,26 @@ void UDMPrimaryComponent::Step(int32 Tick)
         if (Bound && Bound->IsDown() && !Bound->bIsEnemy && Tick % 10 == 0) { Actor->Investigator->ThinPlace(Bound->GetActorLocation(), 2); }
         const auto* Resource = Actor->Investigator->Spirits.FindByPredicate([&](const auto& S) { return S.Id == Spirit->SpiritId; });
         Spirit->Attention = Resource ? Resource->Value : 0;
-        const float Strength = (.1f + Spirit->Attention * .002f) * (bManifest ? 2.f : 1.f);
+        const uint8 N = Actor->Progression->Node(0);
+        const bool bHostileBinding = Bound && Bound->bIsEnemy;
+        const float Branch = N == 4 ? 1.25f : (bHostileBinding ? (N == 2 || N == 5) : (N == 1 || N == 3)) ? 1.6f : 1.f;
+        const float Strength = (.1f + Spirit->Attention * .002f) * (bManifest ? 2.f : 1.f) * Branch;
+        if (bHostileBinding && !Bound->IsDown() && (N == 2 || N == 5)) { Actor->Investigator->AddAttention(Spirit->SpiritId,.5f); }
+        if (N == 3 && Bound && !Bound->bIsEnemy && !Bound->IsDown() && Spirit->Attention >= 20
+            && SpiritPulseUntil.FindRef(Spirit->SpiritId) <= Tick)
+        {
+            bool bThreatened = Bound->Health() < Bound->MaxHealth() * .6f || Bound->LastDamageTick >= Tick-5;
+            for (const ADMCombatant* Enemy : Mode->GetCombatants()) { bThreatened |= Enemy->bIsEnemy && !Enemy->IsDown() && Enemy->GetAttackTarget() == Bound; }
+            if (bThreatened)
+            { Bound->AddShield(15 + Spirit->Attention * .15f); Actor->Investigator->SpendAttention(Spirit->SpiritId,.8f); SpiritPulseUntil.Add(Spirit->SpiritId,Tick+30); }
+        }
+        if (N == 5 && bHostileBinding && !Bound->IsDown() && Spirit->Attention >= 60 && SpiritPulseUntil.FindRef(Spirit->SpiritId) <= Tick)
+        {
+            FDMControl C; C.bInterrupt=true; C.BreakPressure=30; C.Slow=.6f; C.SlowTicks=15;
+            C.Displacement=(Actor->GetActorLocation()-Bound->GetActorLocation()).GetSafeNormal2D()*140;
+            Bound->ApplyControl(C,Actor,TEXT("ability.q.possession"));
+            Actor->Investigator->SpendAttention(Spirit->SpiritId,.5f); SpiritPulseUntil.Add(Spirit->SpiritId,Tick+30);
+        }
         if (Bound && Bound->bIsEnemy && !Bound->IsDown()) { Bound->SpiritSlow = FMath::Max(Bound->SpiritSlow, Strength); }
         else if (!Bound || !Bound->bIsEnemy)
         {

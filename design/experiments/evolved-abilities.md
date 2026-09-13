@@ -10,3 +10,7 @@ Photographer Q: faster single study, area framing, once-per-telegraph Tell-Tale 
 W: stronger interrupt/Break, exposure-focused weaker control, lingering Afterimage impairment, hybrid Frame bonus window, and telegraph-dependent Magnesium Exposure.
 E: weak-point burst/vulnerability, type-wide evidence (role/common/human archetype), high-Exposure Fatal Detail Break, hybrid Published Findings, stronger/longer Case File. Impossible Photograph still preserves Exposure and keeps its existing repeated-Develop window.
 Vulnerability composes with damage mitigation and expires on the authoritative combat clock; it never changes MaxHealth.
+
+Medium Q: defensive Guardian strength; hostile Haunting slow/Attention; Vigil spends Attention on threatened-bound-ally shields with a cooldown; Restless Watcher helps both targets and Beckon arrival; high-Attention Possession uses interrupt/Break/displacement through the existing elite-control gate.
+W: Procession extends range/speed and slows crossed foes; Calling strengthens arrivals at shorter range; Funeral March and Crossroads leave timed protective/hindering routes; Seance adds one combined pulse per call when two spirits arrive nearby within five ticks.
+E: Guardian/Unquiet specialise protection/hostile intervention; Not Yet grants 60 ticks of revive-speed support and incoming mitigation, without reviving; Between Worlds leaves temporary spirit presence; Drag Below adds major displacement and impairment only for an already Broken enemy.
