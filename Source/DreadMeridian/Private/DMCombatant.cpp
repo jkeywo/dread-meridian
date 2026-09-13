@@ -334,7 +334,7 @@ void ADMCombatant::StepInvestigator(int32 Tick)
     if (IncomingUntilTick > 0 && Tick >= IncomingUntilTick) { IncomingUntilTick = 0; IncomingMultiplier = 1; }
     Slows.RemoveAll([&](const FDMSlow& S) { return S.UntilTick <= Tick; });
     const float Slow = FMath::Max(DMKitRules::EffectiveSlow(Slows, Tick), SpiritSlow);
-    ReplicatedMoveSpeed = (bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Speed() : 420) * (1 + Investigator->Stickiness() * .25f) * (1 - Slow * (1 - EffectiveResistance())) * Injuries->MovementFactor;
+    ReplicatedMoveSpeed = (bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Speed() : 420) * (1 + Investigator->Stickiness() * .25f) * (1 - Slow * (1 - EffectiveResistance())) * Injuries->MovementFactor * Relics->MovementMultiplier();
 }
 void ADMCombatant::StepControl(int32 Tick)
 {
@@ -380,6 +380,8 @@ void ADMCombatant::ApplyControl(const FDMControl& Control, ADMCombatant* Source,
     FDMControl Empowered=Control;
     const float Medal=Source ? Source->Relics->SpendMedal(this,AbilityId,false) : 1.f;
     Empowered.Damage*=Medal; Empowered.BreakPressure*=Medal;
+    Empowered.Slow=FMath::Min(1.f,Empowered.Slow*Relics->ControlExposure());
+    Empowered.StunTicks=FMath::CeilToInt(Empowered.StunTicks*Relics->ControlExposure());
     Empowered.StunTicks=FMath::CeilToInt(Empowered.StunTicks*Medal); Empowered.StaggerTicks=FMath::CeilToInt(Empowered.StaggerTicks*Medal);
     FDMControl R = DMKitRules::ResolveControl(Empowered, !Resolve->IsProtected(), bBreakVulnerable,
         Resolve->Settings.ProtectedSlowFactor, Resolve->InterruptUntilTick > Tick);

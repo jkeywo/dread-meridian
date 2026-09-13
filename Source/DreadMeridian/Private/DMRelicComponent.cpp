@@ -1,6 +1,7 @@
 #include "DMRelicComponent.h"
 #include "DMCombatant.h"
 #include "DMCombatGameMode.h"
+#include "DMAbilityMarker.h"
 #include "Net/UnrealNetwork.h"
 UDMRelicComponent::UDMRelicComponent() { SetIsReplicatedByDefault(true); }
 void UDMRelicComponent::BeginPlay()
@@ -52,8 +53,9 @@ float UDMRelicComponent::BreakMultiplierAgainst(const ADMCombatant* Target) cons
 {
     if (!Target) { return 1; }
     const auto* Holder=Target->GetAttackTarget();
-    return Holder && Holder!=Self() && Holder->bIsEnemy==Self()->bIsEnemy && Holder->Relics->Has(EDMRelic::Swagger)
+    const float Swagger=Holder && Holder!=Self() && Holder->bIsEnemy==Self()->bIsEnemy && Holder->Relics->Has(EDMRelic::Swagger)
         && Holder->Relics->Runtime.Swaggered.Contains(Target->EntityId) ? 1.3f : 1.f;
+    return Swagger*Target->Relics->ControlExposure();
 }
 ADMCombatant* UDMRelicComponent::Self() const { return Cast<ADMCombatant>(GetOwner()); }
 void UDMRelicComponent::StoreOverheal(float Amount)
@@ -69,6 +71,9 @@ void UDMRelicComponent::Step(int32 Tick)
     if (!Self()->HasAuthority() || !M || !M->IsCombatActive() || Tick<=LastStepTick) { return; } LastStepTick=Tick;
     Runtime.OwnedShield=FMath::Min(Runtime.OwnedShield,Self()->Shield());
     if (Tick>=Runtime.RosaryUntil) { Runtime.RosaryUntil=0; }
+    if (Tick>=Runtime.HasteUntil) { Runtime.HasteUntil=0; }
+    if (Tick>=Runtime.ControlUntil) { Runtime.ControlUntil=0; }
+    StepWakes(Tick);
     if (Runtime.OwnedShield>0 && Tick>=Runtime.ShieldHoldUntil)
     { const float Decay=FMath::Min(.5f,Runtime.OwnedShield); Runtime.OwnedShield-=Decay; Self()->RemoveShield(Decay); }
 }
@@ -81,6 +86,42 @@ void UDMRelicComponent::BoostResource(int32 Before,int32 After)
 }
 float UDMRelicComponent::ResourceMultiplier() const
 { const auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>(); return M && Has(EDMRelic::Rosary) && Runtime.RosaryUntil>M->GetCombatTick() ? 2.f : 1.f; }
+float UDMRelicComponent::MovementMultiplier() const
+{ const auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>(); return M && Runtime.HasteUntil>M->GetCombatTick() ? 1.2f : 1.f; }
+float UDMRelicComponent::ControlExposure() const
+{ const auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>(); return M && Runtime.ControlUntil>M->GetCombatTick() ? 1.25f : 1.f; }
+void UDMRelicComponent::ProjectWakes()
+{
+    for (ADMAbilityMarker* Marker : WakeMarkers) { if (IsValid(Marker)) { Marker->Destroy(); } } WakeMarkers.Reset();
+    for (const auto& Wake : Runtime.Wakes)
+    { auto* Marker=GetWorld()->SpawnActor<ADMAbilityMarker>(Wake.Location,FRotator::ZeroRotator); Marker->Radius=180; Marker->CustomLabel=TEXT("Ferryman's wake"); Marker->ExpiresTick=Wake.Until; WakeMarkers.Add(Marker); }
+}
+void UDMRelicComponent::StepWakes(int32 Tick)
+{
+    bool Changed=Runtime.Wakes.RemoveAll([&](const FDMRelicWake& W) { return Tick>=W.Until; })>0;
+    const FVector Position=Self()->GetActorLocation();
+    if (Has(EDMRelic::Coin) && !Self()->IsDown())
+    {
+        const float Distance=Runtime.bHasPosition ? FVector::Dist2D(Position,Runtime.LastPosition) : 0;
+        if (!Runtime.bHasPosition || Tick-Runtime.MovementWindow>=10 || Distance>1200) { Runtime.Distance=0; Runtime.MovementWindow=Tick; }
+        if (Distance<=1200) { Runtime.Distance+=Distance; }
+        if (Runtime.Distance>=350)
+        {
+            FDMRelicWake Wake; Wake.Location=Position; Wake.Until=Tick+30; Runtime.Wakes.Add(Wake);
+            while (Runtime.Wakes.Num()>3) { Runtime.Wakes.RemoveAt(0); }
+            Runtime.Distance=0; Runtime.MovementWindow=Tick; Changed=true;
+        }
+        Runtime.LastPosition=Position; Runtime.bHasPosition=true;
+    }
+    else { Runtime.bHasPosition=false; }
+    if (Changed) { ProjectWakes(); }
+    auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>(); if (!M) { return; }
+    for (const auto& Wake : Runtime.Wakes)
+    { for (ADMCombatant* A : M->GetCombatants())
+      { if (A!=Self() && !A->IsDown() && FVector::DistSquared2D(A->GetActorLocation(),Wake.Location)<=FMath::Square(180.f))
+        { if (A->bIsEnemy==Self()->bIsEnemy) { A->Relics->Runtime.HasteUntil=FMath::Max(A->Relics->Runtime.HasteUntil,Tick+5); }
+          else { A->ApplySlow(.3f,Tick+3); A->Relics->Runtime.ControlUntil=FMath::Max(A->Relics->Runtime.ControlUntil,Tick+3); } } } }
+}
 bool UDMRelicComponent::Acquire(EDMRelic R,const FString& AwardId)
 {
     if (!Self() || !Self()->HasAuthority() || !CanAcquire(R) || AwardId.IsEmpty() || Inventory.AwardIds.Contains(AwardId)) { return false; }
@@ -114,7 +155,7 @@ bool UDMRelicComponent::RestoreFull(const FDMRelicSnapshot& S)
     for (const auto& Pair : R.Contributions) { if (Pair.Key.IsEmpty() || !FMath::IsFinite(Pair.Value) || Pair.Value<0) { return false; } }
     for (const auto& Wake : R.Wakes) { if (Wake.Location.ContainsNaN() || Wake.Until<0) { return false; } }
     if (!Restore(S.Inventory)) { return false; }
-    Runtime=R; LastStepTick=-1; return true;
+    Runtime=R; LastStepTick=-1; ProjectWakes(); return true;
 }
 FString UDMRelicComponent::Description(EDMRelic R)
 {
