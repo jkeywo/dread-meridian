@@ -1,6 +1,7 @@
 #include "DMMadnessComponent.h"
 #include "DMCombatant.h"
 #include "DMCombatGameMode.h"
+#include "DMVision.h"
 
 void UDMMadnessComponent::AssignFamily(EDMMadnessFamily Value)
 {
@@ -23,7 +24,7 @@ TArray<ADMCombatant*> UDMMadnessComponent::Candidates() const
     TArray<ADMCombatant*> Out; auto* A = CastChecked<ADMCombatant>(GetOwner());
     if (auto* M = GetWorld()->GetAuthGameMode<ADMCombatGameMode>())
     { for (ADMCombatant* T : M->GetCombatants())
-      { if (IsValid(T) && T->bIsEnemy && !T->IsDown() && FVector::Dist2D(A->GetActorLocation(), T->GetActorLocation()) <= Settings.FamilyRange
+      { if (IsValid(T) && T->bIsEnemy && !T->IsDown() && DMVision::CanSee(A,T) && FVector::Dist2D(A->GetActorLocation(), T->GetActorLocation()) <= Settings.FamilyRange
             && A->Primary->Sight(T->GetActorLocation(), T)) { Out.Add(T); } } }
     Out.Sort([](const ADMCombatant& A, const ADMCombatant& B) { return A.EntityId < B.EntityId; }); return Out;
 }
@@ -53,7 +54,7 @@ void UDMMadnessComponent::StepFamily(int32 Tick)
             else
             {
                 // Stop publishing moving target positions when it leaves this investigator's sight.
-                if (A->Primary->Sight(T->GetActorLocation(), T)) { Cues[0].Location = T->GetActorLocation(); }
+                if (DMVision::CanSee(A,T) && A->Primary->Sight(T->GetActorLocation(), T)) { Cues[0].Location = T->GetActorLocation(); }
                 if (Tick >= NextIgnoreTick) { Add(Settings.IgnorePressure, TEXT("ignored_fixation")); NextIgnoreTick = Tick + Settings.IgnoreTicks; }
                 if (Tick >= Cues[0].Until) { FamilyEvent(TEXT("fixation_expired"), T->EntityId); Cues.Reset(); NextFamilyTick = Tick + 10; }
             }
@@ -117,7 +118,7 @@ void UDMMadnessComponent::StepCompulsion(int32 Tick)
         {
             auto* T = M->FindCombatant(C.TargetId);
             if (!T || T->IsDown()) { Cues.RemoveAt(I); continue; }
-            if (A->Primary->Sight(T->GetActorLocation(), T)) { C.Location = T->GetActorLocation(); }
+            if (DMVision::CanSee(A,T) && A->Primary->Sight(T->GetActorLocation(), T)) { C.Location = T->GetActorLocation(); }
         }
         if (Tick >= C.Until)
         { FamilyEvent(TEXT("urge_resisted"), C.TargetId); Cues.RemoveAt(I); Add(Settings.IgnorePressure, TEXT("resisted_urge")); NextFamilyTick = Tick + 10; }

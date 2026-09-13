@@ -1,4 +1,5 @@
 #include "DMSmugglerComponent.h"
+#include "DMVision.h"
 #include "DMCombatant.h"
 #include "DMCombatGameMode.h"
 #include "DMAbilityMarker.h"
@@ -121,6 +122,7 @@ bool UDMSmugglerComponent::CanSignature(const ADMCombatGameMode& Mode, const ADM
     else if (!Mode.IsCombatActive()) { Why = TEXT("inactive"); }
     else if (!A->bIsEnemy || A->IsDown() || A->IsRestrained() || A->IsStunned()) { Why = TEXT("state"); }
     else if (!IsValid(Target) || !A->IsHostileTo(Target) || Target->IsDown()) { Why = TEXT("target"); }
+    else if (!DMVision::CanSee(A,Target)) { Why = TEXT("target_hidden"); }
     else if (IsCasting()) { Why = TEXT("casting"); }
     else if (Tick < NextSignatureTick) { Why = TEXT("cooldown"); }
     else if (FireUntil > Tick) { Why = TEXT("burning"); }

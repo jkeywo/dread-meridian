@@ -7,6 +7,7 @@
 #include "DMScroungePickup.h"
 #include "DMShubMinion.h"
 #include "DMCorruption.h"
+#include "DMVision.h"
 #include "DMPing.h"
 #include "EngineUtils.h"
 #include "Dom/JsonObject.h"
@@ -37,7 +38,7 @@ void ADMSquadController::Think(ADMCombatGameMode& Mode)
     if (Self->bSwampThing) { return; } // Native role state machine owns movement and target selection.
     if (auto* Minion=Self->FindComponentByClass<UDMShubMinion>(); Minion && Minion->ControlsMovement()) { return; }
     Self->Threat.Cleanup([&](const FString& Id) { const auto* A=Mode.FindCombatant(Id); return A && !A->IsDown(); },Mode.GetCombatTick());
-    if (auto* Forced=Mode.FindCombatant(Self->Threat.Forced(Mode.GetCombatTick())); Forced && Self->IsHostileTo(Forced) && !Forced->IsDown())
+    if (auto* Forced=Mode.FindCombatant(Self->Threat.Forced(Mode.GetCombatTick())); Forced && Self->IsHostileTo(Forced) && !Forced->IsDown() && DMVision::CanSee(Self,Forced))
     { Self->SetAttackTarget(Forced); Self->MoveToward(Forced->GetActorLocation()); return; }
     if (!Profile) { Profile = Mode.ProfileFor(*Self); }
     if (!Profile) { UE_LOG(LogTemp, Warning, TEXT("ADMSquadController: no AI profile for %s"), *Self->EntityId); return; }
@@ -136,6 +137,7 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
         ADMCombatant* C = Roster[I].Get();
         const FVector Loc = C->GetActorLocation();
         FDMAIActorView& V = Out.Actors.AddDefaulted_GetRef();
+        if (!DMVision::CanSee(Self,C)) { V.Index=I; V.bEnemy=!Self->bIsEnemy; V.bDown=true; V.bVisible=false; continue; }
         V.Index = I; V.EntityId = C->EntityId;
         V.bEnemy = Self->IsHostileTo(C) ? !Self->bIsEnemy : Self->bIsEnemy; V.bDown = C->IsDown(); V.bRestrained = C->IsRestrained();
         V.bPlayerControlled = C->IsPlayerControlled(); V.bCommon = C->bCommonEnemy; V.bBreakVulnerable = C->bBreakVulnerable;

@@ -22,6 +22,13 @@ public:
     UFUNCTION(Exec) void DMSpawnObjective(const FString& TemplateId, int32 Difficulty = 0);
     UFUNCTION(Exec) void DMStartShub();
     UFUNCTION(Exec) void DMSpawnSwamp(int32 Kind=1);
+    UFUNCTION(Exec) void DMSpawnReeds(float Radius=500);
+    UFUNCTION(Client,Reliable) void ClientVision(const TArray<FString>& VisibleIds);
+    void PublishVision();
+    bool HasVisionOf(const FString& Id) const { return VisibleEnemies.Contains(Id); }
+    TArray<FString> VisibleEnemies;
+    TArray<FString> LastPublishedVision;
+    bool bVisionPublished=false;
     UFUNCTION(Server,Reliable) void ServerRelicVote(class ADMRelicDrop* Drop,uint8 Choice);
     ADMRelicDrop* PendingRelic() const;
     bool RelicMenuOpen() const { return bRelicOpen; }
@@ -39,6 +46,7 @@ public:
     FDMMadnessView PrivateMadness() const;
     virtual void SetupInputComponent() override;
     virtual void PlayerTick(float DeltaTime) override;
+    virtual void TickActor(float DeltaTime,ELevelTick TickType,FActorTickFunction& ThisTickFunction) override;
     virtual void PawnLeavingGame() override;
     void StartAutoAttack(ADMCombatant* Target = nullptr);
     /** True while any ability is in targeting mode. Slot 0 is Q; 1..3 are W/E/R. */

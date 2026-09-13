@@ -29,6 +29,9 @@ public:
     ADMCombatant();
     UPROPERTY(VisibleAnywhere) TObjectPtr<UDMSwampThing> Swamp;
     UPROPERTY(Replicated) bool bSwampThing=false;
+    UPROPERTY(Replicated) bool bRequiresVision=false;
+    int32 VisionRevealUntil=0; // Authority only; ordinary damage briefly reveals concealed enemies.
+    virtual bool IsNetRelevantFor(const AActor* RealViewer,const AActor* ViewTarget,const FVector& SrcLocation) const override;
     bool IsHostileTo(const ADMCombatant* Other) const;
     UPROPERTY(VisibleAnywhere) TObjectPtr<class UDMRelicComponent> Relics;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UDMProgressionComponent> Progression;

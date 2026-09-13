@@ -14,6 +14,9 @@ class DREADMERIDIAN_API ADMAbilityMarker : public AActor
     GENERATED_BODY()
 public:
     ADMAbilityMarker();
+    UPROPERTY(Replicated) TObjectPtr<ADMCombatant> VisionSubject;
+    UPROPERTY(Replicated) bool bVisionFiltered=false;
+    virtual bool IsNetRelevantFor(const AActor* RealViewer,const AActor* ViewTarget,const FVector& SrcLocation) const override;
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaSeconds) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

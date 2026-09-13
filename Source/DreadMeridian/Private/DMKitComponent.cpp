@@ -1,4 +1,5 @@
 #include "DMKitComponent.h"
+#include "DMVision.h"
 #include "DMKitAbility.h"
 #include "DMAbilityMarker.h"
 #include "DMCombatant.h"
@@ -163,6 +164,7 @@ FString UDMKitComponent::Validate(EDMKitSlot Slot, ADMCombatant* Target, FVector
     if (Slot >= EDMKitSlot::Count) { return TEXT("Invalid slot"); }
     if (Point.ContainsNaN()) { return TEXT("Invalid aim point"); }
     if (Target && (!IsValid(Target) || Target->GetWorld() != GetWorld())) { return TEXT("Invalid target"); }
+    if (Target && !DMVision::CanSee(Actor,Target)) { return TEXT("Target is not visible"); }
     if (!Actor->Injuries->CanCast()) { return TEXT("Concussion: pause before casting again"); }
     if (Actor->IsDown() || (Actor->IsRestrained() || Actor->IsStunned()) || Actor->bIsEnemy) { return TEXT("Cannot cast in this state"); }
     if (Actor->Investigator->Kind == EDMInvestigator::None || Name(Slot).IsEmpty()) { return TEXT("No ability available"); }
@@ -880,7 +882,7 @@ bool UDMKitComponent::ResolvePhotographer(EDMKitSlot Slot, ADMCombatant* Target,
         {
             if (!IsValid(Enemy) || !Enemy->bIsEnemy || Enemy->IsDown()) { continue; }
             if (!DMKitRules::PointInCone(Origin, Direction, FlashHalfAngle, Kit.Range, Enemy->GetActorLocation())) { continue; }
-            if (!Sight(Origin, Enemy->GetActorLocation())) { continue; }
+            if (!DMVision::CanSee(Actor,Enemy) || !Sight(Origin, Enemy->GetActorLocation())) { continue; }
             // Perfect Moment still applies: a subject caught mid-telegraph gives up more.
             const uint8 N = Actor->Progression->Node(1);
             const float Flash = N == 2 ? 45 : N == 5 ? (Enemy->bTelegraphActive ? 75 : 35) : N == 4 ? 35 : FlashExposure;
@@ -938,7 +940,7 @@ bool UDMKitComponent::ResolvePhotographer(EDMKitSlot Slot, ADMCombatant* Target,
         {
             if (!IsValid(Enemy) || !Enemy->bIsEnemy || Enemy->IsDown()) { continue; }
             if (FVector::DistSquared2D(Origin, Enemy->GetActorLocation()) > FMath::Square(Kit.Range)) { continue; }
-            if (!Sight(Origin, Enemy->GetActorLocation())) { continue; }
+            if (!DMVision::CanSee(Actor,Enemy) || !Sight(Origin, Enemy->GetActorLocation())) { continue; }
             const float Current = Actor->Investigator->PeekExposure(Enemy->EntityId);
             if (Current < PhotographExposure)
             { Actor->Investigator->AddExposure(Enemy->EntityId, PhotographExposure - Current, false, Tick); }

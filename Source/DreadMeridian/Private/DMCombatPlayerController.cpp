@@ -11,6 +11,7 @@
 #include "DMScroungePickup.h"
 #include "DMRecoverySupply.h"
 #include "DMObjective.h"
+#include "DMVision.h"
 #include "DMShubEncounter.h"
 #include "DMBossArena.h"
 #include "DMRelicDrop.h"
@@ -99,6 +100,29 @@ void ADMCombatPlayerController::DMSpawnSwamp(int32 Kind)
     auto* A=M->SpawnEncounterActor(Id,GetPawn()->GetActorLocation()+FVector(500,0,0),Kind==5 ? 350 : 90,Kind==5 ? 14 : 8);
     if (A) { A->Swamp->Initialize(static_cast<EDMSwampThing>(Kind)); }
 #endif
+}
+void ADMCombatPlayerController::DMSpawnReeds(float Radius)
+{
+#if !UE_BUILD_SHIPPING
+    if (!HasAuthority() || !GetPawn() || !FMath::IsFinite(Radius) || Radius<=0) { return; }
+    auto* Area=GetWorld()->SpawnActor<ADMVisionArea>(GetPawn()->GetActorLocation()+FVector(500,0,0),FRotator::ZeroRotator); Area->Radius=FMath::Min(Radius,2000.f);
+#endif
+}
+void ADMCombatPlayerController::PublishVision()
+{
+    if (!HasAuthority()) { return; } auto* Observer=Cast<ADMCombatant>(GetPawn()); TArray<FString> Visible;
+    if (Observer) { for (TActorIterator<ADMCombatant> It(GetWorld());It;++It) { if (It->bRequiresVision && DMVision::CanSee(Observer,*It)) { Visible.Add(It->EntityId); } } }
+    Visible.Sort(); if (!bVisionPublished || Visible!=LastPublishedVision) { LastPublishedVision=Visible; bVisionPublished=true; ClientVision(Visible); }
+}
+void ADMCombatPlayerController::ClientVision_Implementation(const TArray<FString>& VisibleIds)
+{
+    VisibleEnemies=VisibleIds;
+#if !UE_BUILD_SHIPPING
+    if (FParse::Param(FCommandLine::Get(),TEXT("DMNetworkProbe"))) { UE_LOG(LogTemp,Display,TEXT("DREAD_VISION_UPDATE pawn=%s visible=%s"),*GetNameSafe(GetPawn()),*FString::Join(VisibleIds,TEXT(","))); }
+#endif
+    if (IsLocalController())
+    { for (TActorIterator<ADMCombatant> It(GetWorld());It;++It) { if (It->bRequiresVision) { It->SetActorHiddenInGame(!VisibleEnemies.Contains(It->EntityId)); } } }
+    if (SelectedTarget.IsValid() && SelectedTarget->bRequiresVision && !VisibleEnemies.Contains(SelectedTarget->EntityId)) { SelectedTarget.Reset(); bAutoAttack=false; }
 }
 void ADMCombatPlayerController::SetupInputComponent()
 {
@@ -226,7 +250,7 @@ void ADMCombatPlayerController::Cycle()
     {
         const auto* Actor = Cast<ADMCombatant>(GetPawn());
         const bool bBinding = bAiming && AimSlot == 0 && Actor && Actor->Investigator->Kind == EDMInvestigator::Medium;
-        if ((It->bIsEnemy && !It->IsDown()) || bBinding) { Targets.Add(*It); }
+        if (!It->IsHidden() && ((It->bIsEnemy && !It->IsDown()) || bBinding)) { Targets.Add(*It); }
     }
     Targets.Sort([](const ADMCombatant& A, const ADMCombatant& B) { return A.EntityId < B.EntityId; });
     if (Targets.IsEmpty()) { SelectedTarget = nullptr; return; }
@@ -245,13 +269,13 @@ void ADMCombatPlayerController::StartAutoAttack(ADMCombatant* Target)
 {
     auto* Actor = Cast<ADMCombatant>(GetPawn());
     if (!Actor || Actor->IsDown()) { return; }
-    if (!IsValid(Target) || Target->IsDown() || !Target->bIsEnemy)
+    if (!IsValid(Target) || Target->IsDown() || !Target->bIsEnemy || Target->IsHidden())
     {
         Target = nullptr; float Best = MAX_flt;
         for (TActorIterator<ADMCombatant> It(GetWorld()); It; ++It)
         {
             const float Distance = FVector::DistSquared(Actor->GetActorLocation(), It->GetActorLocation());
-            if (It->bIsEnemy && !It->IsDown() && Distance < Best) { Best = Distance; Target = *It; }
+            if (It->bIsEnemy && !It->IsDown() && !It->IsHidden() && Distance < Best) { Best = Distance; Target = *It; }
         }
     }
     ServerCancelFrame(); SelectedTarget = Target; bAutoAttack = Target != nullptr;
@@ -275,7 +299,7 @@ void ADMCombatPlayerController::StartRevive()
 void ADMCombatPlayerController::ServerSelectTarget_Implementation(ADMCombatant* Target)
 {
     ADMCombatant* Actor = Cast<ADMCombatant>(GetPawn());
-    if (Actor && (!Target || (Target->GetWorld() == GetWorld() && Target->bIsEnemy && !Target->IsDown())))
+    if (Actor && (!Target || (Target->GetWorld() == GetWorld() && Target->bIsEnemy && !Target->IsDown() && DMVision::CanSee(Actor,Target))))
     { Actor->SetAttackTarget(Target); }
 }
 void ADMCombatPlayerController::ServerRevive_Implementation(ADMCombatant* Ally)
@@ -283,9 +307,23 @@ void ADMCombatPlayerController::ServerRevive_Implementation(ADMCombatant* Ally)
     if (ADMCombatGameMode* Mode = GetWorld()->GetAuthGameMode<ADMCombatGameMode>())
     { Mode->RequestRevive(Cast<ADMCombatant>(GetPawn()), Ally); }
 }
+void ADMCombatPlayerController::TickActor(float DeltaTime,ELevelTick TickType,FActorTickFunction& ThisTickFunction)
+{
+    Super::TickActor(DeltaTime,TickType,ThisTickFunction);
+    // Remote server controllers skip PlayerTick (there is no local input).
+    if (IsValid(this) && HasAuthority()) { PublishVision(); }
+}
 void ADMCombatPlayerController::PlayerTick(float DeltaTime)
 {
     Super::PlayerTick(DeltaTime);
+    if (IsLocalController()) { for (TActorIterator<ADMCombatant> It(GetWorld());It;++It) { if (It->bRequiresVision) { It->SetActorHiddenInGame(!VisibleEnemies.Contains(It->EntityId)); } } }
+#if !UE_BUILD_SHIPPING
+    if (FParse::Param(FCommandLine::Get(),TEXT("DMNetworkProbe")))
+    {
+        for (TActorIterator<ADMCombatant> It(GetWorld());It;++It)
+        { if (It->EntityId==TEXT("vision.hidden_probe")) { UE_LOG(LogTemp,Error,TEXT("DREAD_VISION_HIDDEN_ACTOR_LEAK")); FPlatformMisc::RequestExitWithStatus(false,1); return; } }
+    }
+#endif
     ADMCombatant* Actor = Cast<ADMCombatant>(GetPawn());
     if (!Actor)
     {
@@ -469,6 +507,8 @@ void ADMCombatPlayerController::ClientVerifyCombatState_Implementation(const FSt
             for (TActorIterator<ADMCombatant> It(GetWorld()); It; ++It)
             {
                 ++Count;
+                if (Expected->GetBoolField(TEXT("vision_probe")) && It->EntityId==TEXT("vision.hidden_probe")) { bPassed=false; UE_LOG(LogTemp,Error,TEXT("DREAD_VISION_HIDDEN_ACTOR_LEAK")); }
+                if (It->bRequiresVision && !HasVisionOf(It->EntityId)) { --Count; continue; }
                 double HP = -1, Shield = -1;
                 const bool bHasNumbers = Expected->TryGetNumberField(It->EntityId + TEXT(".health"), HP) && Expected->TryGetNumberField(It->EntityId + TEXT(".shield"), Shield);
                 // Each field is checked on its own so a mismatch names the actor and field in the client log.
@@ -499,6 +539,7 @@ void ADMCombatPlayerController::ClientVerifyCombatState_Implementation(const FSt
             bPassed &= State && Expected->GetStringField(TEXT("phase")) == StaticEnum<EDMRunPhase>()->GetNameStringByValue(static_cast<int64>(State->GetRunState().Phase));
         }
         bPassed &= Expected.IsValid() && Count == Expected->GetIntegerField(TEXT("actor_count"));
+        if (bPassed && Expected->GetBoolField(TEXT("vision_probe"))) { UE_LOG(LogTemp,Display,TEXT("DREAD_VISION_FILTER_PASSED")); }
         UE_LOG(LogTemp, Display, TEXT("DREAD_NETWORK_PROBE_%s actors=%d"), bPassed ? TEXT("PASSED") : TEXT("FAILED"), Count);
         FPlatformMisc::RequestExitWithStatus(false, bPassed ? 0 : 1);
     }), 3.f, false);

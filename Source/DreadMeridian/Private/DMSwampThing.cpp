@@ -2,6 +2,7 @@
 #include "DMCombatant.h"
 #include "DMCombatGameMode.h"
 #include "DMAbilityMarker.h"
+#include "DMVision.h"
 #include "Net/UnrealNetwork.h"
 UDMSwampThing::UDMSwampThing() { SetIsReplicatedByDefault(true); }
 ADMCombatant* UDMSwampThing::Self() const { return CastChecked<ADMCombatant>(GetOwner()); }
@@ -9,7 +10,7 @@ bool UDMSwampThing::Initialize(EDMSwampThing Role)
 {
     if (!Self()->HasAuthority() || !Self()->bIsEnemy || Role<=EDMSwampThing::None || Role>EDMSwampThing::OldThing || State.Role!=EDMSwampThing::None) { return false; }
     State.Role=Role; State.Home=Self()->GetActorLocation(); State.InterruptSerial=Self()->ControlInterruptSerial;
-    Self()->bSwampThing=true; Self()->bHumanEnemy=false; Self()->bCommonEnemy=Role!=EDMSwampThing::OldThing; Self()->Resolve->Reset();
+    Self()->bSwampThing=true; Self()->bRequiresVision=true; Self()->bHumanEnemy=false; Self()->bCommonEnemy=Role!=EDMSwampThing::OldThing; Self()->Resolve->Reset();
     Self()->AttackIntervalTicks=Role==EDMSwampThing::Crawler ? 12 : 20;
     Self()->EncounterLabel=StaticEnum<EDMSwampThing>()->GetNameStringByValue(static_cast<int64>(Role));
     Record(TEXT("initialized")); return true;
@@ -91,7 +92,7 @@ void UDMSwampThing::Step(int32 Tick)
     {
         const float Distance=FVector::Dist2D(A->GetActorLocation(),Self()->GetActorLocation());
         if (A->IsDown() || !Self()->IsHostileTo(A) || Distance>1000 || FVector::DistSquared2D(A->GetActorLocation(),State.Home)>FMath::Square(1200.f)
-            || !Self()->Smuggler->Sight(Self()->GetActorLocation(),A->GetActorLocation())) { continue; }
+            || !DMVision::CanSee(Self(),A) || !Self()->Smuggler->Sight(Self()->GetActorLocation(),A->GetActorLocation())) { continue; }
         if (A->EntityId==Forced) { Target=A; break; }
         const float Score=Self()->Threat.FindRef(A->EntityId)+(IsIsolated(A) ? 500 : 0)-Distance;
         if (Score>Best || (Score==Best && Target && A->EntityId<Target->EntityId)) { Target=A; Best=Score; }
@@ -99,7 +100,7 @@ void UDMSwampThing::Step(int32 Tick)
     Self()->SetAttackTarget(Target); Self()->SetAttackHold(false);
     if (!Target) { Self()->SetAttackHold(true); if (FVector::DistSquared2D(Self()->GetActorLocation(),State.Home)>FMath::Square(80.f)) { Self()->MoveToward(State.Home); } else { Self()->StopGoal(); } return; }
     if (TrySignature(Target)) { return; }
-    if (State.Role==EDMSwampThing::Lurker && Tick>=State.ReadyAt) { Self()->StopGoal(); Self()->SetAttackHold(true); return; }
+    if (State.Role==EDMSwampThing::Lurker && Tick>=State.ReadyAt) { Self()->MoveToward(Target->GetActorLocation()); Self()->SetAttackHold(true); return; }
     if (FVector::DistSquared2D(Self()->GetActorLocation(),Target->GetActorLocation())>FMath::Square(Range()*.85f)) { Self()->MoveToward(Target->GetActorLocation()); } else { Self()->StopGoal(); }
 }
 void UDMSwampThing::Project()
@@ -109,6 +110,7 @@ void UDMSwampThing::Project()
     {
         Tell=GetWorld()->SpawnActor<ADMAbilityMarker>(State.Role==EDMSwampThing::OldThing ? Self()->GetActorLocation() : State.Aim,FRotator::ZeroRotator);
         Tell->bHostile=true; Tell->Radius=State.Role==EDMSwampThing::OldThing ? 450 : State.Role==EDMSwampThing::Spitter ? 220 : 150;
+        Tell->bVisionFiltered=true; Tell->VisionSubject=Self();
         Tell->ArmedTick=State.ResolveAt; Tell->ExpiresTick=State.ResolveAt+1; Tell->CustomLabel=Self()->EncounterLabel+TEXT(" - interrupt or evade");
         if (State.Role==EDMSwampThing::Grasper) { Tell->SetActorLocation(Self()->GetActorLocation()); Tell->Shape=EDMMarkerShape::Wire; Tell->WireEnd=State.Aim; }
     }

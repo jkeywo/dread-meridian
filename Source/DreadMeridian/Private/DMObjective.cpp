@@ -1,4 +1,5 @@
 #include "DMObjective.h"
+#include "DMVision.h"
 #include "DMObjectiveCatalogue.h"
 #include "DMCombatant.h"
 #include "DMCombatGameMode.h"
@@ -149,6 +150,7 @@ void ADMObjective::GrantReward()
     if (Reward == EDMObjectiveReward::Relic)
     { auto* Drop=GetWorld()->SpawnActor<ADMRelicDrop>(); if (Drop && !Drop->Initialize(TEXT("objective.")+PublicState.Id)) { Drop->Destroy(); } }
     bVisionOnline = Reward == EDMObjectiveReward::Vision;
+    if (bVisionOnline) { DMVision::Lighthouse(GetWorld(),TEXT("lighthouse.")+PublicState.Id,GetActorLocation()); }
     bBasinDrained = Reward == EDMObjectiveReward::DrainBasin;
 }
 bool ADMObjective::Fail()
@@ -174,7 +176,10 @@ bool ADMObjective::Restore(const FDMObjectiveSnapshot& S)
         || static_cast<uint8>(S.State) > static_cast<uint8>(EDMObjectiveState::ApocalypseConverted)
         || (S.State == EDMObjectiveState::Completed && (S.Step != Steps.Num() || !S.bRewarded))
         || (S.State != EDMObjectiveState::Completed && (S.Step == Steps.Num() || S.bRewarded))) { return false; }
-    PublicState = S; Participant.Reset(); CarrierId.Reset(); LastTick = -1; ForceNetUpdate(); return true;
+    PublicState = S; Participant.Reset(); CarrierId.Reset(); LastTick = -1;
+    bVisionOnline=S.bRewarded && Reward==EDMObjectiveReward::Vision;
+    if (Reward==EDMObjectiveReward::Vision) { DMVision::Lighthouse(GetWorld(),TEXT("lighthouse.")+PublicState.Id,GetActorLocation(),bVisionOnline); }
+    ForceNetUpdate(); return true;
 }
 void ADMObjective::Publish(const FString& Reason)
 {

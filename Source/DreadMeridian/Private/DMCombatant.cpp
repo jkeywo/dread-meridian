@@ -3,6 +3,7 @@
 #include "DMHealthAttributes.h"
 #include "DMRelicComponent.h"
 #include "DMObjective.h"
+#include "DMVision.h"
 #include "EngineUtils.h"
 #include "DMAttackFX.h"
 #include "DMScroungePickup.h"
@@ -159,7 +160,7 @@ bool ADMCombatant::TryAttack(ADMCombatant* Target)
     AttackTarget = Target;
     ADMCombatGameMode* Mode = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
     if (!Mode || !Mode->IsCombatActive() || IsDown() || !IsValid(Target) || Target->IsDown()
-        || !IsHostileTo(Target) || NextAttackTick > Mode->GetCombatTick()
+        || !IsHostileTo(Target) || !DMVision::CanSee(this,Target) || NextAttackTick > Mode->GetCombatTick()
         || FVector::DistSquared(GetActorLocation(), Target->GetActorLocation()) > FMath::Square(GetAttackRange())) { bTelegraphActive = false; return false; }
     // Bot brain attack-channel gate: the target projection above still updates while held.
     if (bAttackHold) { bTelegraphActive = false; return false; }
@@ -192,7 +193,7 @@ bool ADMCombatant::ResolveAttack()
     ADMCombatant* Target = AttackTarget.Get();
     ADMCombatGameMode* Mode = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
     if (!HasAuthority() || !Mode || !Mode->IsCombatActive() || IsDown() || bAttackHold || !Target || Target->IsDown()
-        || !IsHostileTo(Target) || Mode->GetCombatTick() < NextAttackTick
+        || !IsHostileTo(Target) || !DMVision::CanSee(this,Target) || Mode->GetCombatTick() < NextAttackTick
         || FVector::DistSquared(GetActorLocation(), Target->GetActorLocation()) > FMath::Square(GetAttackRange())) { return false; }
     FHitResult Hit;
     FCollisionQueryParams Query(SCENE_QUERY_STAT(BasicAttack), false, this);
@@ -210,6 +211,8 @@ bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FS
     if (!HasAuthority() || !Mode || !Mode->IsCombatActive() || IsDown() || !IsValid(Target) || Target->IsDown()
         || Target->GetWorld()!=GetWorld() || !IsHostileTo(Target) || !FMath::IsFinite(Damage) || Damage <= 0) { return false; }
     const float Before = Target->Health();
+    if (bBasic && !DMVision::CanSee(this,Target)) { return false; }
+    Target->VisionRevealUntil=Mode->GetCombatTick()+30;
     Damage*=Relics->SpendMedal(Target,AbilityId,bBasic);
     if (bBasic && bSwampThing) { Damage*=Swamp->DamageMultiplier(Target); }
     const float ShieldBefore = Target->Shield();
@@ -315,6 +318,7 @@ void ADMCombatant::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
     DOREPLIFETIME(ADMCombatant, ReviveProgress);
     DOREPLIFETIME(ADMCombatant, AttackIntervalTicks);
     DOREPLIFETIME(ADMCombatant, bSwampThing);
+    DOREPLIFETIME(ADMCombatant, bRequiresVision);
     DOREPLIFETIME(ADMCombatant, NextAttackTick);
 }
 
@@ -333,6 +337,8 @@ bool ADMCombatant::IsHostileTo(const ADMCombatant* Other) const
     if (bIsEnemy!=Other->bIsEnemy) { return true; }
     return bIsEnemy && bSwampThing!=Other->bSwampThing && (bSwampThing ? Other->bHumanEnemy : bHumanEnemy);
 }
+bool ADMCombatant::IsNetRelevantFor(const AActor* RealViewer,const AActor* ViewTarget,const FVector& SrcLocation) const
+{ return (!bRequiresVision || DMVision::Relevant(this,RealViewer)) && Super::IsNetRelevantFor(RealViewer,ViewTarget,SrcLocation); }
 float ADMCombatant::EffectiveResistance() const { return FMath::Max(FMath::Max3(Investigator->Resistance(), BraceResistance, Kit->ChargeResistance()),Relics->ProtectsObjective() ? .75f : 0.f); }
 void ADMCombatant::StepInvestigator(int32 Tick)
 {

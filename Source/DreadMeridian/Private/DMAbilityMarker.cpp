@@ -1,5 +1,7 @@
 #include "DMAbilityMarker.h"
 #include "DMCombatant.h"
+#include "DMVision.h"
+#include "DMCombatPlayerController.h"
 #include "DMPrimaryComponent.h"
 #include "DMCombatGameMode.h"
 #include "DMGameState.h"
@@ -58,6 +60,8 @@ int32 ADMAbilityMarker::CurrentTick() const
 void ADMAbilityMarker::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+    if (bVisionFiltered && GetNetMode()!=NM_DedicatedServer)
+    { const auto* PC=Cast<ADMCombatPlayerController>(GetWorld()->GetFirstPlayerController()); if (PC && PC->IsLocalController()) { SetActorHiddenInGame(!VisionSubject || !PC->HasVisionOf(VisionSubject->EntityId)); } }
     if (HasAuthority() && bTravelling && bSpirit)
     {
         // Glide every frame instead of stepping once per combat tick (10Hz) - the discrete jumps otherwise
@@ -180,6 +184,7 @@ void ADMAbilityMarker::UpdateWire()
 void ADMAbilityMarker::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(ADMAbilityMarker,VisionSubject); DOREPLIFETIME(ADMAbilityMarker,bVisionFiltered);
     DOREPLIFETIME(ADMAbilityMarker, bHostile); DOREPLIFETIME(ADMAbilityMarker, CustomLabel);
     DOREPLIFETIME(ADMAbilityMarker, bSpirit); DOREPLIFETIME(ADMAbilityMarker, BoundTarget);
     DOREPLIFETIME(ADMAbilityMarker, SpiritId); DOREPLIFETIME(ADMAbilityMarker, Radius); DOREPLIFETIME(ADMAbilityMarker, Attention);
@@ -188,3 +193,5 @@ void ADMAbilityMarker::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
     DOREPLIFETIME(ADMAbilityMarker, bTravelling); DOREPLIFETIME(ADMAbilityMarker, TravelRate); DOREPLIFETIME(ADMAbilityMarker, TravelGoal);
     DOREPLIFETIME(ADMAbilityMarker, ArmedTick); DOREPLIFETIME(ADMAbilityMarker, ExpiresTick); DOREPLIFETIME(ADMAbilityMarker, Serial);
 }
+bool ADMAbilityMarker::IsNetRelevantFor(const AActor* RealViewer,const AActor* ViewTarget,const FVector& SrcLocation) const
+{ return (!bVisionFiltered || (VisionSubject && DMVision::Relevant(VisionSubject,RealViewer))) && Super::IsNetRelevantFor(RealViewer,ViewTarget,SrcLocation); }

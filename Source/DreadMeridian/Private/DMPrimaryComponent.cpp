@@ -1,4 +1,5 @@
 #include "DMPrimaryComponent.h"
+#include "DMVision.h"
 #include "DMPrimaryAbility.h"
 #include "DMAbilityMarker.h"
 #include "DMCombatant.h"
@@ -67,6 +68,7 @@ FString UDMPrimaryComponent::Validate(ADMCombatant* Target, FVector Point, bool 
     if (Actor->IsDown() || (Actor->IsRestrained() || Actor->IsStunned()) || Actor->bIsEnemy) { return TEXT("Cannot cast in this state"); }
     if (Point.ContainsNaN()) { return TEXT("Invalid aim point"); }
     if (Target && (!IsValid(Target) || Target->GetWorld() != GetWorld())) { return TEXT("Invalid target"); }
+    if (Target && !DMVision::CanSee(Actor,Target)) { return TEXT("Target is not visible"); }
     const auto Kind = Actor->Investigator->Kind;
     if (bDetonate)
     { return Kind == EDMInvestigator::Sapper && Satchels.ContainsByPredicate([&](const ADMAbilityMarker* M) { return IsValid(M) && M->ArmedTick <= Now(); }) ? TEXT("") : TEXT("No armed satchels"); }
@@ -253,7 +255,7 @@ void UDMPrimaryComponent::Step(int32 Tick)
     if (HeldTarget && (Actor->IsDown() || HeldTarget->IsDown() || Tick >= HoldEndTick || FVector::DistSquared2D(Actor->GetActorLocation(), HeldTarget->GetActorLocation()) > FMath::Square(240.f))) { ReleaseClinch(); }
     if (FrameTarget)
     {
-        if (Actor->IsDown() || FrameTarget->IsDown() || (Actor->IsRestrained() || Actor->IsStunned()) || Tick >= FrameEndTick || Actor->GetVelocity().SizeSquared2D() > 100
+        if (Actor->IsDown() || FrameTarget->IsDown() || !DMVision::CanSee(Actor,FrameTarget) || (Actor->IsRestrained() || Actor->IsStunned()) || Tick >= FrameEndTick || Actor->GetVelocity().SizeSquared2D() > 100
             || FVector::DistSquared2D(Actor->GetActorLocation(), FrameTarget->GetActorLocation()) > FMath::Square(Range()) || !Sight(FrameTarget->GetActorLocation(), FrameTarget)) { CancelChannel(); }
         else
         {

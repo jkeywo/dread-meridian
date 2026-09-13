@@ -1,0 +1,81 @@
+{
+  "date": "2026-09-13",
+  "engine": "5.8.2",
+  "platform": "Win64",
+  "foundation_passed": 36,
+  "full_editor_passed": 44,
+  "python_export_passed": 14,
+  "foundation_report": "56dd07dcf243414280ad80c2cfd50a76",
+  "editor_report": "43711f2b9e904c43af37e1145a686a54",
+  "smoke": {
+    "contract": "dread-meridian.foundation-capture.v1",
+    "run_id": "039b2db1-400b-fe63-1dfb-2998fbebbb08",
+    "outcome": "victory",
+    "event_count": 6,
+    "event_counts": {
+      "run.started": 1,
+      "run.state_changed": 2,
+      "ritual.advanced": 1,
+      "ritual.summoned": 1,
+      "run.ended": 1
+    },
+    "provenance_complete": true,
+    "working_tree_dirty": true,
+    "evidence_scope": "foundation_harness_only",
+    "supports_gameplay_balance_claims": false,
+    "limitations": [
+      "No production bots, combat, objectives, or boss encounter.",
+      "Recorded source digests identify inputs; retain those inputs separately.",
+      "Wall-clock event timing is not deterministic simulation time."
+    ]
+  },
+  "four_bot_swamp_outcome": "victory",
+  "four_bot_swamp_ticks": 98,
+  "network_report": "37b5ef95b41840c8abe3f2c84fb6abb2",
+  "network_clients_passed": 2,
+  "network_visible_actors_per_client": 9,
+  "network_hidden_sentinel_received": false,
+  "network_madness_privacy_and_disconnect_takeover_passed": true,
+  "network_human_damage_events": {
+    "investigator.1": 5,
+    "investigator.0": 18
+  },
+  "captures": [
+    {
+      "kind": "four_bot_swamp",
+      "run_id": "ae10caa5-4bb0-c687-60ee-f1ae380ab191",
+      "events": 357,
+      "outcome": "victory",
+      "GameRevision": "34e72c0b4f05b14e0405e4062eb8e05dd9fb4928",
+      "SourceDigest": "c12173b8df156373e519d59c9c648421b864e920af537f35f29b94b78e448850",
+      "GDDDigest": "427d848e5a92838e5fd8ab41fb15f4cb43351d0b3af1af10a5d95ea0e88ba40a",
+      "capture_version": "0.14.0",
+      "combat_rules_version": "swamp-vision-v1",
+      "working_tree_dirty": true
+    },
+    {
+      "kind": "two_client_swamp",
+      "run_id": "c39b334b-4e0b-a6f5-218f-c499c72e5155",
+      "events": 467,
+      "outcome": "victory",
+      "GameRevision": "34e72c0b4f05b14e0405e4062eb8e05dd9fb4928",
+      "SourceDigest": "c12173b8df156373e519d59c9c648421b864e920af537f35f29b94b78e448850",
+      "GDDDigest": "427d848e5a92838e5fd8ab41fb15f4cb43351d0b3af1af10a5d95ea0e88ba40a",
+      "capture_version": "0.14.0",
+      "combat_rules_version": "swamp-vision-v1",
+      "working_tree_dirty": true
+    }
+  ],
+  "fixed_failures": [
+    "Concealed Lurker waited outside commitment range; it now stalks into range.",
+    "Remote server controllers skip PlayerTick; visibility publication now uses TickActor. Earlier network probes timed out with neither client attacking."
+  ],
+  "limits": [
+    "Opt-in Swamp Thing vision, not complete map-wide fog.",
+    "Spitter pools retain existing hazard presentation.",
+    "Provisional ranges and reveal duration; no art or approved balance change.",
+    "No host migration, deterministic gameplay replay, or Play Trace ingestion claim.",
+    "Other platform SDKs unavailable; Win64 only."
+  ],
+  "source_verification": "Working tree was rehashed before writing this evidence JSON and matched both final combat captures. The evidence JSON is the only subsequently added input; Git line-ending conversion may change byte digests."
+}

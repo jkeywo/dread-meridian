@@ -47,6 +47,9 @@ try {
     }
     foreach ($index in 1..2) {
         if (-not (Select-String -LiteralPath (Join-Path $runDirectory "client-$index.log") -SimpleMatch 'DREAD_MADNESS_PRIVACY_PASSED' -Quiet)) { throw "Client $index did not validate private Madness delivery." }
+        if ($LaunchArguments -contains '-DMSwampProbe') {
+            if (-not (Select-String -LiteralPath (Join-Path $runDirectory "client-$index.log") -SimpleMatch 'DREAD_VISION_FILTER_PASSED' -Quiet)) { throw "Client $index did not validate swamp vision filtering." }
+        }
     }
     if (-not $server.WaitForExit(15000)) { throw 'Server did not complete network test.' }
     $captureLine = (Select-String -LiteralPath $serverLog -Pattern 'Display: Capture: (.+events.jsonl)').Matches

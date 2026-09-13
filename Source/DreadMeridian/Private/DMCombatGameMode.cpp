@@ -3,6 +3,7 @@
 #include "DMCombatant.h"
 #include "DMRecoverySupply.h"
 #include "DMObjective.h"
+#include "DMVision.h"
 #include "DMElderOne.h"
 #include "DMCorruption.h"
 #include "DMGrowthNetwork.h"
@@ -53,9 +54,9 @@ void ADMCombatGameMode::ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& 
 {
     Metadata->SetStringField(TEXT("scenario_id"), TEXT("combat-sandbox"));
     Metadata->SetStringField(TEXT("run_kind"), TEXT("combat_sandbox"));
-    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.13.0"));
+    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.14.0"));
     if (UsesEncounterLayout()) { Metadata->SetStringField(TEXT("native_faction"), TEXT("smugglers")); }
-    Metadata->SetStringField(TEXT("combat_rules_version"), TEXT("swamp-things-v1"));
+    Metadata->SetStringField(TEXT("combat_rules_version"), TEXT("swamp-vision-v1"));
     if (bSwampTest) { Metadata->SetStringField(TEXT("native_faction"),TEXT("swamp_things")); }
     Metadata->SetStringField(TEXT("bot_policy"), TEXT("squad-utility-v5"));
     Metadata->SetStringField(TEXT("test_profile"), bNetworkTest ? TEXT("network_probe") : (SmokeOutcome.IsEmpty() ? TEXT("interactive") : SmokeOutcome));
@@ -119,6 +120,7 @@ void ADMCombatGameMode::BeginEncounter()
         {
             Actor->InitializeCombatant(Actor->EntityId,true,Index==8 ? 350 : 90,Index==8 ? 14 : 8);
             Actor->Swamp->Initialize(static_cast<EDMSwampThing>(Index-3));
+            if (Index==5) { auto* Reeds=GetWorld()->SpawnActor<ADMVisionArea>(Position,FRotator::ZeroRotator); Reeds->Radius=250; }
         }
         if (!bEnemy) { Actor->InitializeInvestigator(static_cast<EDMInvestigator>(Index + 1), bSmoke); }
         if (bReviveTest && bEnemy)
@@ -158,6 +160,12 @@ void ADMCombatGameMode::BeginEncounter()
         TArray<ADMCombatant*> Roster; TArray<uint32> Draws;
         for (ADMCombatant* A : Combatants) { if (!A->bIsEnemy) { Roster.Add(A); Draws.Add(DrawRandom(EDMRandomStream::Madness)); } }
         ElderOne->AssignResonance(Roster,DrawRandom(EDMRandomStream::Madness),Draws);
+    }
+    if (bNetworkTest && bSwampTest)
+    {
+        // Out-of-sight replication sentinel; deliberately outside the gameplay roster/outcome.
+        auto* Hidden=GetWorld()->SpawnActor<ADMCombatant>(FVector(0,5000,95),FRotator::ZeroRotator);
+        Hidden->InitializeCombatant(TEXT("vision.hidden_probe"),true,100,0); Hidden->Swamp->Initialize(EDMSwampThing::Lurker); Hidden->SetAttackHold(true);
     }
     bCombatActive = true;
     PublishEncounter();
@@ -297,7 +305,7 @@ int32 ADMCombatGameMode::CreatePing(EDMPingKind Kind, const FString& AuthorId, b
     case EDMPingKind::Enemy: case EDMPingKind::Focus: case EDMPingKind::Ignore:
     {
         const ADMCombatant* Hostile = FindCombatant(Target);
-        if (!Hostile || !Hostile->bIsEnemy || Hostile->IsDown()) { return INDEX_NONE; }
+        if (!Hostile || !Hostile->bIsEnemy || Hostile->IsDown() || !DMVision::CanSee(FindCombatant(AuthorId),Hostile)) { return INDEX_NONE; }
         Point = Hostile->GetActorLocation();
         break;
     }
@@ -376,7 +384,7 @@ void ADMCombatGameMode::StepPings()
         switch (Ping.Kind)
         {
         case EDMPingKind::Enemy: case EDMPingKind::Focus: case EDMPingKind::Ignore:
-        { const ADMCombatant* Target = FindCombatant(Ping.TargetId); return !Target || Target->IsDown(); }
+        { const ADMCombatant* Target = FindCombatant(Ping.TargetId); return !Target || Target->IsDown() || !DMVision::CanSee(FindCombatant(Ping.AuthorId),Target); }
         case EDMPingKind::Help:
             // A completed revive fulfils Help pings on the ally where it happens (StepCombat); here only a vanished ally ends one.
             return FindCombatant(Ping.TargetId) == nullptr;
@@ -751,6 +759,7 @@ void ADMCombatGameMode::CompleteCombat(bool bVictory)
     {
         TSharedRef<FJsonObject> Expected = MakeShared<FJsonObject>();
         Expected->SetNumberField(TEXT("actor_count"),Combatants.Num());
+        Expected->SetBoolField(TEXT("vision_probe"),bSwampTest);
         for (ADMCombatant* Actor : Combatants)
         {
             Expected->SetNumberField(Actor->EntityId + TEXT(".health"), Actor->Health());
@@ -770,10 +779,17 @@ void ADMCombatGameMode::CompleteCombat(bool bVictory)
         Expected->SetStringField(TEXT("phase"), bVictory ? TEXT("Victory") : TEXT("Defeat"));
         for (TActorIterator<ADMRelicDrop> It(GetWorld());It;++It)
         { if (It->Roll.AwardId==TEXT("network:shared_relic")) { Expected->SetStringField(TEXT("relic_winner"),It->Roll.Winner); } }
-        FString Json;
-        FJsonSerializer::Serialize(Expected, TJsonWriterFactory<>::Create(&Json));
         for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-        { if (ADMCombatPlayerController* Player = Cast<ADMCombatPlayerController>(It->Get())) { Player->ClientVerifyCombatState(Json); if (auto* A = Cast<ADMCombatant>(Player->GetPawn())) { Player->ClientMadness(A->MadnessCore->View()); Player->ClientVerifyMadness(A->MadnessCore->View()); } } }
+        { if (auto* Player=Cast<ADMCombatPlayerController>(It->Get()))
+          { if (auto* A=Cast<ADMCombatant>(Player->GetPawn()))
+            {
+                auto PrivateExpected=MakeShared<FJsonObject>(); PrivateExpected->Values=Expected->Values; int32 VisibleCount=0;
+                for (ADMCombatant* Subject : Combatants)
+                { if (DMVision::CanSee(A,Subject)) { ++VisibleCount; }
+                  else { for (const TCHAR* Field : {TEXT("health"),TEXT("shield"),TEXT("name"),TEXT("resources"),TEXT("progression"),TEXT("primary"),TEXT("injuries"),TEXT("resolve"),TEXT("kit"),TEXT("relics"),TEXT("relic_capacity"),TEXT("swamp_role"),TEXT("swamp_faction")}) { PrivateExpected->RemoveField(Subject->EntityId+TEXT(".")+Field); } } }
+                PrivateExpected->SetNumberField(TEXT("actor_count"),VisibleCount); FString Json; FJsonSerializer::Serialize(PrivateExpected,TJsonWriterFactory<>::Create(&Json));
+                Player->PublishVision(); Player->ClientVerifyCombatState(Json); Player->ClientMadness(A->MadnessCore->View()); Player->ClientVerifyMadness(A->MadnessCore->View());
+            } } }
         UE_LOG(LogTemp, Display, TEXT("DREAD_NETWORK_SERVER_COMPLETE"));
         FTimerHandle ExitTimer;
         GetWorldTimerManager().SetTimer(ExitTimer, [] { FPlatformMisc::RequestExit(false); }, 8.f, false);
