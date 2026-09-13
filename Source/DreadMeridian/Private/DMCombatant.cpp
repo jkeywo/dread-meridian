@@ -1,6 +1,7 @@
 #include "DMCombatant.h"
 #include "DMCombatPresentation.h"
 #include "DMHealthAttributes.h"
+#include "DMRelicComponent.h"
 #include "DMAttackFX.h"
 #include "DMScroungePickup.h"
 #include "Serialization/JsonSerializer.h"
@@ -24,6 +25,7 @@
 
 ADMCombatant::ADMCombatant()
 {
+    Relics=CreateDefaultSubobject<UDMRelicComponent>(TEXT("Relics"));
     PrimaryActorTick.bCanEverTick = true;
     bReplicates = true;
     SetReplicateMovement(true);
