@@ -3,6 +3,7 @@
 #include "DMCombatant.h"
 #include "DMRecoverySupply.h"
 #include "DMObjective.h"
+#include "DMElderOne.h"
 #include "DMCombatPlayerController.h"
 #include "DMCombatHUD.h"
 #include "DMSquadController.h"
@@ -138,6 +139,12 @@ void ADMCombatGameMode::BeginEncounter()
         GetWorld()->SpawnActor<ADMRecoverySupply>(FVector(-2200, 350, 40), FRotator::ZeroRotator);
         auto* Food = GetWorld()->SpawnActor<ADMRecoverySupply>(FVector(-1900, -350, 40), FRotator::ZeroRotator);
         Food->bFood = true; Food->Charges = 1;
+    }
+    if (!bNetworkTest && !bSmoke)
+    {
+        TArray<ADMCombatant*> Roster; TArray<uint32> Draws;
+        for (ADMCombatant* A : Combatants) { if (!A->bIsEnemy) { Roster.Add(A); Draws.Add(DrawRandom(EDMRandomStream::Madness)); } }
+        ElderOne->AssignResonance(Roster,DrawRandom(EDMRandomStream::Madness),Draws);
     }
     bCombatActive = true;
     PublishEncounter();

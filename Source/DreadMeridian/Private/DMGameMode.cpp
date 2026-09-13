@@ -50,6 +50,7 @@ void ADMGameMode::StartPlay()
     Metadata->SetNumberField(TEXT("seed"), Seed);
     Metadata->SetNumberField(TEXT("rng_schema_version"), 2);
     Metadata->SetNumberField(TEXT("boss_selection_version"), 1);
+    Metadata->SetNumberField(TEXT("madness_assignment_version"), 2);
     Metadata->SetNumberField(TEXT("ritual_points_per_stage"), RitualPointsPerStage);
     Metadata->SetNumberField(TEXT("investigator_slots"), FDMRunState::InvestigatorCount);
     Metadata->SetNumberField(TEXT("production_bots"), 0);

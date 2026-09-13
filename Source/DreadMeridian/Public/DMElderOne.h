@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "DMMadnessRules.h"
 #include "DMElderOne.generated.h"
 
 enum class EDMElderOne : uint8 { Shub, Nyarlathotep };
@@ -25,6 +26,9 @@ public:
     bool Finish(bool bVictory);
     FDMElderSnapshot Capture() const { return State; }
     bool Restore(const FDMElderSnapshot& Snapshot);
+    bool AssignResonance(const TArray<class ADMCombatant*>& Roster, uint32 SeatDraw, const TArray<uint32>& FamilyDraws);
+    bool IsResonant(const ADMCombatant* Actor) const;
+    static TArray<EDMMadnessFamily> Families(EDMElderOne Boss, uint32 SeatDraw, const TArray<uint32>& Draws);
     EDMElderOne Identity() const { return State.Identity; }
     EDMBossPhase Phase() const { return State.Phase; }
 private:

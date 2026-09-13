@@ -32,3 +32,9 @@ These subsystem snapshots are not a complete run or host-migration save.
   `-DMElderOne=Shub` or `Nyarlathotep` forces developer selection while consuming
   the same named selection draw. Capture records boss_selection_version=1, never
   a player-visible secret projection. Foundation Test and Smoke passed.
+
+- Elder 2: normal encounter rosters now get exactly one actual-boss resonance.
+  Version 2 changes Madness assignment intentionally; isolated smoke/network
+  fixtures retain their explicit family coverage. Private resonance cues reuse
+  owner-only Madness delivery, separate from the family symptom scheduler.
+  Verified both bosses across 256 seed assignments, Foundation Test and Smoke.

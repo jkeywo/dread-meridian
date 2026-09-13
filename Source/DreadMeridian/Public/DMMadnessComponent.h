@@ -28,7 +28,9 @@ public:
     /** Authored server-side context chooses a symptom from an unlocked pool. No client submission. */
     bool Manifest(const FString& Id, const FString& Text, int32 RequiredBand, int32 DurationTicks);
     FDMMadnessView View() const;
+    void SetResonanceCues(const TArray<FDMMadnessCue>& Value);
 private:
+    TArray<FDMMadnessCue> ResonanceCues;
     FDMMadnessState State;
     EDMMadnessFamily Family = EDMMadnessFamily::None;
     TArray<FDMMadnessCue> Cues;

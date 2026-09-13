@@ -12,6 +12,7 @@ void UDMMadnessComponent::Reset()
     NextPerceptionUse = NextPerceptionHazard = PerceptionSerial = 0;
     Echoes.Reset();
     Family = EDMMadnessFamily::None; Cues.Reset(); NextFamilyTick = NextIgnoreTick = 0; bFamilyCrisis = false;
+    ResonanceCues.Reset();
     Settings.Sanitize(); State = FDMMadnessState(); GroundUntil = SymptomUntil = 0;
     SymptomId.Reset(); SymptomText.Reset(); LastSent.Reset(); LastOwner.Reset();
     CastChecked<ADMCombatant>(GetOwner())->Investigator->Madness = 0; Deliver();
@@ -20,12 +21,14 @@ FDMMadnessView UDMMadnessComponent::View() const
 {
     FDMMadnessView V;
     if (!Authority()) { return V; }
-    V.Family = Family; V.Cues = Cues;
+    V.Family = Family; V.Cues = Cues; V.Cues.Append(ResonanceCues);
     V.EntityId = CastChecked<ADMCombatant>(GetOwner())->EntityId;
     V.Current = State.Current; V.Floor = State.Floor; V.Band = State.Band(Settings);
     V.CrisisUntil = State.CrisisUntil; V.GroundUntil = GroundUntil;
     V.SymptomId = SymptomId; V.SymptomText = SymptomText; V.SymptomUntil = SymptomUntil; return V;
 }
+void UDMMadnessComponent::SetResonanceCues(const TArray<FDMMadnessCue>& Value)
+{ if (Authority()) { ResonanceCues = Value; Deliver(); } }
 void UDMMadnessComponent::Deliver()
 {
     if (!Authority()) { return; }
