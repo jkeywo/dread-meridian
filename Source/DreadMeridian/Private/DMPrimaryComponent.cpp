@@ -125,7 +125,7 @@ bool UDMPrimaryComponent::Resolve()
     }
     else if (R->Kind == EDMInvestigator::Photographer)
     {
-        FrameTarget = Target; FrameEndTick = Now() + 30;
+        FrameTarget = Target; FrameEndTick = Now() + 30; StudiedTells.Reset(); PortraitSubjects.Reset();
         Actor->StopGoal(); Actor->GetCharacterMovement()->StopMovementImmediately(); Emit(TEXT("frame_started"), Target);
     }
     else if (R->Kind == EDMInvestigator::Medium)
@@ -247,7 +247,28 @@ void UDMPrimaryComponent::Step(int32 Tick)
             || FVector::DistSquared2D(Actor->GetActorLocation(), FrameTarget->GetActorLocation()) > FMath::Square(Range()) || !Sight(FrameTarget->GetActorLocation(), FrameTarget)) { CancelChannel(); }
         else
         {
-            Actor->Investigator->AddExposure(FrameTarget->EntityId, 2, FrameTarget->bTelegraphActive, Tick);
+            const uint8 N = Actor->Progression->Node(0);
+            const float Rate = N == 1 || N == 3 ? 3.5f : N == 2 || N == 5 ? 1.2f : N == 4 ? 2.8f : 2.f;
+            Actor->Investigator->AddExposure(FrameTarget->EntityId, Rate * (FrameTarget->Progression->FrameBonusUntil > Tick ? 1.5f : 1.f), FrameTarget->bTelegraphActive, Tick);
+            if (N == 3 && FrameTarget->bTelegraphActive
+                && (!StudiedTells.Contains(FrameTarget->EntityId) || StudiedTells[FrameTarget->EntityId] != FrameTarget->TelegraphEndTick))
+            {
+                StudiedTells.Add(FrameTarget->EntityId, FrameTarget->TelegraphEndTick);
+                Actor->Investigator->AddExposure(FrameTarget->EntityId, 20, false, Tick);
+                FrameTarget->Progression->Expose(.2f, Tick+20);
+            }
+            if (N == 2 || N == 4 || N == 5)
+            {
+                if (N == 5) { PortraitSubjects.AddUnique(FrameTarget->EntityId); PortraitUntil = Tick+60; }
+                for (ADMCombatant* Other : Mode->GetCombatants())
+                {
+                    if (!Other->bIsEnemy || Other == FrameTarget || Other->IsDown()
+                        || FVector::Dist2D(Other->GetActorLocation(), FrameTarget->GetActorLocation()) > 250
+                        || FVector::Dist2D(Actor->GetActorLocation(), Other->GetActorLocation()) > Range() || !Sight(Other->GetActorLocation(),Other)) { continue; }
+                    Actor->Investigator->AddExposure(Other->EntityId, N == 4 ? 1.4f : 1.2f, Other->bTelegraphActive, Tick);
+                    if (N == 5) { PortraitSubjects.AddUnique(Other->EntityId); }
+                }
+            }
             if (Tick % 5 == 0) { Actor->MulticastAttackFX(Actor->GetActorLocation(), FrameTarget->GetActorLocation(), Actor->Investigator->Color(), 2); }
             Actor->RecordResources(TEXT("frame"));
         }
@@ -378,4 +399,19 @@ bool UDMPrimaryComponent::TriggerNearbySatchel(FVector Point, float Distance)
         if (bEligible) { return Self()->Kit->IsDeadGroundActive() || DetonateSatchel(I); }
     }
     return false;
+}
+
+
+void UDMPrimaryComponent::DevelopLinked(ADMCombatant* Subject, float Exposure)
+{
+    auto* M = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    if (!Self()->HasAuthority() || !M || !Subject || Self()->Progression->Node(0) != 5
+        || PortraitUntil <= Now() || !PortraitSubjects.Contains(Subject->EntityId)) { return; }
+    for (const FString& Id : PortraitSubjects)
+    {
+        auto* Other = M->FindCombatant(Id);
+        if (Other && Other != Subject && !Other->IsDown() && FVector::Dist2D(Self()->GetActorLocation(),Other->GetActorLocation()) <= Range()
+            && Sight(Other->GetActorLocation(),Other))
+        { Self()->DealCombatDamage(Other, Exposure * .25f, TEXT("ability.e.group_portrait")); }
+    }
 }

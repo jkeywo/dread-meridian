@@ -61,6 +61,11 @@ public:
     FString Name(uint8 Slot) const;
     void ChooseForBot();
     void Cover(float Strength, int32 Until);
+    void Expose(float Strength, int32 Until);
+    UPROPERTY(Replicated) float Vulnerability = 0;
+    UPROPERTY(Replicated) int32 VulnerableUntil = 0;
+    UPROPERTY(Replicated) int32 FrameBonusUntil = 0;
+
     float IncomingFrom(const class ADMCombatant* Source) const;
 private:
     float CoverStrength = 0;

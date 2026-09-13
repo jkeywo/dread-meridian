@@ -788,11 +788,16 @@ bool UDMKitComponent::ResolvePhotographer(EDMKitSlot Slot, ADMCombatant* Target,
             if (!DMKitRules::PointInCone(Origin, Direction, FlashHalfAngle, Kit.Range, Enemy->GetActorLocation())) { continue; }
             if (!Sight(Origin, Enemy->GetActorLocation())) { continue; }
             // Perfect Moment still applies: a subject caught mid-telegraph gives up more.
-            Actor->Investigator->AddExposure(Enemy->EntityId, FlashExposure, Enemy->bTelegraphActive, Tick);
+            const uint8 N = Actor->Progression->Node(1);
+            const float Flash = N == 2 ? 45 : N == 5 ? (Enemy->bTelegraphActive ? 75 : 35) : N == 4 ? 35 : FlashExposure;
+            Actor->Investigator->AddExposure(Enemy->EntityId, Flash, Enemy->bTelegraphActive, Tick);
             FDMControl Control;
             Control.Slow = FlashSlow; Control.SlowTicks = FlashSlowTicks;
             Control.StaggerTicks = FlashStaggerTicks; Control.BreakPressure = FlashBreakPressure;
-            // No interrupt at the A node: a hard interrupt is what Blinding Flash adds.
+            if (N == 1 || N == 3) { Control.bInterrupt = true; Control.StaggerTicks = 15; Control.BreakPressure = 30; }
+            if (N == 3) { Control.Slow = .65f; Control.SlowTicks = 40; }
+            if (N == 2 || N == 5) { Control.StaggerTicks = 3; Control.BreakPressure = 5; Control.Slow = .25f; }
+            if (N == 4) { Control.BreakPressure = 20; Enemy->Progression->FrameBonusUntil = Tick+30; Enemy->ForceNetUpdate(); }
             Enemy->ApplyControl(Control, Actor, TEXT("ability.w.flashbulb"));
             Enemy->MulticastPresentation(14, Enemy->GetActorLocation());
             ++Hits;
@@ -808,8 +813,21 @@ bool UDMKitComponent::ResolvePhotographer(EDMKitSlot Slot, ADMCombatant* Target,
     {
         // Impossible Photograph holds the stored Exposure, so Develop reads the same value again inside the window.
         const float Exposure = Actor->Investigator->ConsumeExposure(Target->EntityId);
-        const float Damage = Exposure * DevelopDamagePerExposure;
+        const uint8 N = Actor->Progression->Node(2);
+        const float Damage = Exposure * (N == 1 ? 1.f : N == 3 ? (Exposure >= 70 ? 1.5f : 1.f) : N == 2 || N == 5 ? .3f : N == 4 ? .85f : DevelopDamagePerExposure);
         Actor->DealCombatDamage(Target, Damage, TEXT("ability.e.develop"));
+        Actor->Primary->DevelopLinked(Target, Exposure);
+        if (N == 1 || N == 3) { Target->Progression->Expose(.2f, Tick+30); }
+        if (N == 3 && Exposure >= 70) { Target->AddBreak(Target->bCommonEnemy ? 20 : 60); }
+        if (N == 2 || N == 4 || N == 5)
+        {
+            for (ADMCombatant* Other : M->GetCombatants())
+            {
+                if (!Other->bIsEnemy || Other->IsDown() || Other->Smuggler->Role != Target->Smuggler->Role
+                    || Other->bCommonEnemy != Target->bCommonEnemy || Other->bHumanEnemy != Target->bHumanEnemy) { continue; }
+                Other->Progression->Expose(N == 5 ? .3f : N == 4 ? .15f : .2f, Tick + (N == 5 ? 100 : N == 4 ? 40 : 60));
+            }
+        }
         StartCooldown(Slot, IsRActive() ? DevelopCooldownDuringR : Kit.CooldownTicks);
         TSharedPtr<FJsonObject> Extra = MakeShared<FJsonObject>();
         Extra->SetNumberField(TEXT("exposure"), Exposure);

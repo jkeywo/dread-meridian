@@ -25,7 +25,9 @@ bool UDMProgressionComponent::Award(const FString& EventId, int32 Amount)
 FString UDMProgressionComponent::Summary() const
 { return FString::Printf(TEXT("Lv %d | XP %d/1200 | Evolutions %d"), State.Level(), State.XP, State.Opportunities()) + FString::Printf(TEXT(" | Q:%c W:%c E:%c"), TCHAR(65 + State.Q), TCHAR(65 + State.W), TCHAR(65 + State.E)); }
 void UDMProgressionComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{ Super::GetLifetimeReplicatedProps(OutLifetimeProps); DOREPLIFETIME(UDMProgressionComponent, State); }
+{ Super::GetLifetimeReplicatedProps(OutLifetimeProps); DOREPLIFETIME(UDMProgressionComponent, State);
+    DOREPLIFETIME(UDMProgressionComponent, Vulnerability); DOREPLIFETIME(UDMProgressionComponent, VulnerableUntil);
+    DOREPLIFETIME(UDMProgressionComponent, FrameBonusUntil); }
 
 
 
@@ -96,5 +98,17 @@ float UDMProgressionComponent::IncomingFrom(const ADMCombatant* Source) const
 {
     const auto* M = GetWorld() ? GetWorld()->GetAuthGameMode<ADMCombatGameMode>() : nullptr;
     const bool bRanged = Source && FVector::Dist2D(Source->GetActorLocation(), GetOwner()->GetActorLocation()) > 250;
-    return M && bRanged && CoverUntil > M->GetCombatTick() ? 1.f - CoverStrength : 1.f;
+    const float Weakness = M && VulnerableUntil > M->GetCombatTick() ? 1.f + Vulnerability : 1.f;
+    return Weakness * (M && bRanged && CoverUntil > M->GetCombatTick() ? 1.f - CoverStrength : 1.f);
+}
+
+
+void UDMProgressionComponent::Expose(float Strength, int32 Until)
+{
+    auto* M = GetWorld() ? GetWorld()->GetAuthGameMode<ADMCombatGameMode>() : nullptr;
+    if (!GetOwner() || !GetOwner()->HasAuthority() || !M || Until <= M->GetCombatTick() || !FMath::IsFinite(Strength) || Strength <= 0) { return; }
+    if (VulnerableUntil <= M->GetCombatTick()) { Vulnerability = 0; }
+    Vulnerability = FMath::Max(Vulnerability, FMath::Min(.6f,Strength));
+    VulnerableUntil = FMath::Max(VulnerableUntil,Until);
+    GetOwner()->ForceNetUpdate();
 }

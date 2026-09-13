@@ -5,3 +5,8 @@ Sapper Q: shaped central blast, elite breaching, wide displacement, concussive c
 W: covering cone protects allies from sources beyond 250 units; entrenched self cover near origin; pinning cone increases slow/Break; Kill Zone improves trap control against suppressed enemies; Walking Fire allows re-aiming a live cone without extending its lifetime.
 E: reinforced length/stopping, detonator links only to armed charges with living unobstructed targets, Clothesline opposes sampled approach with extra charging impact, Prepared Ground suppresses locally, Resetting Fuse rearms after 30 ticks and needs a new crossing.
 Dead Ground captures linked satchel triggers when the wire legitimately crosses; deferred resolution uses the same evolved blast/control path. Resetting wires survive the batch. Objective/destructible targets are absent from this sandbox; no claim of implemented objective demolition.
+
+Photographer Q: faster single study, area framing, once-per-telegraph Tell-Tale Exposure/vulnerability, hybrid primary/secondary rates, and timed Group Portrait links used by Develop. Linked payoff reaches only still-live, visible subjects in Frame range.
+W: stronger interrupt/Break, exposure-focused weaker control, lingering Afterimage impairment, hybrid Frame bonus window, and telegraph-dependent Magnesium Exposure.
+E: weak-point burst/vulnerability, type-wide evidence (role/common/human archetype), high-Exposure Fatal Detail Break, hybrid Published Findings, stronger/longer Case File. Impossible Photograph still preserves Exposure and keeps its existing repeated-Develop window.
+Vulnerability composes with damage mitigation and expires on the authoritative combat clock; it never changes MaxHealth.
