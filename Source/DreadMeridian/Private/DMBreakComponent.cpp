@@ -1,5 +1,6 @@
 #include "DMBreakComponent.h"
 #include "DMCombatant.h"
+#include "DMRelicComponent.h"
 #include "DMCombatGameMode.h"
 #include "Net/UnrealNetwork.h"
 
@@ -63,7 +64,8 @@ void UDMBreakComponent::AddPressure(float Amount, ADMCombatant* Source, const FS
     const float Before = Meter.Value;
     const bool bBroke = Meter.Add(Amount, Tick);
     Project(Tick);
-    if (Meter.Value > Before) { Record(TEXT("break.pressure"), Source, AbilityId, Meter.Value - Before); }
+    if (Meter.Value > Before)
+    { Self()->Relics->AcceptedBreak.Broadcast(Source,Meter.Value-Before,bBroke); Record(TEXT("break.pressure"), Source, AbilityId, Meter.Value - Before); }
     if (bBroke) { Record(TEXT("break.broken"), Source, AbilityId); }
 }
 

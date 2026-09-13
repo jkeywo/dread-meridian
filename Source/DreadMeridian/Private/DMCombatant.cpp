@@ -404,6 +404,7 @@ void ADMCombatant::ApplyControl(const FDMControl& Control, ADMCombatant* Source,
         && (Control.Slow > 0 || Control.StaggerTicks > 0 || Control.StunTicks > 0 || Control.bInterrupt || !Control.Displacement.IsNearlyZero()))
     { Pressure = Resolve->Settings.ControlPressure; }
     if (Pressure > 0) { Resolve->AddPressure(Pressure, Source, AbilityId); }
+    if (Source) { Source->Relics->AcceptedControl.Broadcast(this,R); }
     auto Data = MakeShared<FJsonObject>(); Data->SetStringField(TEXT("entity_id"), EntityId);
     Data->SetStringField(TEXT("ability_id"), AbilityId);
     if (Source) { Data->SetStringField(TEXT("source_id"), Source->EntityId); }
@@ -492,6 +493,8 @@ float ADMCombatant::HealHealth(float Amount)
     if (!HasAuthority() || !M || !M->IsCombatActive() || IsDown() || !FMath::IsFinite(Amount) || Amount <= 0) { return 0; }
     const float Before = Health();
     const float Delta = FMath::Min(MaxHealth() - Before, Amount * Injuries->HealingFactor);
+    const float Excess=FMath::Max(0.f,Amount*Injuries->HealingFactor-Delta);
+    if (Excess>0) { Relics->ExcessHealing.Broadcast(Excess); }
     if (Delta <= 0) { return 0; }
     ApplyAttributeDelta(UDMHealthAttributes::GetHealthAttribute(), Delta);
     auto D = MakeShared<FJsonObject>(); D->SetStringField(TEXT("entity_id"), EntityId);

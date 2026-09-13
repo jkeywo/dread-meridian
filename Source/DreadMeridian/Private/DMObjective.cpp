@@ -78,6 +78,7 @@ bool ADMObjective::IsInteracting(const ADMCombatant* A) const { return Participa
 void ADMObjective::Release(ADMCombatant* A, bool bExplicitInterrupt)
 {
     if (!HasAuthority() || !IsInteracting(A)) { return; }
+    if (!bExplicitInterrupt) { A->Relics->ObjectiveFinished.Broadcast(); }
     Participant.Reset(); CarrierId.Reset(); Publish(bExplicitInterrupt ? TEXT("interrupted") : TEXT("released"));
 }
 void ADMObjective::Step(int32 Tick)
@@ -130,6 +131,7 @@ void ADMObjective::Step(int32 Tick)
 }
 void ADMObjective::Advance()
 {
+    if (auto* A=Participant.Get()) { A->Relics->ObjectiveFinished.Broadcast(); }
     Participant.Reset(); CarrierId.Reset(); Destructible = nullptr; PublicState.Progress = 0; SequenceStarted = -1; bSequenceReady = false; ObservedSymbol = 0;
     ++PublicState.Step;
     if (Targets.IsValidIndex(PublicState.Step)) { Destructible = Targets[PublicState.Step]; }

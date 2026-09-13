@@ -1,5 +1,6 @@
 #include "DMMadnessComponent.h"
 #include "DMCombatant.h"
+#include "DMRelicComponent.h"
 #include "DMCombatGameMode.h"
 #include "DMCombatPlayerController.h"
 bool UDMMadnessComponent::Authority() const
@@ -40,6 +41,7 @@ void UDMMadnessComponent::Deliver()
 }
 void UDMMadnessComponent::Publish(const FDMMadnessState& Before, const FString& Reason)
 {
+    if (State.Band(Settings)>Before.Band(Settings)) { CastChecked<ADMCombatant>(GetOwner())->Relics->TierEntered.Broadcast(Before.Band(Settings),State.Band(Settings)); }
     CastChecked<ADMCombatant>(GetOwner())->Investigator->Madness = State.Current;
     if (auto* M = GetWorld()->GetAuthGameMode<ADMCombatGameMode>())
     {

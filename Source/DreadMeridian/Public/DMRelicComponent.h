@@ -1,8 +1,14 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "DMKitRules.h"
 #include "DMRelicComponent.generated.h"
 class ADMCombatant;
+DECLARE_MULTICAST_DELEGATE_TwoParams(FDMRelicControlEvent,ADMCombatant*,const FDMControl&);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FDMRelicBreakEvent,ADMCombatant*,float,bool);
+DECLARE_MULTICAST_DELEGATE_OneParam(FDMRelicOverhealEvent,float);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FDMRelicTierEvent,int32,int32);
+DECLARE_MULTICAST_DELEGATE(FDMRelicObjectiveEvent);
 UENUM()
 enum class EDMRelic : uint8 { Swagger, Medal, Knot, Overheal, Morphine, Rosary, Coin, Gloves, Count };
 USTRUCT()
@@ -19,6 +25,11 @@ class DREADMERIDIAN_API UDMRelicComponent : public UActorComponent
     GENERATED_BODY()
 public:
     UDMRelicComponent();
+    FDMRelicControlEvent AcceptedControl;
+    FDMRelicBreakEvent AcceptedBreak;
+    FDMRelicOverhealEvent ExcessHealing;
+    FDMRelicTierEvent TierEntered;
+    FDMRelicObjectiveEvent ObjectiveFinished;
     UPROPERTY(Config,EditAnywhere) int32 Capacity = 2; // Provisional, not a locked cap.
     bool CanAcquire(EDMRelic Relic) const;
     bool Acquire(EDMRelic Relic,const FString& AwardId);
