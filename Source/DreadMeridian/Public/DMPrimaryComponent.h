@@ -50,6 +50,7 @@ public:
     UPROPERTY(Replicated) TArray<TObjectPtr<ADMAbilityMarker>> Satchels;
     UPROPERTY(Replicated) TArray<TObjectPtr<ADMAbilityMarker>> Bindings;
     FString LastFailure;
+    void ThrowCollision(ADMCombatant* Victim, FVector From, FVector To);
     void DevelopLinked(ADMCombatant* Subject, float Exposure);
     float EvolvedSatchelRadius() const;
     void ApplySatchel(ADMCombatant* Enemy, FVector Center);

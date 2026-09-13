@@ -153,8 +153,13 @@ bool UDMPrimaryComponent::Resolve()
         {
             auto* Victim = HeldTarget.Get();
             const FVector Direction = (RequestedPoint - Actor->GetActorLocation()).GetSafeNormal2D();
-            ReleaseClinch(); FDMControl Control; Control.Displacement = Direction * (bDrowned ? 450 : 300);
+            const FVector From = Victim->GetActorLocation();
+            const uint8 N = Actor->Progression->Node(0);
+            ReleaseClinch(); FDMControl Control;
+            Control.Displacement = Direction * (N==2 || N==5 ? 550 : N==4 ? 400 : bDrowned ? 450 : 300);
+            if(N==1 || N==3) { Control.BreakPressure=30; }
             Control.StaggerTicks = 5; Victim->ApplyControl(Control, Actor, TEXT("ability.q.throw"));
+            ThrowCollision(Victim,From,Victim->GetActorLocation());
             R->Pressure(Now(), 10); Emit(TEXT("throw"), Victim);
             Actor->MulticastAttackFX(Actor->GetActorLocation(), Victim->GetActorLocation(), R->Color(), 4);
         }
@@ -170,7 +175,9 @@ bool UDMPrimaryComponent::Resolve()
         {
             HeldTarget = Target; Target->HeldBy = Actor; Target->StopGoal();
             Target->GetCharacterMovement()->StopMovementImmediately(); Target->InterruptControl(); Actor->StopGoal();
-            HoldEndTick = Now() + (bDrowned ? 25 : 15);
+            const uint8 N = Actor->Progression->Node(0);
+            HoldEndTick = Now() + (N==1 || N==3 ? 25 : N==2 || N==5 ? 10 : N==4 ? 20 : bDrowned ? 25 : 15);
+            if(N==1 || N==3) { Target->AddBreak(25); }
             if (!Target->bCommonEnemy) { HoldEndTick = FMath::Min(HoldEndTick, Target->BrokenUntilTick); }
             R->Pressure(Now(), 10); Emit(TEXT("clinch"), Target);
         }
@@ -232,6 +239,7 @@ void UDMPrimaryComponent::CancelChannel()
 void UDMPrimaryComponent::ReleaseClinch()
 {
     if (!Self()->HasAuthority() || !HeldTarget) { return; }
+    if (IsValid(HeldTarget) && !HeldTarget->IsDown() && !Self()->IsDown() && Self()->Progression->Node(0)==3) { Self()->Kit->MarkRival(HeldTarget,.4f,60); }
     if (IsValid(HeldTarget) && HeldTarget->HeldBy == Self()) { HeldTarget->HeldBy = nullptr; HeldTarget->ForceNetUpdate(); }
     HeldTarget = nullptr; NextCastTick = Now() + 40; Cooldown = 4; Self()->ForceNetUpdate();
 }
@@ -432,5 +440,25 @@ void UDMPrimaryComponent::DevelopLinked(ADMCombatant* Subject, float Exposure)
         if (Other && Other != Subject && !Other->IsDown() && FVector::Dist2D(Self()->GetActorLocation(),Other->GetActorLocation()) <= Range()
             && Sight(Other->GetActorLocation(),Other))
         { Self()->DealCombatDamage(Other, Exposure * .25f, TEXT("ability.e.group_portrait")); }
+    }
+}
+
+
+void UDMPrimaryComponent::ThrowCollision(ADMCombatant* Victim, FVector From, FVector To)
+{
+    auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    const uint8 N=Self()->Progression->Node(0);
+    if(!Self()->HasAuthority() || !M || !M->IsCombatActive() || !IsValid(Victim) || Self()->Investigator->Kind!=EDMInvestigator::Smuggler
+        || (N!=2 && N!=4 && N!=5) || FVector::Dist2D(From,To)<1) { return; }
+    for(ADMCombatant* Other : M->GetCombatants())
+    {
+        if(!Other->bIsEnemy || Other==Victim || Other->IsDown() || DMKitRules::DistanceToSegment2D(From,To,Other->GetActorLocation())>90
+            || !Self()->Smuggler->Sight(From,Other->GetActorLocation())) { continue; }
+        FDMControl C; C.StaggerTicks=N==4?15:8;
+        C.Damage=N==5?(Victim->bCommonEnemy?30:60):N==2?15:0;
+        C.BreakPressure=N==5?(Victim->bCommonEnemy?30:55):15;
+        C.Displacement=(To-From).GetSafeNormal2D()*(N==2?100:150);
+        Other->ApplyControl(C,Self(),TEXT("ability.q.thrown_collision"));
+        if(N==4) { FDMControl Stagger; Stagger.StaggerTicks=15; Stagger.BreakPressure=15; Victim->ApplyControl(Stagger,Self(),TEXT("ability.q.rough_handling")); }
     }
 }

@@ -54,6 +54,11 @@ public:
     void CancelWire();
 
     FString Name(EDMKitSlot Slot) const;
+    void MarkRival(ADMCombatant* Target, float Strength, int32 Duration);
+    float OutgoingTo(const ADMCombatant* Target) const;
+    float ChargeResistance() const;
+    void RecordBraceHit(ADMCombatant* Source, float Before, float After);
+
     FString Status(EDMKitSlot Slot) const;
     float Range(EDMKitSlot Slot) const;
     bool IsSelfCast(EDMKitSlot Slot) const;
@@ -140,6 +145,12 @@ private:
     int32 NextCastTick[3] = { 0, 0, 0 };
     int32 WirePendingSinceTick = 0;
     FVector ChargeDirection = FVector::ZeroVector;
+    FVector LastChargeSample = FVector::ZeroVector;
+    TMap<TWeakObjectPtr<ADMCombatant>,TPair<int32,float>> Rivals;
+    TMap<TWeakObjectPtr<ADMCombatant>,float> BraceAttackers;
+    float BraceAbsorbed = 0;
+    int32 SustainUntil = 0, NextSustainTick = 0;
+
     TArray<TWeakObjectPtr<ADMCombatant>> ChargeHits;
     TWeakObjectPtr<ADMCombatant> ProtectionTarget;
     int32 ProtectionUntilTick = 0;

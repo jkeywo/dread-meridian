@@ -207,13 +207,14 @@ bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FS
     const float Before = Target->Health();
     const float ShieldBefore = Target->Shield();
     const float Incoming = Target->IncomingUntilTick > Mode->GetCombatTick() ? FMath::Clamp(Target->IncomingMultiplier, 0.f, 2.f) : 1.f;
-    const float BaseDamage = Damage * Target->Progression->IncomingFrom(this) * MadnessCore->Outgoing(Target) * (1 - FMath::Clamp(Target->SpiritProtection, 0.f, .5f)) * Incoming;
+    const float BaseDamage = Damage * Kit->OutgoingTo(Target) * Target->Progression->IncomingFrom(this) * MadnessCore->Outgoing(Target) * (1 - FMath::Clamp(Target->SpiritProtection, 0.f, .5f)) * Incoming;
     const float ResolvedDamage = BaseDamage * Target->Injuries->Incoming(FMath::Max(0.f, BaseDamage - ShieldBefore), bHazard);
     const float Absorbed = FMath::Min(ShieldBefore, ResolvedDamage);
     if (Absorbed > 0) { Target->ApplyAttributeDelta(UDMHealthAttributes::GetShieldAttribute(), -Absorbed); }
     Target->ApplyAttributeDelta(UDMHealthAttributes::GetHealthAttribute(), -(ResolvedDamage - Absorbed));
     Target->Threat.FindOrAdd(EntityId) += Before - Target->Health();
     Target->LastDamageTick = Mode->GetCombatTick();
+    Target->Kit->RecordBraceHit(this, Incoming > 0 ? BaseDamage / Incoming : Damage, BaseDamage);
     Mode->NoteDamage(*this, *Target, ResolvedDamage, Before + ShieldBefore);
     TSharedRef<FJsonObject> Data = MakeShared<FJsonObject>();
     Data->SetStringField(TEXT("actor_id"), EntityId);
@@ -317,7 +318,7 @@ FString ADMCombatant::DisplayName() const
 { return bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Name() : bIsEnemy ? Investigator->DisplayName() + TEXT(" ") + EntityId.Mid(EntityId.Find(TEXT(".")) + 1) : Investigator->DisplayName(); }
 float ADMCombatant::GetAttackRange() const
 { return (bProfileRange ? 420 : bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Range() : Investigator->Range()) + ReachBonus; }
-float ADMCombatant::EffectiveResistance() const { return FMath::Max(Investigator->Resistance(), BraceResistance); }
+float ADMCombatant::EffectiveResistance() const { return FMath::Max3(Investigator->Resistance(), BraceResistance, Kit->ChargeResistance()); }
 void ADMCombatant::StepInvestigator(int32 Tick)
 {
     if (!HasAuthority()) { return; }

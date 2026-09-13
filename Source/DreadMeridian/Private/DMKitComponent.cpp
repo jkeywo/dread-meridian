@@ -305,7 +305,6 @@ void UDMKitComponent::EndR()
     Actor->Investigator->MomentumFloor = 0;
     Actor->Investigator->bExposureFrozen = false;
     Actor->ReachBonus = 0;
-    ChargeHits.Reset();
     Emit(EDMKitSlot::R, TEXT("ended"));
     Actor->ForceNetUpdate();
 }
@@ -315,6 +314,12 @@ void UDMKitComponent::EndBrace(bool bShove)
     if (BracedUntilTick <= 0) { return; }
     ADMCombatant* Actor = Self();
     ADMCombatGameMode* M = Mode();
+    const uint8 N=Actor->Progression->Node(2);
+    ADMCombatant* Worst=nullptr; float WorstPressure=-1;
+    for(const auto& Entry : BraceAttackers)
+    { if(Entry.Key.IsValid() && (Entry.Value>WorstPressure || (Entry.Value==WorstPressure && Worst && Entry.Key->EntityId<Worst->EntityId)))
+      { Worst=Entry.Key.Get(); WorstPressure=Entry.Value; } }
+    if(N==3 && BraceAbsorbed>=30 && bShove) { SustainUntil=Now()+30; NextSustainTick=Now(); }
     BracedUntilTick = 0;
     Actor->IncomingMultiplier = 1; Actor->IncomingUntilTick = 0; Actor->BraceResistance = 0;
     if (bShove && M)
@@ -325,9 +330,11 @@ void UDMKitComponent::EndBrace(bool bShove)
             if (!IsValid(Enemy) || !Enemy->bIsEnemy || Enemy->IsDown()) { continue; }
             if (FVector::DistSquared2D(Actor->GetActorLocation(), Enemy->GetActorLocation()) > FMath::Square(ShoveRadius)) { continue; }
             FDMControl Control;
-            Control.Damage = ShoveDamage;
+            Control.Damage = ShoveDamage + (N==4 ? FMath::Min(50.f,BraceAbsorbed*.5f) : 0);
+            if(N==5 && Enemy==Worst) { Control.Damage+=45; Control.BreakPressure+=45; }
+            if((N==2 || N==5) && BraceAttackers.Contains(Enemy)) { Control.Damage+=15; }
             Control.Displacement = (Enemy->GetActorLocation() - Actor->GetActorLocation()).GetSafeNormal2D() * ShovePush;
-            Control.StaggerTicks = ShoveStaggerTicks; Control.BreakPressure = ShoveBreakPressure;
+            Control.StaggerTicks = ShoveStaggerTicks; Control.BreakPressure += ShoveBreakPressure;
             Enemy->ApplyControl(Control, Actor, TEXT("ability.e.counter_shove"));
             ++Hits;
         }
@@ -337,6 +344,7 @@ void UDMKitComponent::EndBrace(bool bShove)
         Emit(EDMKitSlot::E, TEXT("counter_shove"), nullptr, Extra);
         Actor->MulticastPresentation(24, Actor->GetActorLocation());
     }
+    BraceAbsorbed=0; BraceAttackers.Reset();
     StartCooldown(EDMKitSlot::E, Spec(Actor->Investigator->Kind, EDMKitSlot::E).CooldownTicks);
     Emit(EDMKitSlot::E, TEXT("dig_in_ended"));
     Actor->ForceNetUpdate();
@@ -349,7 +357,7 @@ void UDMKitComponent::Cancel(bool bDestroyMarkers)
     EndR();
     if (BracedUntilTick > 0)
     { BracedUntilTick = 0; Actor->IncomingMultiplier = 1; Actor->IncomingUntilTick = 0; Actor->BraceResistance = 0; }
-    ChargeUntilTick = 0; ChargeHits.Reset();
+    ChargeUntilTick = 0; ChargeHits.Reset(); BraceAbsorbed=0; BraceAttackers.Reset(); SustainUntil=0;
     if (bWirePending) { bWirePending = false; PendingWireStart = FVector::ZeroVector; WirePendingSinceTick = 0; }
     ProtectionUntilTick = 0; ProtectionTarget = nullptr;
     if (bDestroyMarkers)
@@ -389,7 +397,7 @@ void UDMKitComponent::Step(int32 Tick)
         if (!Ledger.Tags.IsEmpty()) { ResolveDeadGround(); }
         EndR();
     }
-    if (BracedUntilTick > 0 && Tick >= BracedUntilTick) { EndBrace(false); }
+    if (BracedUntilTick > 0 && Tick >= BracedUntilTick) { EndBrace(Actor->Progression->Node(2)>0); }
     // Wire crossings compare each actor's previous sampled position with this one, so the cache only matters to a
     // Sapper holding live wire. An actor's first sample only seeds: a wire never triggers on a position it never saw.
     if (Wires.IsEmpty()) { LastPositions.Reset(); }
@@ -481,7 +489,11 @@ bool UDMKitComponent::ResolveSmuggler(EDMKitSlot Slot, FVector Point)
     {
     case EDMKitSlot::W:
         ChargeDirection = (Point - Actor->GetActorLocation()).GetSafeNormal2D();
-        ChargeUntilTick = Tick + Kit.DurationTicks;
+        {
+            const uint8 N=Actor->Progression->Node(1);
+            ChargeUntilTick=Tick+(N==1 || N==3?8:N==2 || N==5?4:N==4?6:Kit.DurationTicks);
+        }
+        LastChargeSample=Actor->GetActorLocation();
         ChargeHits.Reset();
         Actor->StopGoal();
         // The charge owns the Smuggler for its duration: no basic attack lands out of a shoulder barge.
@@ -493,8 +505,12 @@ bool UDMKitComponent::ResolveSmuggler(EDMKitSlot Slot, FVector Point)
     case EDMKitSlot::E:
         if (IsBraced()) { EndBrace(true); return true; }
         BracedUntilTick = Tick + Kit.DurationTicks;
-        Actor->IncomingMultiplier = BraceIncoming; Actor->IncomingUntilTick = BracedUntilTick;
-        Actor->BraceResistance = BraceResistanceValue;
+        {
+            const uint8 N=Actor->Progression->Node(2);
+            Actor->IncomingMultiplier=N==1 || N==3?.4f:N==2 || N==5?.8f:N==4?.55f:BraceIncoming;
+            Actor->BraceResistance=N==1 || N==3?.7f:N==4?.6f:BraceResistanceValue;
+        }
+        BraceAbsorbed=0; BraceAttackers.Reset(); Actor->IncomingUntilTick = BracedUntilTick;
         Emit(Slot, TEXT("dig_in_started"));
         Actor->MulticastPresentation(23, Actor->GetActorLocation());
         return true;
@@ -536,11 +552,19 @@ void UDMKitComponent::StepSmuggler(int32 Tick)
 {
     ADMCombatant* Actor = Self();
     ADMCombatGameMode* M = Mode();
-    if (!M || ChargeUntilTick <= 0) { return; }
+    if(!M){return;}
+    if(SustainUntil>Tick && Tick>=NextSustainTick && !Actor->IsDown())
+    { Actor->HealHealth(4); NextSustainTick=Tick+5; }
+    if (ChargeUntilTick <= 0) { return; }
+    const uint8 N=Actor->Progression->Node(1);
     if (Tick >= ChargeUntilTick)
     {
         TSharedPtr<FJsonObject> Extra = MakeShared<FJsonObject>();
         Extra->SetNumberField(TEXT("hits"), ChargeHits.Num());
+        if(N==3 && ChargeHits.Num()==1 && ChargeHits[0].IsValid() && !ChargeHits[0]->IsDown())
+        { auto* Victim=ChargeHits[0].Get(); MarkRival(Victim,.35f,50);
+          FDMControl C; C.Displacement=ChargeDirection*200; C.BreakPressure=20;
+          Victim->ApplyControl(C,Actor,TEXT("ability.w.run_them_down")); }
         Emit(EDMKitSlot::W, TEXT("shoulder_through_ended"), nullptr, Extra);
         Actor->MulticastPresentation(22, Actor->GetActorLocation());
         ChargeUntilTick = 0; ChargeHits.Reset();
@@ -554,10 +578,15 @@ void UDMKitComponent::StepSmuggler(int32 Tick)
     {
         if (!IsValid(Enemy) || !Enemy->bIsEnemy || Enemy->IsDown()) { continue; }
         if (ChargeHits.Contains(Enemy)) { continue; }
-        if (FVector::DistSquared2D(At, Enemy->GetActorLocation()) > FMath::Square(ChargeWidth)) { continue; }
+        if (DMKitRules::DistanceToSegment2D(LastChargeSample,At,Enemy->GetActorLocation()) > (N==2 || N==5 ? 140 : N==4 ? 110 : ChargeWidth)) { continue; }
         FDMControl Control;
-        Control.Damage = ChargeDamage; Control.Displacement = ChargeDirection * Push;
-        Control.StaggerTicks = ChargeStaggerTicks; Control.BreakPressure = ChargeBreakPressure;
+        Control.Damage = ChargeDamage; Control.Displacement = ChargeDirection * Push * (N==2?1.4f:N==5?1.f+.35f*ChargeHits.Num():1.f);
+        Control.StaggerTicks = ChargeStaggerTicks; Control.BreakPressure = ChargeBreakPressure*(N==5?1.f+.35f*ChargeHits.Num():1.f);
+        if(N==4 && ChargeHits.IsEmpty())
+        { for(ADMCombatant* Other : M->GetCombatants())
+          { if(Other->bIsEnemy && !Other->IsDown() && FVector::Dist2D(Enemy->GetActorLocation(),Other->GetActorLocation())<200)
+            { FDMControl C; C.StaggerTicks=12; C.BreakPressure=15; Other->ApplyControl(C,Actor,TEXT("ability.w.bar_room_entrance")); } } }
+        if((N==1 || N==3) && ChargeHits.IsEmpty()) { Actor->Investigator->Pressure(Tick,10); }
         Enemy->ApplyControl(Control, Actor, TEXT("ability.w.shoulder_through"));
         ChargeHits.Add(Enemy);
         // Pressure caps a single call, so the contact's Momentum arrives as two.
@@ -565,6 +594,7 @@ void UDMKitComponent::StepSmuggler(int32 Tick)
         Actor->Investigator->Pressure(Tick, ChargeMomentum - 10);
         Enemy->MulticastPresentation(22, Enemy->GetActorLocation());
     }
+    LastChargeSample=At;
 }
 
 // ------------------------------------------------------------------------------------------- Medium
@@ -1170,4 +1200,34 @@ void UDMKitComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(UDMKitComponent, RActiveUntilTick); DOREPLIFETIME(UDMKitComponent, BracedUntilTick); DOREPLIFETIME(UDMKitComponent, ChargeUntilTick);
     DOREPLIFETIME(UDMKitComponent, PendingWireStart); DOREPLIFETIME(UDMKitComponent, bWirePending);
     DOREPLIFETIME(UDMKitComponent, Zones); DOREPLIFETIME(UDMKitComponent, Wires);
+}
+
+
+void UDMKitComponent::MarkRival(ADMCombatant* Target, float Strength, int32 Duration)
+{
+    if(!Self()->HasAuthority() || !Mode() || !Mode()->IsCombatActive() || !IsValid(Target) || !Target->bIsEnemy || Target->IsDown()
+        || Self()->IsDown() || !FMath::IsFinite(Strength) || Strength<=0 || Duration<=0) { return; }
+    Rivals.Add(Target,TPair<int32,float>(Now()+Duration,FMath::Min(1.f,Strength)));
+    Self()->Threat.FindOrAdd(Target->EntityId)+=100;
+}
+float UDMKitComponent::OutgoingTo(const ADMCombatant* Target) const
+{
+    if(Self()->Investigator->Kind!=EDMInvestigator::Smuggler || !Target) { return 1; }
+    const auto* Entry=Rivals.Find(TWeakObjectPtr<ADMCombatant>(const_cast<ADMCombatant*>(Target)));
+    return Entry && Entry->Key>Now()?1.f+Entry->Value:1.f;
+}
+float UDMKitComponent::ChargeResistance() const
+{
+    const uint8 N=Self()->Progression->Node(1);
+    return Self()->Investigator->Kind==EDMInvestigator::Smuggler && IsCharging() && (N==1 || N==3) ?.5f:0.f;
+}
+void UDMKitComponent::RecordBraceHit(ADMCombatant* Source, float Before, float After)
+{
+    if(!Self()->HasAuthority() || Self()->Investigator->Kind!=EDMInvestigator::Smuggler || !IsBraced()
+        || !IsValid(Source) || !FMath::IsFinite(Before) || !FMath::IsFinite(After) || Before<=0) { return; }
+    BraceAbsorbed=FMath::Min(1000.f,BraceAbsorbed+FMath::Max(0.f,Before-After));
+    BraceAttackers.FindOrAdd(Source)+=Before;
+    const uint8 N=Self()->Progression->Node(2);
+    if(N==1 || N==3) { Self()->Investigator->Pressure(Now(),10); }
+    if(N==2 || N==5) { MarkRival(Source,.25f,40); }
 }
