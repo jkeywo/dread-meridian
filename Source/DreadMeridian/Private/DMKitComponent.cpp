@@ -136,7 +136,11 @@ bool UDMKitComponent::IsTwoPoint(EDMKitSlot Slot) const { return Spec(Self()->In
 float UDMKitComponent::CooldownSeconds(EDMKitSlot Slot) const
 { switch (Slot) { case EDMKitSlot::W: return CooldownW; case EDMKitSlot::E: return CooldownE; default: return CooldownR; } }
 bool UDMKitComponent::IsReady(EDMKitSlot Slot) const
-{ return CooldownSeconds(Slot) <= 0 && !IsCharging() && !Self()->IsDown() && !Self()->IsRestrained() && !Self()->IsStunned() && Self()->Injuries->CanCast(); }
+{
+    const bool bSweep=Self()->Investigator->Kind==EDMInvestigator::Sapper && Slot==EDMKitSlot::W && Self()->Progression->Node(1)==5
+        && Zones.ContainsByPredicate([&](const ADMAbilityMarker* Z){return IsValid(Z)&&Z->ExpiresTick>CurrentTick();});
+    return (CooldownSeconds(Slot)<=0 || bSweep) && !IsCharging() && !Self()->IsDown() && !Self()->IsRestrained() && !Self()->IsStunned() && Self()->Injuries->CanCast();
+}
 int32 UDMKitComponent::CooldownRemaining(EDMKitSlot Slot, int32 Tick) const { return FMath::Max(0, NextCastTick[Index(Slot)] - Tick); }
 
 FString UDMKitComponent::Status(EDMKitSlot Slot) const
@@ -564,7 +568,7 @@ void UDMKitComponent::StepSmuggler(int32 Tick)
         if(N==3 && ChargeHits.Num()==1 && ChargeHits[0].IsValid() && !ChargeHits[0]->IsDown())
         { auto* Victim=ChargeHits[0].Get(); MarkRival(Victim,.35f,50);
           FDMControl C; C.Displacement=ChargeDirection*200; C.BreakPressure=20;
-          Victim->ApplyControl(C,Actor,TEXT("ability.w.run_them_down")); }
+          Victim->ApplyControl(C,Actor,TEXT("ability.w.run_them_down")); Actor->ApplyDisplacement(ChargeDirection*150); }
         Emit(EDMKitSlot::W, TEXT("shoulder_through_ended"), nullptr, Extra);
         Actor->MulticastPresentation(22, Actor->GetActorLocation());
         ChargeUntilTick = 0; ChargeHits.Reset();

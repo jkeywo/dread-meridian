@@ -43,10 +43,21 @@ public:
                 if (!A->bIsEnemy && !Hero.IsValid()) { Hero = A; }
                 if (A->bIsEnemy && !Enemy.IsValid()) { Enemy = A; }
             }
+            Test->TestFalse(TEXT("Cannot spend without XP"),Hero->Progression->Choose(0,1));
+            Hero->ControlKind=TEXT("human");
+            for(int32 Camp=0;Camp<3;++Camp)
+            {
+                for(int32 Member=0;Member<3;++Member)
+                {
+                    auto* Victim=M->FindCombatant(FString::Printf(TEXT("enemy.%d"),Camp*3+Member));
+                    Hero->DealCombatDamage(Victim,10000,TEXT("test.clear_camp"));
+                }
+                Test->TestEqual(TEXT("Each camp rewards once"),Hero->Progression->Get().XP,(Camp+1)*265);
+            }
+            Test->TestTrue(TEXT("Major choices already banked before patrol/boss"),Hero->Progression->Get().Opportunities()>=4);
             Hero->MadnessCore->Reset();
             auto* C = Hero->Progression.Get();
             Hero->ControlKind = TEXT("human");
-            Test->TestFalse(TEXT("Cannot spend without XP"), C->Choose(0, 1));
             Test->TestTrue(TEXT("Accepted event awards XP"), C->Award(TEXT("objective:test"), 1200));
             Test->TestFalse(TEXT("Event not awarded twice"), C->Award(TEXT("objective:test"), 1200));
             Test->TestFalse(TEXT("No tier skip"), C->Choose(0, 3));

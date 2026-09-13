@@ -90,7 +90,7 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
     S.Role = Self->Smuggler->Role;
     S.Kind = Self->Investigator->Kind;
     S.Health = Self->Health(); S.MaxHealth = Self->MaxHealth();
-    S.AttackRange = Self->GetAttackRange(); S.AttackDamage = Self->AttackDamage; S.AttackInterval = Self->AttackIntervalTicks;
+    S.AttackRange = Self->GetAttackRange(); S.AttackDamage = Self->AttackDamage * (Self->bIsEnemy ? 1.f : Self->Progression->Get().BasicMultiplier()); S.AttackInterval = Self->AttackIntervalTicks;
     S.Location = SelfLoc;
     S.Anchor = bPatrolMember ? DMEncounterLayout::PatrolPoint(PatrolWaypoint) + FVector(0, PatrolSlot * 120, 0) : HomePosition;
     S.EncounterGroup = EncounterGroup; S.PatrolWaypoint = PatrolWaypoint;

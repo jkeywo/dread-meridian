@@ -1,0 +1,43 @@
+{
+  "date": "2026-09-13",
+  "platform": "Win64",
+  "engine": "5.8.2",
+  "foundation_passed": 30,
+  "full_editor_passed": 23,
+  "final_evolution_followup_passed": 4,
+  "python_export_passed": 14,
+  "smoke_provenance_complete": true,
+  "captures": [
+    {
+      "kind": "network",
+      "run_id": "6a9586d5-4f0f-9a21-3540-88aa5d104162",
+      "events": 395,
+      "outcome": "victory",
+      "evolutions": 6,
+      "GameRevision": "17644b0640862d2298651e8dc85ac22f702326f9",
+      "SourceDigest": "345c624fbdfcfbde9281f5b6c64bb8f24d3e05d6b6a3cf51aa12f2ae1c59802e",
+      "GDDDigest": "427d848e5a92838e5fd8ab41fb15f4cb43351d0b3af1af10a5d95ea0e88ba40a",
+      "capture_version": "0.11.0",
+      "combat_rules_version": "evolved-investigators-v1"
+    },
+    {
+      "kind": "smugglers",
+      "run_id": "0fae60f4-4315-665e-2a53-1abd0383ac95",
+      "events": 1696,
+      "outcome": "victory",
+      "evolutions": 24,
+      "GameRevision": "17644b0640862d2298651e8dc85ac22f702326f9",
+      "SourceDigest": "345c624fbdfcfbde9281f5b6c64bb8f24d3e05d6b6a3cf51aa12f2ae1c59802e",
+      "GDDDigest": "427d848e5a92838e5fd8ab41fb15f4cb43351d0b3af1af10a5d95ea0e88ba40a",
+      "capture_version": "0.11.0",
+      "combat_rules_version": "evolved-investigators-v1"
+    }
+  ],
+  "scope": "Native sandbox progression and evolved abilities. Network and encounter captures precede final demolition-tag and single-contact carry review fixes; all four evolved families were rechecked afterwards.",
+  "limitations": [
+    "Numeric tuning is provisional.",
+    "Authored objective/structure actors and generated full-run progression are separate work.",
+    "No manual controller-parity, host-migration or deterministic-gameplay-replay claim.",
+    "Other platform SDKs unavailable; only Win64 validated."
+  ]
+}

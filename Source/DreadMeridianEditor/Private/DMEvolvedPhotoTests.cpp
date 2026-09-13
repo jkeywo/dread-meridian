@@ -100,4 +100,3 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FDMPhotoEvolutionTest, "DreadMeridian.Editor.Ev
 bool FDMPhotoEvolutionTest::RunTest(const FString&)
 { ADD_LATENT_AUTOMATION_COMMAND(FDMVerifyPhotoEvolution(this)); return true; }
 #endif
-

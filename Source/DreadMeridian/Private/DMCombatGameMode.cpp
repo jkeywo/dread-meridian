@@ -44,17 +44,17 @@ void ADMCombatGameMode::ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& 
 {
     Metadata->SetStringField(TEXT("scenario_id"), TEXT("combat-sandbox"));
     Metadata->SetStringField(TEXT("run_kind"), TEXT("combat_sandbox"));
-    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.10.0"));
+    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.11.0"));
     if (UsesEncounterLayout()) { Metadata->SetStringField(TEXT("native_faction"), TEXT("smugglers")); }
-    Metadata->SetStringField(TEXT("combat_rules_version"), TEXT("madness-families-v1"));
-    Metadata->SetStringField(TEXT("bot_policy"), TEXT("squad-utility-v4"));
+    Metadata->SetStringField(TEXT("combat_rules_version"), TEXT("evolved-investigators-v1"));
+    Metadata->SetStringField(TEXT("bot_policy"), TEXT("squad-utility-v5"));
     Metadata->SetStringField(TEXT("test_profile"), bNetworkTest ? TEXT("network_probe") : (SmokeOutcome.IsEmpty() ? TEXT("interactive") : SmokeOutcome));
     Metadata->SetNumberField(TEXT("initial_bot_count"), 4);
     Metadata->RemoveField(TEXT("production_bots"));
     Metadata->SetNumberField(TEXT("logical_step_seconds"), .1);
     TArray<TSharedPtr<FJsonValue>> Omissions;
     // All four sandbox families are implemented; hidden boss resonance is separate.
-    for (const TCHAR* Missing : { TEXT("ability_evolutions"), TEXT("objectives_htn"), TEXT("madness_resonance"),
+    for (const TCHAR* Missing : { TEXT("objectives_htn"), TEXT("madness_resonance"),
         TEXT("mythos_boss_encounters"), TEXT("medical_objectives"),
         TEXT("host_migration"), TEXT("deterministic_physics_navigation") })
     { Omissions.Add(MakeShared<FJsonValueString>(Missing)); }
@@ -433,6 +433,21 @@ void ADMCombatGameMode::NoteDowned(const ADMCombatant& Target)
         ++Metrics.EnemyKills;
         for (ADMCombatant* Hero : Combatants)
         { if (Hero && !Hero->bIsEnemy) { Hero->Progression->Award(TEXT("kill:") + Target.EntityId, 5); } }
+        if (UsesEncounterLayout())
+        {
+            for (int32 Camp=0; Camp<DMEncounterLayout::CampCount; ++Camp)
+            {
+                bool bCleared=true;
+                for (int32 Member=0; Member<DMEncounterLayout::CampSize; ++Member)
+                {
+                    const auto* Enemy=FindCombatant(FString::Printf(TEXT("enemy.%d"),Camp*DMEncounterLayout::CampSize+Member));
+                    bCleared &= Enemy && Enemy->IsDown();
+                }
+                if(bCleared)
+                { for(ADMCombatant* Hero : Combatants)
+                  { if(Hero && !Hero->bIsEnemy) { Hero->Progression->Award(FString::Printf(TEXT("encounter:camp:%d"),Camp),250); } } }
+            }
+        }
         for (TActorIterator<ADMAbilityMarker> It(GetWorld()); It; ++It)
         {
             if (It->bHostile || It->bSpirit || !It->IsArmed() || !MarkerCovers(**It, Target.GetActorLocation())) { continue; }
@@ -578,6 +593,7 @@ void ADMCombatGameMode::StepCombat()
         for (ADMCombatant* A : Combatants)
         {
             if (A->bIsEnemy) { continue; }
+            A->Progression->Award(TEXT("network:progression_probe"),300);
             A->MadnessCore->Add(25, TEXT("network_privacy_probe"));
             A->MadnessCore->Manifest(TEXT("test.private.") + A->EntityId,
                 TEXT("Private cue for ") + A->EntityId, 1, 10000);
@@ -645,7 +661,7 @@ void ADMCombatGameMode::StepCombat()
         const EDMWaveAction Action = SmugglerWave.Advance(bInvestigatorsUp,bEnemiesUp,CombatTick);
         if (Action == EDMWaveAction::Announce)
         { for (ADMCombatant* Hero : Combatants)
-          { if (Hero && !Hero->bIsEnemy) { Hero->Progression->Award(TEXT("encounter:occupation"), 500); } }
+          { if (Hero && !Hero->bIsEnemy) { Hero->Progression->Award(TEXT("encounter:occupation"), 350); } }
           auto Data = MakeShared<FJsonObject>(); Data->SetStringField(TEXT("stage"),TEXT("boss_incoming")); Data->SetNumberField(TEXT("arrival_tick"),SmugglerWave.ArrivalTick); Emit(TEXT("encounter.wave"),Data); }
         else if (Action == EDMWaveAction::SpawnPosse) { SpawnBossPosse(); }
         else if (Action == EDMWaveAction::Victory || Action == EDMWaveAction::Defeat) { CompleteCombat(Action == EDMWaveAction::Victory); }

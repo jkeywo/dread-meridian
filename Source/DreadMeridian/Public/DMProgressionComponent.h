@@ -72,9 +72,6 @@ public:
 private:
     float CoverStrength = 0;
     int32 CoverUntil = 0;
-public:
-
-private:
     UPROPERTY(Replicated) FDMProgressionState State;
     TSet<FString> RewardedEvents;
 };

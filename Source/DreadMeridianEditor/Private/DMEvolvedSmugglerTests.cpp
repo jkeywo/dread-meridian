@@ -76,8 +76,9 @@ public:
                 const float After=Enemy->Health(); A->Kit->Step(M->GetCombatTick()+2);
                 Test->TestEqual(TEXT("Charge cannot hit one target twice"),Enemy->Health(),After);
                 if(Node==1 || Node==3){Test->TestTrue(TEXT("Head Down adds resistance"),A->Kit->ChargeResistance()>0);}
+                const FVector BeforeCarry=A->GetActorLocation();
                 A->Kit->Step(M->GetCombatTick()+20);
-                if(Node==3){Test->TestTrue(TEXT("Single-target charge grants bonus"),A->Kit->OutgoingTo(Enemy.Get())>1);}
+                if(Node==3){Test->TestTrue(TEXT("Single-target charge grants bonus"),A->Kit->OutgoingTo(Enemy.Get())>1); Test->TestTrue(TEXT("Single target carries Smuggler farther"),A->GetActorLocation().X>BeforeCarry.X);}
                 A->SetActorLocation(FVector(-1200,0,95));Enemy->SetActorLocation(FVector(-1070,0,95));
                 Test->TestTrue(TEXT("Evolved brace accepted"),A->Kit->Request(EDMKitSlot::E,nullptr,A->GetActorLocation()));
                 const float Health=A->Health();
@@ -108,4 +109,3 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FDMSmugglerEvolutionTest, "DreadMeridian.Editor
 bool FDMSmugglerEvolutionTest::RunTest(const FString&)
 { ADD_LATENT_AUTOMATION_COMMAND(FDMVerifySmugglerEvolution(this)); return true; }
 #endif
-

@@ -453,6 +453,17 @@ void ADMCombatHUD::DrawTarget(const FDMHudModel& Model)
         Label(Unit.bBroken ? TEXT("BROKEN") : Unit.bInterruptible ? TEXT("INTERRUPT") : Unit.bResisting ? TEXT("RESISTING") : TEXT("RESOLVE"), Unit.bBroken ? DMHud::Brass : DMHud::Muted, X + W - 96 * S, Y + 26 * S, .75f);
         Bar(X + W - 96 * S, Y + 38 * S, 84 * S, 8 * S, Unit.BreakFraction, Unit.bBroken ? DMHud::Brass : DMHud::Shield);
     }
+    const auto* Local=Model.bHasSelf ? Model.Self.Actor.Get() : nullptr;
+    const auto* Target=Unit.Actor.Get();
+    if(Local && Target && Local->Investigator->Kind==EDMInvestigator::Photographer && Local->Primary->FrameTarget==Target
+        && (Local->Progression->Node(0)==1 || Local->Progression->Node(0)==3))
+    {
+        Label(FString::Printf(TEXT("STUDY | reach %.0f | attack %.1fs | Resolve %.0f/%.0f"),
+            Target->GetAttackRange(),Target->AttackIntervalTicks*.1f,Target->Resolve->CurrentResolve,Target->Resolve->MaxResolve),
+            DMHud::Brass,X,Y+H+5*S,.8f);
+    }
+    if(Target && Target->Progression->VulnerableUntil>Model.CombatTick)
+    { Label(FString::Printf(TEXT("VULNERABLE +%.0f%%"),Target->Progression->Vulnerability*100),DMHud::Danger,X,Y+H+21*S,.8f); }
     if (Unit.bSuppressed) { Label(TEXT("SUPPRESSED"), DMHud::Shield, X + 84 * S, Y + 43 * S, .8f); }
 }
 

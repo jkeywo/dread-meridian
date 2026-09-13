@@ -319,6 +319,8 @@ void ADMCombatPlayerController::PlayerTick(float DeltaTime)
             GetWorldTimerManager().SetTimer(ExitTimer, [] { FPlatformMisc::RequestExit(false); }, 7.f, false);
         }
         if ((FParse::Param(FCommandLine::Get(), TEXT("DMNetworkProbe")) || FParse::Param(FCommandLine::Get(), TEXT("DMVisualProbe"))) && (!SelectedTarget.IsValid() || SelectedTarget->IsDown() || !bAutoAttack)) { Attack(); }
+        if (FParse::Param(FCommandLine::Get(),TEXT("DMNetworkProbe")) && !HasAuthority() && !bEvolutionProbeSent && Actor->Progression->Get().Opportunities()>0)
+        { bEvolutionProbeSent=true; ServerEvolve(0,1); }
         // Authority pawns think through ADMSquadController; the probe only drives the client's Q by RPC.
         if ((FParse::Param(FCommandLine::Get(), TEXT("DMNetworkProbe")) || FParse::Param(FCommandLine::Get(), TEXT("DMVisualProbe")))
             && !HasAuthority() && SelectedTarget.IsValid() && GetWorld()->GetTimeSeconds() > NextProbeQTime)

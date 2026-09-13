@@ -58,6 +58,16 @@ public:
                 Enemy->SetActorLocation(FVector(-1100,0,95));
                 A->Primary->ApplySatchel(Enemy.Get(), FVector(-1100,0,18));
                 Test->TestTrue(TEXT("Every evolved blast damages"), Enemy->Health() < 1000);
+                if(Node==3)
+                {
+                    Enemy->bCommonEnemy=true;
+                    const float Before=Enemy->Health(); A->Primary->ApplySatchel(Enemy.Get(),Enemy->GetActorLocation());
+                    const float Normal=Before-Enemy->Health();
+                    Enemy->Tags.Add(TEXT("Destructible"));
+                    const float Tagged=Enemy->Health(); A->Primary->ApplySatchel(Enemy.Get(),Enemy->GetActorLocation());
+                    Test->TestTrue(TEXT("Breaching improves authored destructible targets"),Tagged-Enemy->Health()>Normal);
+                    Enemy->Tags.Remove(TEXT("Destructible"));
+                }
                 Test->TestTrue(TEXT("Suppression cast"), A->Kit->Request(EDMKitSlot::W,nullptr,FVector(-800,0,95)));
                 Test->TestTrue(TEXT("Suppression marker created"), !A->Kit->Zones.IsEmpty());
                 if (Node == 5)

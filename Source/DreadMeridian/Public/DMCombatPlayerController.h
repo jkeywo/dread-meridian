@@ -105,6 +105,7 @@ private:
     float FeedbackUntil = 0;
     float NextProbeQTime = 0;
     int32 ProbeCastIndex = 0;
+    bool bEvolutionProbeSent = false;
     // Ping gesture state (client side)
     bool bPingHeld = false;
     bool bPingRadialOpen = false;

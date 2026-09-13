@@ -167,7 +167,7 @@ bool UDMPrimaryComponent::Resolve()
         {
             // An unbroken elite cannot be held, but the grab still counts against its Resolve.
             FDMControl Control;
-            Control.StaggerTicks = 5; Control.BreakPressure = 40;
+            Control.StaggerTicks = 5; Control.BreakPressure = 40 + (Actor->Progression->Node(0)==1 || Actor->Progression->Node(0)==3 ? 25 : 0);
             Target->ApplyControl(Control, Actor, TEXT("ability.q.clinch"));
             NextCastTick = Now() + 20; R->Pressure(Now(), 10); Emit(TEXT("clinch_break"), Target);
         }
@@ -399,8 +399,9 @@ void UDMPrimaryComponent::ApplySatchel(ADMCombatant* Enemy, FVector Center)
     const uint8 N = Self()->Progression->Node(0);
     const bool bCenter = FVector::Dist2D(Center, Enemy->GetActorLocation()) < 120;
     const bool bKillZone = Self()->Progression->Node(1) == 4 && Enemy->bSuppressed;
+    const bool bDemolition = !Enemy->bCommonEnemy || Enemy->ActorHasTag(TEXT("Objective")) || Enemy->ActorHasTag(TEXT("Destructible"));
     FDMControl C;
-    C.Damage = N == 1 ? (bCenter ? 95 : 65) : N == 3 ? (Enemy->bCommonEnemy ? 95 : 135)
+    C.Damage = N == 1 ? (bCenter ? 95 : 65) : N == 3 ? (bDemolition ? 135 : 95)
         : N == 2 || N == 5 ? 45 : N == 4 ? 65 : 55;
     C.BreakPressure = N == 0 ? 0 : N == 3 ? 60 : N == 1 ? (bCenter ? 40 : 20) : 15;
     if (N == 2 || N == 5 || (N == 4 && bCenter))

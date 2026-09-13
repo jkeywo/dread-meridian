@@ -20,6 +20,10 @@ bool FDMProgressionTest::RunTest(const FString&)
     TestEqual(TEXT("First tier floor cost"), FDMProgressionState::FloorCost(1), 5.f);
     TestEqual(TEXT("Deep tier floor cost"), FDMProgressionState::FloorCost(4), 10.f);
     TestEqual(TEXT("Base has no floor cost"), FDMProgressionState::FloorCost(0), 0.f);
+    const auto* Guard=DMEvolution::Find(EDMInvestigator::Medium,2,1);
+    const auto* Haunt=DMEvolution::Find(EDMInvestigator::Medium,2,2);
+    TestTrue(TEXT("Danger favours protection"),DMEvolution::Value(*Guard,0,4,0)>DMEvolution::Value(*Haunt,0,4,0));
+    TestTrue(TEXT("Crowds favour hostile control"),DMEvolution::Value(*Haunt,4,0,1)>DMEvolution::Value(*Guard,4,0,1));
     TSet<FString> Ids;
     for (uint8 K = 1; K <= 4; ++K)
     { for (uint8 Slot = 0; Slot < 3; ++Slot)
@@ -42,6 +46,8 @@ bool FDMProgressionTest::RunTest(const FString&)
       } }
     TestFalse(TEXT("Invalid slot rejected"), S.Choose(255, 1));
     TestFalse(TEXT("Invalid node rejected"), S.Choose(0, 255));
+    FDMProgressionState CampRun; CampRun.Add(3*250+350+11*5);
+    TestEqual(TEXT("Full build earned before gang boss"),CampRun.Opportunities(),6);
     FDMProgressionState Empty; TestFalse(TEXT("Cannot spend unearned opportunity"), Empty.Choose(0, 1));
     return true;
 }
