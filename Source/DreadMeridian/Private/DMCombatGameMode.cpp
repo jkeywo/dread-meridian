@@ -431,6 +431,8 @@ void ADMCombatGameMode::NoteDowned(const ADMCombatant& Target)
     if (Target.bIsEnemy)
     {
         ++Metrics.EnemyKills;
+        for (ADMCombatant* Hero : Combatants)
+        { if (Hero && !Hero->bIsEnemy) { Hero->Progression->Award(TEXT("kill:") + Target.EntityId, 5); } }
         for (TActorIterator<ADMAbilityMarker> It(GetWorld()); It; ++It)
         {
             if (It->bHostile || It->bSpirit || !It->IsArmed() || !MarkerCovers(**It, Target.GetActorLocation())) { continue; }
@@ -642,7 +644,9 @@ void ADMCombatGameMode::StepCombat()
     {
         const EDMWaveAction Action = SmugglerWave.Advance(bInvestigatorsUp,bEnemiesUp,CombatTick);
         if (Action == EDMWaveAction::Announce)
-        { auto Data = MakeShared<FJsonObject>(); Data->SetStringField(TEXT("stage"),TEXT("boss_incoming")); Data->SetNumberField(TEXT("arrival_tick"),SmugglerWave.ArrivalTick); Emit(TEXT("encounter.wave"),Data); }
+        { for (ADMCombatant* Hero : Combatants)
+          { if (Hero && !Hero->bIsEnemy) { Hero->Progression->Award(TEXT("encounter:occupation"), 500); } }
+          auto Data = MakeShared<FJsonObject>(); Data->SetStringField(TEXT("stage"),TEXT("boss_incoming")); Data->SetNumberField(TEXT("arrival_tick"),SmugglerWave.ArrivalTick); Emit(TEXT("encounter.wave"),Data); }
         else if (Action == EDMWaveAction::SpawnPosse) { SpawnBossPosse(); }
         else if (Action == EDMWaveAction::Victory || Action == EDMWaveAction::Defeat) { CompleteCombat(Action == EDMWaveAction::Victory); }
         PublishEncounter();
@@ -657,6 +661,9 @@ void ADMCombatGameMode::StepCombat()
 
 void ADMCombatGameMode::CompleteCombat(bool bVictory)
 {
+    if (bVictory && bCombatActive)
+    { for (ADMCombatant* Hero : Combatants)
+      { if (Hero && !Hero->bIsEnemy) { Hero->Progression->Award(TEXT("encounter:victory"), 650); } } }
     bCombatActive = false;
     GetWorldTimerManager().ClearTimer(CombatTimer);
     for (ADMCombatant* Actor : Combatants) { Actor->Smuggler->Cancel(); Actor->StopGoal(); Actor->Primary->CancelChannel(); Actor->Primary->ReleaseClinch(); Actor->Kit->Cancel(true); Actor->GetCharacterMovement()->StopMovementImmediately(); }

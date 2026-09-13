@@ -12,6 +12,7 @@
 #include "DMMadnessComponent.h"
 #include "DMBreakComponent.h"
 #include "DMSmugglerComponent.h"
+#include "DMProgressionComponent.h"
 #include "DMCombatant.generated.h"
 
 class UDMHealthAttributes;
@@ -24,6 +25,7 @@ class DREADMERIDIAN_API ADMCombatant : public ACharacter, public IAbilitySystemI
     GENERATED_BODY()
 public:
     ADMCombatant();
+    UPROPERTY(VisibleAnywhere) TObjectPtr<UDMProgressionComponent> Progression;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UDMMadnessComponent> MadnessCore;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UDMSmugglerComponent> Smuggler;
     UPROPERTY(VisibleAnywhere) TObjectPtr<class UDMCombatPresentation> Presentation;

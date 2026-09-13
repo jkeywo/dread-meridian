@@ -43,6 +43,7 @@ ADMCombatant::ADMCombatant()
     Primary = CreateDefaultSubobject<UDMPrimaryComponent>(TEXT("Primary"));
     Kit = CreateDefaultSubobject<UDMKitComponent>(TEXT("Kit"));
     Presentation = CreateDefaultSubobject<UDMCombatPresentation>(TEXT("Presentation"));
+    Progression = CreateDefaultSubobject<UDMProgressionComponent>(TEXT("Progression"));
     Investigator = CreateDefaultSubobject<UDMInvestigatorComponent>(TEXT("Investigator"));
     static ConstructorHelpers::FObjectFinder<USkeletalMesh> Manny(TEXT("/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple"));
     static ConstructorHelpers::FObjectFinder<UAnimSequence> Idle(TEXT("/Game/Characters/Mannequins/Anims/Unarmed/MM_Idle"));
@@ -195,7 +196,7 @@ bool ADMCombatant::ResolveAttack()
     if (GetWorld()->LineTraceSingleByChannel(Hit, GetActorLocation(), Target->GetActorLocation(), ECC_Visibility, Query)) { return false; }
     if (IsRestrained() || IsStunned() || !Injuries->CanAttack() || StaggeredUntilTick > 0 || Primary->FrameTarget || Smuggler->IsCasting()) { return false; }
     NextAttackTick = Mode->GetCombatTick() + AttackIntervalTicks;
-    return DealCombatDamage(Target, AttackDamage * Investigator->DamageMultiplier(Target->EntityId, Target->bSuppressed) * (bIsEnemy ? Smuggler->DamageMultiplier(*Mode, Target) : 1.f), TEXT("ability.basic_attack"), true);
+    return DealCombatDamage(Target, AttackDamage * (bIsEnemy ? 1.f : Progression->Get().BasicMultiplier()) * Investigator->DamageMultiplier(Target->EntityId, Target->bSuppressed) * (bIsEnemy ? Smuggler->DamageMultiplier(*Mode, Target) : 1.f), TEXT("ability.basic_attack"), true);
 }
 
 bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FString& AbilityId, bool bBasic, bool bHazard)
