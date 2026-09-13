@@ -27,6 +27,14 @@ public:
     bool DriveBot(ADMCombatant* Hero);
     FVector Waypoint(FVector From,FVector Goal) const;
     bool RouteClear(FVector From,FVector To) const;
+    /**
+     * A click-to-move destination is only ever routed around obstacles in flight (see Waypoint); it was never
+     * validated at the point of click, so a click landing on non-navigable ground (deep water, inside a
+     * building) set a MoveGoal the pawn could never actually reach and just idled trying to close on it. This
+     * walks the straight line from From (the player) back from To (the raw click point) and returns the first
+     * point that clears every obstacle, i.e. the nearest navigable spot on that line to the click.
+     */
+    FVector ClampToNavigable(FVector From,FVector To) const;
     ADMObjective* NextObjective() const;
     void Drain();
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

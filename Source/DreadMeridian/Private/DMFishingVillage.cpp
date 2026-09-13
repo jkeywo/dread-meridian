@@ -175,21 +175,42 @@ bool ADMFishingVillage::RouteClear(FVector From,FVector To) const
 FVector ADMFishingVillage::Waypoint(FVector From,FVector Goal) const
 {
     if (RouteClear(From,Goal)) { return Goal; }
-    TArray<FVector> Nodes={From,Goal};
+    TArray<FVector> RouteNodes={From,Goal};
     for (int32 I=0;I<Obstacles.Num();++I)
     {
         if (I==0 && bDrained) { continue; } const FBox B=Obstacles[I].ExpandBy(65);
         for (auto P : {FVector(B.Min.X,B.Min.Y,From.Z),FVector(B.Min.X,B.Max.Y,From.Z),FVector(B.Max.X,B.Min.Y,From.Z),FVector(B.Max.X,B.Max.Y,From.Z)})
-        { if (FMath::Abs(P.X)<2850 && FMath::Abs(P.Y)<2350) { Nodes.Add(P); } }
+        { if (FMath::Abs(P.X)<2850 && FMath::Abs(P.Y)<2350) { RouteNodes.Add(P); } }
     }
-    TArray<float> Cost; Cost.Init(MAX_flt,Nodes.Num()); Cost[0]=0;
-    TArray<int32> Parent; Parent.Init(INDEX_NONE,Nodes.Num()); TArray<bool> Visited; Visited.Init(false,Nodes.Num());
-    for (int32 N=0;N<Nodes.Num();++N)
+    TArray<float> Cost; Cost.Init(MAX_flt,RouteNodes.Num()); Cost[0]=0;
+    TArray<int32> Parent; Parent.Init(INDEX_NONE,RouteNodes.Num()); TArray<bool> Visited; Visited.Init(false,RouteNodes.Num());
+    for (int32 N=0;N<RouteNodes.Num();++N)
     {
-        int32 Best=INDEX_NONE; for (int32 I=0;I<Nodes.Num();++I) { if (!Visited[I] && (Best==INDEX_NONE || Cost[I]<Cost[Best])) { Best=I; } }
-        if (Best==INDEX_NONE || Cost[Best]==MAX_flt) { break; } if (Best==1) { int32 P=1; while (Parent[P]>0) { P=Parent[P]; } return Nodes[P]; }
+        int32 Best=INDEX_NONE; for (int32 I=0;I<RouteNodes.Num();++I) { if (!Visited[I] && (Best==INDEX_NONE || Cost[I]<Cost[Best])) { Best=I; } }
+        if (Best==INDEX_NONE || Cost[Best]==MAX_flt) { break; } if (Best==1) { int32 P=1; while (Parent[P]>0) { P=Parent[P]; } return RouteNodes[P]; }
         Visited[Best]=true;
-        for (int32 I=0;I<Nodes.Num();++I) { const float C=Cost[Best]+FVector::Dist2D(Nodes[Best],Nodes[I]); if (!Visited[I] && C<Cost[I] && RouteClear(Nodes[Best],Nodes[I])) { Cost[I]=C; Parent[I]=Best; } }
+        for (int32 I=0;I<RouteNodes.Num();++I) { const float C=Cost[Best]+FVector::Dist2D(RouteNodes[Best],RouteNodes[I]); if (!Visited[I] && C<Cost[I] && RouteClear(RouteNodes[Best],RouteNodes[I])) { Cost[I]=C; Parent[I]=Best; } }
+    }
+    return From;
+}
+FVector ADMFishingVillage::ClampToNavigable(FVector From,FVector To) const
+{
+    auto IsBlocked=[this](const FVector& P)
+    {
+        for (int32 I=0;I<Obstacles.Num();++I) { if (I==0 && bDrained) { continue; } if (Obstacles[I].IsInsideOrOn(P)) { return true; } }
+        return false;
+    };
+    FVector Probe=To; Probe.Z=80;
+    if (!IsBlocked(Probe)) { return To; }
+    FVector FromXY=From; FromXY.Z=80;
+    const FVector Delta=FromXY-Probe;
+    const float Distance=Delta.Size2D();
+    if (Distance<KINDA_SMALL_NUMBER) { return From; }
+    const FVector Step=Delta/Distance*25.f;
+    for (int32 I=1,Count=FMath::CeilToInt(Distance/25.f);I<=Count;++I)
+    {
+        Probe+=Step;
+        if (!IsBlocked(Probe)) { return FVector(Probe.X,Probe.Y,To.Z); }
     }
     return From;
 }

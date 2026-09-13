@@ -14,6 +14,7 @@
 #include "DMVision.h"
 #include "DMShubEncounter.h"
 #include "DMBossArena.h"
+#include "DMFishingVillage.h"
 #include "DMRelicDrop.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -238,7 +239,11 @@ void ADMCombatPlayerController::Click()
     {
         bAutoAttack = false;
         ServerSelectTarget(nullptr);
-        Actor->MoveToward(FVector(FMath::Clamp(Hit.Location.X, -DMEncounterLayout::PlayableX, DMEncounterLayout::PlayableX), FMath::Clamp(Hit.Location.Y, -DMEncounterLayout::PlayableY, DMEncounterLayout::PlayableY), Actor->GetActorLocation().Z));
+        FVector Goal(FMath::Clamp(Hit.Location.X, -DMEncounterLayout::PlayableX, DMEncounterLayout::PlayableX), FMath::Clamp(Hit.Location.Y, -DMEncounterLayout::PlayableY, DMEncounterLayout::PlayableY), Actor->GetActorLocation().Z);
+        // A click can land on non-navigable ground (deep water, inside a building); snap it back along the
+        // line to the player to the nearest point that's actually reachable instead of stranding the goal there.
+        for (TActorIterator<ADMFishingVillage> It(GetWorld()); It; ++It) { Goal = It->ClampToNavigable(Actor->GetActorLocation(), Goal); break; }
+        Actor->MoveToward(Goal);
     }
 }
 void ADMCombatPlayerController::Cycle()
