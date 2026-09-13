@@ -208,7 +208,7 @@ void ADMCombatPlayerController::Move(const FInputActionValue& Value)
         return;
     }
     const ADMGameState* State = GetWorld()->GetGameState<ADMGameState>();
-    if (!Actor || Actor->IsDown() || !State || State->GetRunState().Phase != EDMRunPhase::Apocalypse) { return; }
+    if (!Actor || Actor->IsDown() || !State || (State->GetRunState().Phase != EDMRunPhase::Apocalypse && State->GetRunState().Phase != EDMRunPhase::Expedition)) { return; }
     if ((Actor->IsRestrained() || Actor->IsStunned()) || Actor->Kit->IsCharging()) { return; }
     if (bAiming && bQGamepad)
     {
@@ -318,6 +318,15 @@ void ADMCombatPlayerController::PlayerTick(float DeltaTime)
     Super::PlayerTick(DeltaTime);
     if (IsLocalController()) { for (TActorIterator<ADMCombatant> It(GetWorld());It;++It) { if (It->bRequiresVision) { It->SetActorHiddenInGame(!VisibleEnemies.Contains(It->EntityId)); } } }
 #if !UE_BUILD_SHIPPING
+    if (FParse::Param(FCommandLine::Get(),TEXT("DMVillagePreview")) && !bVisualScheduled)
+    {
+        bVisualScheduled=true;
+        auto* Camera=GetWorld()->SpawnActor<ACameraActor>(FVector(0,0,7200),FRotator(-90,0,0));
+        Camera->GetCameraComponent()->SetFieldOfView(80); SetViewTarget(Camera);
+        FTimerHandle Shot,Exit;
+        GetWorldTimerManager().SetTimer(Shot,[]{FScreenshotRequest::RequestScreenshot(FPaths::Combine(FPaths::ProjectSavedDir(),TEXT("Screenshots/FishingVillage.png")),true,false);},10.f,false);
+        GetWorldTimerManager().SetTimer(Exit,[]{FPlatformMisc::RequestExit(false);},12.f,false);
+    }
     if (FParse::Param(FCommandLine::Get(),TEXT("DMNetworkProbe")))
     {
         for (TActorIterator<ADMCombatant> It(GetWorld());It;++It)
@@ -475,7 +484,7 @@ void ADMCombatPlayerController::PlayerTick(float DeltaTime)
         }
     }
 #endif
-    if (!Actor || !State || State->GetRunState().Phase != EDMRunPhase::Apocalypse || Actor->IsDown())
+    if (!Actor || !State || (State->GetRunState().Phase != EDMRunPhase::Apocalypse && State->GetRunState().Phase != EDMRunPhase::Expedition) || Actor->IsDown())
     { if (Actor) { Actor->StopGoal(); } return; }
     if (Actor->Primary->FrameTarget || (Actor->IsRestrained() || Actor->IsStunned()) || Actor->Kit->IsCharging()) { Actor->StopGoal(); return; }
     if (bAutoAttack && SelectedTarget.IsValid() && !SelectedTarget->IsDown())

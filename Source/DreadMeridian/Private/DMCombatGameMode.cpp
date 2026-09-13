@@ -1,4 +1,5 @@
 #include "DMCombatGameMode.h"
+#include "DMFishingVillage.h"
 #include "DMEditorPlaySelection.h"
 #include "DMCombatant.h"
 #include "DMRecoverySupply.h"
@@ -47,6 +48,7 @@ void ADMCombatGameMode::InitGame(const FString& MapName, const FString& Options,
     FParse::Value(FCommandLine::Get(), TEXT("DMAIWeights="), AIWeightsPath);
     bNetworkTest = FParse::Param(FCommandLine::Get(), TEXT("DMNetworkTest"));
     bSwampTest = FParse::Param(FCommandLine::Get(), TEXT("DMSwampProbe"));
+    if (FParse::Param(FCommandLine::Get(),TEXT("DMShellProbe"))) { bFishingVillage=false; }
 #endif
 }
 
@@ -70,6 +72,17 @@ void ADMCombatGameMode::ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& 
         TEXT("host_migration"), TEXT("deterministic_physics_navigation") })
     { Omissions.Add(MakeShared<FJsonValueString>(Missing)); }
     Metadata->SetArrayField(TEXT("omissions"), Omissions);
+    if (bFishingVillage)
+    {
+        Metadata->SetStringField(TEXT("scenario_id"),TEXT("fishing-village-fixed-v1"));
+        Metadata->SetStringField(TEXT("run_kind"),TEXT("fixed_scenario"));
+        Metadata->SetStringField(TEXT("capture_version"),TEXT("0.15.0"));
+        Metadata->SetStringField(TEXT("combat_rules_version"),TEXT("fishing-village-v1"));
+        Metadata->SetNumberField(TEXT("boss_selection_version"),2);
+        TArray<TSharedPtr<FJsonValue>> Missing;
+        for (const TCHAR* S : {TEXT("htn_generation"),TEXT("timed_ritual_escalation"),TEXT("nyarlathotep_scenario"),TEXT("host_migration"),TEXT("full_map_fog")}) { Missing.Add(MakeShared<FJsonValueString>(S)); }
+        Metadata->SetArrayField(TEXT("omissions"),Missing);
+    }
 }
 
 void ADMCombatGameMode::StartPlay()
@@ -81,12 +94,14 @@ void ADMCombatGameMode::StartPlay()
 void ADMCombatGameMode::BeginEncounter()
 {
     if (bCombatActive || Combatants.Num() > 0) { return; }
-    if (!TActorIterator<ADMSandboxArena>(GetWorld())) { GetWorld()->SpawnActor<ADMSandboxArena>(); }
+    if (bFishingVillage)
+    { for (TActorIterator<ADMFishingVillage> It(GetWorld());It;++It) { Village=*It; break; } if (!Village) { Village=GetWorld()->SpawnActor<ADMFishingVillage>(); } }
+    else if (!TActorIterator<ADMSandboxArena>(GetWorld())) { GetWorld()->SpawnActor<ADMSandboxArena>(); }
     int32 Seed = 1927;
     FParse::Value(FCommandLine::Get(), TEXT("DMSeed="), Seed);
     FDMRandomStreams Layout(Seed);
     const bool bSmoke = !SmokeOutcome.IsEmpty();
-    for (int32 Index = 0; Index < (bSwampTest ? 9 : UsesEncounterLayout() ? 4 + DMEncounterLayout::EnemyCount : 7); ++Index)
+    for (int32 Index = 0; Index < (bFishingVillage ? 4 : bSwampTest ? 9 : UsesEncounterLayout() ? 4 + DMEncounterLayout::EnemyCount : 7); ++Index)
     {
         const bool bEnemy = Index >= 4;
         const float X = bEnemy ? (bSmoke ? 170.f : 650.f) : (bSmoke ? -170.f : -650.f);
@@ -103,6 +118,7 @@ void ADMCombatGameMode::BeginEncounter()
             Position.X += static_cast<float>(static_cast<int32>(Layout.Next(EDMRandomStream::RunGeneration) % 61) - 30);
             Position.Y += static_cast<float>(static_cast<int32>(Layout.Next(EDMRandomStream::RunGeneration) % 61) - 30);
         }
+        if (bFishingVillage) { Position=FVector(-2550,-1100+Index*90,95); }
         ADMCombatant* Actor = GetWorld()->SpawnActor<ADMCombatant>(Position, FRotator::ZeroRotator, Params);
         check(Actor);
         const bool bLoss = SmokeOutcome == TEXT("Defeat");
@@ -170,8 +186,8 @@ void ADMCombatGameMode::BeginEncounter()
     bCombatActive = true;
     PublishEncounter();
     if (bSmoke) { bGuardChecksPassed = !Combatants[0]->TryAttack(Combatants[0]) && !Combatants[0]->TryAttack(nullptr); }
-    // This is an isolated combat encounter, not a scenario/boss implementation.
-    Summon();
+    // Sandbox combat starts immediately; the village stays in Expedition until its objective gate.
+    if (Village) { Village->StartScenario(); } else { Summon(); }
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
     { AssignInvestigator(It->Get()); }
 #if !UE_BUILD_SHIPPING
@@ -718,6 +734,8 @@ void ADMCombatGameMode::StepCombat()
     {
         if (!Actor->IsDown()) { if (Actor->bIsEnemy) { bEnemiesUp = true; } else { bInvestigatorsUp = true; } }
     }
+    if (Village)
+    { if (!bInvestigatorsUp) { CompleteCombat(false); return; } Village->StepScenario(); return; }
     if (bBossOutcome) { return; }
     if (UsesEncounterLayout())
     {

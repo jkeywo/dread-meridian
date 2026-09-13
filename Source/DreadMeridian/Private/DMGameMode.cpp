@@ -35,7 +35,7 @@ void ADMGameMode::StartPlay()
     if (FParse::Value(FCommandLine::Get(),TEXT("DMElderOne="),ForcedBoss))
     { if (ForcedBoss == TEXT("Shub")) { BossDraw = 0; } else if (ForcedBoss == TEXT("Nyarlathotep")) { BossDraw = 1; } }
 #endif
-    ElderOne->Select(BossDraw);
+    ElderOne->Select(SelectBossDraw(BossDraw));
 
     if (RitualPointsPerStage <= 0)
     {

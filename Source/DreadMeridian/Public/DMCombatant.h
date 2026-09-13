@@ -158,6 +158,9 @@ private:
     TWeakObjectPtr<ADMCombatant> AttackTarget;
     TWeakObjectPtr<ADMCombatant> TelegraphTarget;
     FVector MoveGoal = FVector::ZeroVector;
+    FVector VillageWaypoint = FVector::ZeroVector;
+    FVector VillageRouteGoal = FVector::ZeroVector;
+    float NextVillageRouteTime = 0;
     bool bHasMoveGoal = false;
     void ApplyAttributeDelta(const FGameplayAttribute& Attribute, float Delta);
 };

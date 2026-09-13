@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Generate', 'GenerateMap', 'GenerateShellMap', 'GenerateAIProfiles', 'Python', 'Build', 'Test', 'EditorTest', 'Smoke', 'CombatSmoke', 'SmugglerSmoke', 'SwampSmoke', 'ShellSmoke', 'Editor', 'Play', 'Shell', 'NetworkTest')]
+    [ValidateSet('Generate', 'GenerateMap', 'GenerateVillage', 'VillagePreview', 'GenerateShellMap', 'GenerateAIProfiles', 'Python', 'Build', 'Test', 'EditorTest', 'Smoke', 'CombatSmoke', 'SmugglerSmoke', 'SwampSmoke', 'ShellSmoke', 'Editor', 'Play', 'Shell', 'NetworkTest')]
     [string]$Action = 'Build',
     [string]$EngineRoot = $env:UE_ROOT,
     [int]$Seed = 1927,
@@ -12,7 +12,8 @@ param(
     # Overrides the automation filter for Test (default DreadMeridian.Foundation) and EditorTest (default DreadMeridian.Editor).
     [string]$Filter,
     [switch]$RenderOffscreen,
-    [switch]$SwampEnemies
+    [switch]$SwampEnemies,
+    [switch]$Sandbox
 )
 
 $ErrorActionPreference = 'Stop'
@@ -38,6 +39,11 @@ if ($Action -eq 'Generate') {
 & $build DreadMeridianEditor Win64 Development "-Project=$projectFile" -WaitMutex -NoHotReloadFromIDE
 if ($LASTEXITCODE -ne 0) { throw "Unreal build failed: $LASTEXITCODE" }
 if ($Action -eq 'Build') { exit 0 }
+if ($Action -eq 'GenerateVillage') {
+    & (Join-Path $EngineRoot 'Engine\Binaries\Win64\UnrealEditor-Cmd.exe') $projectFile -run=pythonscript "-script=$PSScriptRoot\generate_village.py" -unattended -nop4 -nullrhi -nosound
+    if ($LASTEXITCODE -ne 0) { throw 'Village map generation failed.' }
+    exit 0
+}
 
 $cmdEditor = Join-Path $EngineRoot 'Engine\Binaries\Win64\UnrealEditor-Cmd.exe'
 if ($Action -eq 'Python') {
@@ -121,6 +127,7 @@ finally { $hasher.Dispose() }
 $gdd = Join-Path $projectRoot 'gdd\Mythos_PvE_MOBA_Master_GDD_v0.3.md'
 $gddDigest = (Get-FileHash -LiteralPath $gdd -Algorithm SHA256).Hash.ToLowerInvariant()
 $map = '/Game/DreadMeridian/Maps/L_CombatSandbox'
+if ($Action -eq 'VillagePreview' -or ($Action -in @('Play','Editor') -and -not $Sandbox)) { $map='/Game/DreadMeridian/Maps/L_FishingVillage' }
 if ($Action -eq 'Smoke') { $map = '/Engine/Maps/Entry?game=/Script/DreadMeridian.DMGameMode' }
 # The shell opens the front end; the sandbox streams in when the lobby launches.
 if ($Action -in @('Shell', 'ShellSmoke')) { $map = '/Game/DreadMeridian/Maps/L_Shell' }
@@ -129,7 +136,10 @@ $launchArgs = @($projectFile, $map, '-PlaytraceCapture', "-DMInvestigator=$Inves
 if ($status) { $launchArgs += '-DMDirty' }
 if ($SwampEnemies -or $Action -eq 'SwampSmoke') { $launchArgs += '-DMSwampProbe' }
 
-if ($Action -eq 'NetworkTest') {
+if ($Action -eq 'VillagePreview') {
+    & $cmdEditor @launchArgs -game -RenderOffscreen -DMVillagePreview -ResX=1440 -ResY=1200 -unattended -nop4 -nosound
+    if ($LASTEXITCODE -ne 0) { throw 'Village preview failed.' }
+} elseif ($Action -eq 'NetworkTest') {
     & (Join-Path $PSScriptRoot 'NetworkTest.ps1') -EngineRoot $EngineRoot -LaunchArguments $launchArgs
 } elseif ($Action -eq 'SwampSmoke') {
     $swampLog = Join-Path $projectRoot ('Saved\Logs\swamp-' + [guid]::NewGuid().ToString('N') + '.log')

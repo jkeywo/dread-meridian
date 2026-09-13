@@ -2,6 +2,9 @@
 #include "DMCombatant.h"
 #include "DMCombatPlayerController.h"
 #include "DMRelicDrop.h"
+#include "DMObjective.h"
+#include "DMFishingVillage.h"
+#include "EngineUtils.h"
 #include "DMEncounterLayout.h"
 #include "DMGameState.h"
 #include "DMHudStyle.h"
@@ -426,6 +429,14 @@ void ADMCombatHUD::DrawRitual(const FDMHudModel& Model)
     const float W = 476 * S, H = 62 * S;
     const float X = (Canvas->ClipX - W) * .5f, Y = 14 * S;
     Panel(X, Y, W, H, DMHud::BrassDim);
+    for (TActorIterator<ADMFishingVillage> It(GetWorld());It;++It)
+    {
+        int32 Done=It->CoreStage; for (ADMObjective* O : It->Disruptions) { Done+=O && O->PublicState.State==EDMObjectiveState::Completed; }
+        Label(It->bManifested?TEXT("ELDER ONE MANIFESTED"):TEXT("COMPLETE THE CORE OBJECTIVES"),DMHud::Brass,X+14*S,Y+8*S,.95f);
+        Label(FString::Printf(TEXT("%d / 7"),Done),DMHud::Bone,X+W-65*S,Y+8*S,.95f);
+        DrawRect(DMHud::BrassDim,X+20*S,Y+38*S,W-40*S,6*S);
+        DrawRect(DMHud::Brass,X+20*S,Y+38*S,(W-40*S)*FMath::Clamp(Done/7.f,0.f,1.f),6*S); return;
+    }
     Label(TEXT("RITUAL"), DMHud::Muted, X + 14 * S, Y + 8 * S, .9f);
     const FString Stage = DMHud::Stage(Model.RitualStage).ToUpper();
     Label(Stage, DMHud::Brass, X + (W - TextWidth(Stage, 1.2f)) * .5f, Y + 6 * S, 1.2f);
@@ -484,10 +495,21 @@ void ADMCombatHUD::DrawTarget(const FDMHudModel& Model)
 
 void ADMCombatHUD::DrawEncounter(const FDMHudModel& Model)
 {
+    for (TActorIterator<ADMFishingVillage> It(GetWorld());It;++It)
+    {
+        const float W=360*S,X=Canvas->ClipX-W-20*S,Y=16*S; Panel(X,Y,W,112*S,DMHud::BrassDim);
+        Label(TEXT("FISHING VILLAGE"),DMHud::Brass,X+12*S,Y+8*S,.9f);
+        int32 Done=0; for (ADMObjective* O : It->Disruptions) { Done+=O && O->PublicState.State==EDMObjectiveState::Completed; }
+        Label(FString::Printf(TEXT("Core %d/4 | Disruptions %d/3 | %s"),It->CoreStage,Done,It->bDrained?TEXT("Basin drained"):TEXT("Basin flooded")),DMHud::Bone,X+12*S,Y+29*S,.8f);
+        const auto* O=It->NextObjective();
+        Label(It->bManifested?TEXT("Defeat Shub-Niggurath"):O?O->DisplayTitle:TEXT("Preparing manifestation"),DMHud::Brass,X+12*S,Y+50*S,.85f);
+        Label(O && O->Current()?O->Current()->Instruction:TEXT("Control growths and escape corruption"),DMHud::Muted,X+12*S,Y+71*S,.7f);
+        Label(TEXT("Gold map markers: objectives | I: interact"),DMHud::Muted,X+12*S,Y+91*S,.75f); return;
+    }
     const float W = 300 * S, H = 78 * S;
     const float X = Canvas->ClipX - W - 20 * S, Y = 16 * S;
     Panel(X, Y, W, H, DMHud::BrassDim);
-    Label(Model.EncounterObjective.IsEmpty() ? TEXT("SANDBOX ENCOUNTER") : TEXT("SMUGGLER TERRITORY"), DMHud::Brass, X + 12 * S, Y + 8 * S, .9f);
+    Label(TActorIterator<ADMFishingVillage>(GetWorld()) ? TEXT("FISHING VILLAGE") : Model.EncounterObjective.IsEmpty() ? TEXT("SANDBOX ENCOUNTER") : TEXT("SMUGGLER TERRITORY"), DMHud::Brass, X + 12 * S, Y + 8 * S, .9f);
     Label(FString::Printf(TEXT("Enemies standing  %d / %d"), Model.EnemiesStanding, Model.EnemyCount),
         DMHud::Bone, X + 12 * S, Y + 26 * S, 1.f);
     Label(FString::Printf(TEXT("Investigators up  %d / %d"), Model.InvestigatorsStanding, Model.InvestigatorCount),
@@ -671,7 +693,12 @@ void ADMCombatHUD::DrawMinimap(const FDMHudModel& Model)
         DrawLine(PointX, PointY - 12 * S, PointX - 4 * S, PointY - 6 * S, DMHud::Brass, 2.f * S);
         DrawLine(PointX, PointY - 12 * S, PointX + 4 * S, PointY - 6 * S, DMHud::Brass, 2.f * S);
     }
-    Label(TEXT("no fog of war implemented"), DMHud::Gap, X, Y + H + 4 * S, .85f);
+    for (TActorIterator<ADMObjective> It(GetWorld());It;++It)
+    {
+        if (It->IsTerminal()) { continue; } Place(It->PublicState.PayloadLocation,PointX,PointY);
+        DrawRect(DMHud::Brass,PointX-3*S,PointY-3*S,6*S,6*S);
+    }
+    Label(TEXT("gold: objectives | vision filters enemies"), DMHud::Muted, X, Y + H + 4 * S, .75f);
 }
 
 void ADMCombatHUD::DrawControls()
@@ -682,8 +709,9 @@ void ADMCombatHUD::DrawControls()
         return;
     }
     const float X = 20 * S;
-    const float Y = Canvas->ClipY - 170 * S;
-    Label(TEXT("DREAD MERIDIAN  |  combat sandbox"), DMHud::Brass, X, Y, 1.f);
+    const bool Village=TActorIterator<ADMFishingVillage>(GetWorld()) ? true : false;
+    const float Y = Canvas->ClipY - (Village?320:170) * S;
+    Label(Village ? TEXT("FISHING VILLAGE | I: interact | 1/2/3: bells") : TEXT("DREAD MERIDIAN  |  combat sandbox"), DMHud::Brass, X, Y, 1.f);
     Label(TEXT("right-click move/attack   left stick move   Tab target"), DMHud::Muted, X, Y + 18 * S, .85f);
     Label(TEXT("Q / W / E / R abilities   LMB / Space attack   V revive ally"), DMHud::Muted, X, Y + 34 * S, .85f);
     Label(TEXT("G ping (hold: radial)"), DMHud::Muted, X, Y + 50 * S, .85f);

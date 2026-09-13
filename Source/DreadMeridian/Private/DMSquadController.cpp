@@ -8,6 +8,7 @@
 #include "DMShubMinion.h"
 #include "DMCorruption.h"
 #include "DMVision.h"
+#include "DMFishingVillage.h"
 #include "DMPing.h"
 #include "EngineUtils.h"
 #include "Dom/JsonObject.h"
@@ -36,6 +37,7 @@ void ADMSquadController::Think(ADMCombatGameMode& Mode)
     if (!Self || Self->IsDown() || Self->IsRestrained()) { return; }
     if (Self->ActorHasTag(TEXT("ShubBoss"))) { return; }
     if (Self->bSwampThing) { return; } // Native role state machine owns movement and target selection.
+    if (Mode.Village && Mode.Village->DriveBot(Self)) { return; }
     if (auto* Minion=Self->FindComponentByClass<UDMShubMinion>(); Minion && Minion->ControlsMovement()) { return; }
     Self->Threat.Cleanup([&](const FString& Id) { const auto* A=Mode.FindCombatant(Id); return A && !A->IsDown(); },Mode.GetCombatTick());
     if (auto* Forced=Mode.FindCombatant(Self->Threat.Forced(Mode.GetCombatTick())); Forced && Self->IsHostileTo(Forced) && !Forced->IsDown() && DMVision::CanSee(Self,Forced))
@@ -88,9 +90,9 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
     S.EntityId = Self->EntityId;
     S.bEnemy = Self->bIsEnemy;
     S.bProfileRange = Self->bProfileRange;
-    S.bLocalEnemy = Mode.UsesEncounterLayout() && Self->bIsEnemy && EncounterGroup >= 0 && EncounterGroup <= 3;
+    S.bLocalEnemy = (Mode.UsesEncounterLayout() || Mode.IsFishingVillage()) && Self->bIsEnemy && EncounterGroup >= 0 && EncounterGroup <= 3;
     S.bPatrolMember = bPatrolMember;
-    S.bCompanionTethered = Mode.UsesEncounterLayout() && !Self->bIsEnemy && Leader != nullptr;
+    S.bCompanionTethered = (Mode.UsesEncounterLayout() || Mode.IsFishingVillage()) && !Self->bIsEnemy && Leader != nullptr;
     S.bCasting = Self->Smuggler->IsCasting();
     S.bRestrained = Self->IsRestrained() || Self->IsStunned();
     S.bAttackReady = Self->NextAttackTick <= Tick && Self->StaggeredUntilTick <= Tick && Self->Injuries->CanAttack();

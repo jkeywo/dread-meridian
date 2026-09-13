@@ -1,0 +1,112 @@
+{
+  "date": "2026-09-13",
+  "engine": "5.8.2",
+  "platform": "Win64",
+  "validation_root": "Saved/VillageVerification",
+  "source_snapshot": "Copied Source and Config; shared actual Content directory. Existing editor was left running. Runtime source hashes below matched the workspace.",
+  "foundation": {
+    "passed": 37,
+    "report": "d0c9b6de63054549995b0e02b15578a3"
+  },
+  "full_editor": {
+    "report": "a7136630b4f54f4c9c7884c8ad27fd64",
+    "scope": "Before final terrain-reference and HUD readability fixes; included FishingVillage and Vision.",
+    "passed": 44
+  },
+  "final_scenario": {
+    "report": "28491bbad25240829467eb1bce3eac49",
+    "scope": "Real village map, accepted objective interactions and test damage; order, optional lighthouse, drainage collision and routes, all disruptions, one-time Shub, victory. Followed only by the objective-progress HUD change.",
+    "passed": 1
+  },
+  "python_export_passed": 14,
+  "smoke": {
+    "contract": "dread-meridian.foundation-capture.v1",
+    "run_id": "2081676b-478e-8965-8bb9-10be054824a8",
+    "outcome": "victory",
+    "event_count": 6,
+    "event_counts": {
+      "run.started": 1,
+      "run.state_changed": 2,
+      "ritual.advanced": 1,
+      "ritual.summoned": 1,
+      "run.ended": 1
+    },
+    "provenance_complete": true,
+    "working_tree_dirty": true,
+    "evidence_scope": "foundation_harness_only",
+    "supports_gameplay_balance_claims": false,
+    "limitations": [
+      "No production bots, combat, objectives, or boss encounter.",
+      "Recorded source digests identify inputs; retain those inputs separately.",
+      "Wall-clock event timing is not deterministic simulation time."
+    ]
+  },
+  "network_regression": {
+    "report": "3a4c0db55cf443b885d513543f232238",
+    "scope": "Existing sandbox disconnect and two-client state/privacy checks; not a village multiplayer playthrough.",
+    "passed": true
+  },
+  "shell_regression": {
+    "scope": "Existing ShellSmoke sandbox probe.",
+    "passed": true,
+    "log": "shell-708d06605c8d4109ab37a35499d04c3b.log"
+  },
+  "preview": {
+    "image_sha256": "78eefd177bade5482762cc4ececb828951d97df5fb445aee1d90e6dfe108757c",
+    "metadata": {
+      "project_id": "dread-meridian",
+      "scenario_id": "fishing-village-fixed-v1",
+      "run_kind": "fixed_scenario",
+      "seed": 1927,
+      "rng_schema_version": 2,
+      "boss_selection_version": 2,
+      "madness_assignment_version": 2,
+      "ritual_points_per_stage": 100,
+      "investigator_slots": 4,
+      "logical_step_seconds": 0.1,
+      "engine_version": "5.8.2-56702186+++UE5+Release-5.8",
+      "capture_version": "0.15.0",
+      "started_at_utc": "2026-09-13T11:54:21.73Z",
+      "GameRevision": "e7d82f1a9d837a1c6175af42eab8b3b48b75dccf",
+      "SourceDigest": "18e64e8998242956c017b1ad02761c3f985ac7ab9fbd8dfb4be81cd149e1750b",
+      "GDDDigest": "427d848e5a92838e5fd8ab41fb15f4cb43351d0b3af1af10a5d95ea0e88ba40a",
+      "working_tree_dirty": true,
+      "combat_rules_version": "fishing-village-v1",
+      "bot_policy": "squad-utility-v5",
+      "test_profile": "interactive",
+      "initial_bot_count": 4,
+      "omissions": [
+        "htn_generation",
+        "timed_ritual_escalation",
+        "nyarlathotep_scenario",
+        "host_migration",
+        "full_map_fog"
+      ]
+    },
+    "outcome": "aborted by timed preview exit; not a completed playthrough",
+    "image": "fishing-village-overview.png",
+    "run_id": "52cdaa52-4746-b73c-1fa6-508f567292ff"
+  },
+  "runtime_source_hashes": [
+    {
+      "sha256": "25744937948e220c61d7e0385f25c89b0d897c2189e79456145b2ab09940372e",
+      "path": "Source/DreadMeridian/Private/DMFishingVillage.cpp"
+    },
+    {
+      "sha256": "e4178ec4f40af467e6210d74f270260ab4adb6a8224cdf3a87e97455d6ace21a",
+      "path": "Source/DreadMeridian/Private/DMCombatHUD.cpp"
+    },
+    {
+      "sha256": "68384e11b8c74dae04e5e4ba30ef30e32cf6425e2399e7f214e7a88087fe5aa0",
+      "path": "Source/DreadMeridian/Private/DMCombatPlayerController.cpp"
+    }
+  ],
+  "limitations": [
+    "No autonomous four-bot victory or two-client village playthrough claim.",
+    "No timed Ritual escalation, HTN generation, full-map fog, Nyarlathotep scenario or host migration.",
+    "Greybox terrain and provisional encounter tuning.",
+    "Other platform SDKs unavailable.",
+    "Concurrent creature-art and animation work was present in the tested working tree and is outside this commit.",
+    "Documentation and retained evidence were added after some capture fingerprints. Runtime hashes identify the final changed rendering/scenario inputs."
+  ]
+}

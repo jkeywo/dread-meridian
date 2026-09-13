@@ -13,7 +13,7 @@
 class FDMMechanicFixture : public IAutomationLatentCommand
 {
 public:
-    FDMMechanicFixture(FAutomationTestBase* T,TFunction<void(UWorld*,ADMCombatGameMode*,ADMCombatant*)> Work) : Test(T),Body(MoveTemp(Work)) {}
+    FDMMechanicFixture(FAutomationTestBase* T,TFunction<void(UWorld*,ADMCombatGameMode*,ADMCombatant*)> Work,FString Map=TEXT("/Game/DreadMeridian/Maps/L_CombatSandbox")) : Test(T),Body(MoveTemp(Work)),MapPath(MoveTemp(Map)) {}
     ~FDMMechanicFixture() { if (Settings) { Settings->RemoveFromRoot(); } }
     bool Update() override
     {
@@ -22,7 +22,7 @@ public:
             Settings=DuplicateObject<ULevelEditorPlaySettings>(GetDefault<ULevelEditorPlaySettings>(),GetTransientPackage()); Settings->AddToRoot();
             Settings->SetPlayNetMode(PIE_Standalone); Settings->SetPlayNumberOfClients(1); Settings->SetRunUnderOneProcess(true);
             Window=SNew(SWindow).Title(FText::FromString(TEXT("Mechanic verification"))).ClientSize(FVector2D(640,480)); FSlateApplication::Get().AddWindow(Window.ToSharedRef(),false);
-            FRequestPlaySessionParams P; P.EditorPlaySettings=Settings; P.CustomPIEWindow=Window; P.GlobalMapOverride=TEXT("/Game/DreadMeridian/Maps/L_CombatSandbox"); P.bAllowOnlineSubsystem=false;
+            FRequestPlaySessionParams P; P.EditorPlaySettings=Settings; P.CustomPIEWindow=Window; P.GlobalMapOverride=MapPath; P.bAllowOnlineSubsystem=false;
             GEditor->RequestPlaySession(P); GEditor->StartQueuedPlaySessionRequest(); Started=true; Deadline=FPlatformTime::Seconds()+90; return false;
         }
         UWorld* W=GEditor->PlayWorld; auto* M=W ? W->GetAuthGameMode<ADMCombatGameMode>() : nullptr;
@@ -39,5 +39,6 @@ public:
     }
 private:
     FAutomationTestBase* Test; TFunction<void(UWorld*,ADMCombatGameMode*,ADMCombatant*)> Body;
+    FString MapPath;
     bool Started=false; double Deadline=0; ULevelEditorPlaySettings* Settings=nullptr; TSharedPtr<SWindow> Window;
 };

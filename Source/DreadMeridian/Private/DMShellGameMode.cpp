@@ -15,7 +15,8 @@ ADMShellGameMode::ADMShellGameMode()
 {
     PlayerControllerClass = ADMShellPlayerController::StaticClass();
     HUDClass = ADMShellHUD::StaticClass();
-    MissionLevel = TSoftObjectPtr<UWorld>(FSoftObjectPath(TEXT("/Game/DreadMeridian/Maps/L_CombatSandbox")));
+    bFishingVillage=true;
+    MissionLevel = TSoftObjectPtr<UWorld>(FSoftObjectPath(TEXT("/Game/DreadMeridian/Maps/L_FishingVillage")));
 }
 
 void ADMShellGameMode::StartPlay()
@@ -98,6 +99,7 @@ void ADMShellGameMode::PublishPhase()
 
 void ADMShellGameMode::StreamMission()
 {
+    if (!IsFishingVillage()) { MissionLevel=TSoftObjectPtr<UWorld>(FSoftObjectPath(TEXT("/Game/DreadMeridian/Maps/L_CombatSandbox"))); }
     if (MissionStream)
     {
         // Already streamed once this session; the level cannot host a second encounter.

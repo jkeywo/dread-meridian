@@ -65,6 +65,7 @@ FDMHudModel FDMHudModel::Build(UWorld* World, const ADMCombatant* LocalPawn, con
 
     for (const ADMCombatant* Unit : Roster)
     {
+        if (Unit->bRequiresVision && Unit->IsHidden()) { continue; }
         const FDMHudUnit Row = Read(*Unit, LocalId);
         if (Row.bEnemy)
         {

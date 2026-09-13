@@ -4,6 +4,7 @@
 #include "DMRelicComponent.h"
 #include "DMObjective.h"
 #include "DMVision.h"
+#include "DMFishingVillage.h"
 #include "EngineUtils.h"
 #include "DMAttackFX.h"
 #include "DMScroungePickup.h"
@@ -125,7 +126,15 @@ void ADMCombatant::Tick(float DeltaSeconds)
     else if (Kit->IsCharging()) { if (HasAuthority()) { Kit->AdvanceCharge(DeltaSeconds); } }
     else if (bHasMoveGoal && IsLocallyControlled())
     {
-        const FVector Direction = (MoveGoal - GetActorLocation()).GetSafeNormal2D();
+        FVector Steer=MoveGoal;
+        for (TActorIterator<ADMFishingVillage> It(GetWorld());It;++It)
+        {
+            const float Now=GetWorld()->GetTimeSeconds();
+            if (Now>=NextVillageRouteTime || FVector::DistSquared2D(MoveGoal,VillageRouteGoal)>FMath::Square(150.f))
+            { VillageWaypoint=It->Waypoint(GetActorLocation(),MoveGoal); VillageRouteGoal=MoveGoal; NextVillageRouteTime=Now+.4f; }
+            Steer=VillageWaypoint; break;
+        }
+        const FVector Direction = (Steer - GetActorLocation()).GetSafeNormal2D();
         if (FVector::DistSquared2D(MoveGoal, GetActorLocation()) > FMath::Square(35.f)) { AddMovementInput(Direction); }
         else { StopGoal(); }
     }
@@ -352,6 +361,7 @@ void ADMCombatant::StepInvestigator(int32 Tick)
     Slows.RemoveAll([&](const FDMSlow& S) { return S.UntilTick <= Tick; });
     const float Slow = FMath::Max(DMKitRules::EffectiveSlow(Slows, Tick), SpiritSlow);
     ReplicatedMoveSpeed = (bSwampThing ? Swamp->Speed() : bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Speed() : 420) * (1 + Investigator->Stickiness() * .25f) * (1 - Slow * (1 - EffectiveResistance())) * Injuries->MovementFactor * Relics->MovementMultiplier();
+    if (auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>(); M && M->IsFishingVillage() && DMVision::InReeds(GetWorld(),GetActorLocation())) { ReplicatedMoveSpeed*=.7f; }
 }
 void ADMCombatant::StepControl(int32 Tick)
 {

@@ -23,6 +23,7 @@ public:
     bool FinishRun(bool bVictory);
 
 protected:
+    virtual uint32 SelectBossDraw(uint32 Draw) const { return Draw; }
     virtual void ConfigureCaptureMetadata(const TSharedRef<class FJsonObject>& Metadata) {}
 
 private:

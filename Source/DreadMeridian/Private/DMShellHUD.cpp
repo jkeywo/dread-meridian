@@ -238,9 +238,9 @@ void ADMShellHUD::DrawLobby()
     Brackets(40, 92, 860, 158, DMShell::Bone);
     Text(TEXT("SCENARIO"), DMShell::Brass, 62, 110, 12);
     Text(TEXT("SWAMP FISHING VILLAGE"), DMShell::Bone, 62, 132, 34);
-    PlaceholderTag(62, 178);
-    Text(TEXT("Scenario selection, factions and mutators have no system behind them."), DMShell::Body, 62, 202, 15);
-    Text(TEXT("The mission that streams in is the combat sandbox encounter."), DMShell::Body, 62, 221, 15);
+    Text(TEXT("FIXED SCENARIO"), DMShell::Brass, 62, 178, 12);
+    Text(TEXT("Complete the core chain and three Disruptions to summon Shub."), DMShell::Body, 62, 202, 15);
+    Text(TEXT("Lighthouse, treatment and relic sites are optional."), DMShell::Body, 62, 221, 15);
     Frame(700, 110, 180, 114, DMShell::Rule);
     Text(TEXT("ELDER ONE"), DMShell::Brass, 718, 126, 12);
     Text(TEXT("Hidden until"), DMShell::Muted, 718, 150, 15);
@@ -292,11 +292,11 @@ void ADMShellHUD::DrawCaseReport()
     const ADMGameState* State = GetWorld() ? GetWorld()->GetGameState<ADMGameState>() : nullptr;
     const bool bVictory = State && State->bShellVictory;
 
-    Text(TEXT("CASE REPORT - COMBAT SANDBOX ENCOUNTER"), DMShell::Brass, 40, 28, 12);
+    Text(TEXT("CASE REPORT - EXPEDITION"), DMShell::Brass, 40, 28, 12);
     Text(bVictory ? TEXT("VICTORY") : TEXT("DEFEAT"), bVictory ? DMShell::Brass : DMShell::Danger, 40, 52, 92);
     Text(bVictory
-            ? TEXT("The squad cleared the encounter. This is the sandbox encounter, not a GDD scenario or boss.")
-            : TEXT("All four investigators went down. This is the sandbox encounter, not a GDD scenario or boss."),
+            ? TEXT("The squad defeated the manifested Elder One.")
+            : TEXT("All four investigators went down. The expedition is lost."),
         DMShell::Muted, 40, 150, 17);
     DrawLine(X(40), Y(186), X(1400), Y(186), DMShell::Rule, 1.f);
 

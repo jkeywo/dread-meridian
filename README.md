@@ -3,11 +3,17 @@
 A PC-first Unreal Engine co-op Mythos PvE game and Play Trace's video-game pilot.
 The [master GDD](gdd/Mythos_PvE_MOBA_Master_GDD_v0.3.md) remains canonical.
 
-## Play the combat sandbox
+The [fixed fishing-village scenario](design/experiments/fishing-village.md) is
+`L_FishingVillage`. It assembles the existing systems into a greybox map with
+fixed enemy placements, a four-stage core chain, three required Disruptions,
+optional rewards, a drainable basin and Shub. Completing the required objectives
+summons Shub; defeating Shub wins. This version has no timed Ritual escalation,
+generated HTN plan or Nyarlathotep scenario.
 
-The playable slice has a native greybox arena, four investigators, a staged
-smuggler encounter, GAS attacks, Health/Shield, downing, interruptible revives, basic
-threat and bot control. Humans take over existing investigators; disconnects
+## Play the fishing village
+
+Four investigators explore the village, fight fixed Swamp Thing and Smuggler
+encounters, complete objectives and confront Shub. Humans take over existing investigators; disconnects
 return them to the same companion policy used in headless runs.
 
 ```powershell
@@ -19,6 +25,9 @@ and a Windows SDK. Tested toolchain: MSVC 14.44 / SDK 10.0.22621.0.
 Set `UE_ROOT` or pass `-EngineRoot` if needed. Each launch/test builds first.
 Save and close the editor before rebuilding so it releases the game DLL.
 Use `-Action Editor` to edit the map and press Play inside Unreal.
+The editor starts on the village map; the shell's Launch Expedition also loads
+it. Use `-Action GenerateVillage` if the map needs to be created.
+The original smuggler sandbox remains available with `-Action Play -Sandbox`.
 
 | Action | Mouse/keyboard | Controller |
 |---|---|---|
@@ -32,6 +41,8 @@ Use `-Action Editor` to edit the map and press Play inside Unreal.
 | Use nearby treatment supply | T | D-pad left |
 | Ground to reduce current Madness | H | D-pad right |
 | Examine / dispel nearest Perception manifestation | J | Right-stick click |
+| Interact with nearby objective | I | Menu |
+| Enter observed bell sequence | 1 / 2 / 3 | Keyboard sequence entry |
 | Ping (tap for context, hold for the radial) | G | D-pad up |
 
 Q/W/E/R take the conventional MOBA keys (GDD 3.2), so keyboard movement is
@@ -39,7 +50,7 @@ right-click only and revive moved to V.
 
 Move to cancel auto-attack. Revival requires staying close and is interrupted by
 damage; repeated Grievous Injuries lengthen the channel. Defeat occurs when all
-four investigators are down. Clear the eleven occupation enemies, then defeat
+four investigators are down. In the optional **old sandbox**, clear the eleven occupation enemies, then defeat
 the Gang Boss and all four posse members to win this **sandbox encounter**,
 not a GDD scenario/boss. Smoke and network probes use a compact three-enemy
 fixture. Restart play to reset the encounter.
@@ -52,8 +63,9 @@ circles and answer [pings](docs/pings.md). Tuning lives in per-hero/role data
 assets with C++ defaults. It is a per-bot combat policy, not the GDD team planner.
 [Injuries](docs/injuries.md) now use recent Health loss, six named effects,
 Grievous overflow and finite treatment; food heals over time.
-Ability evolutions, Madness boss resonance, HTN/objectives, bosses, matchmaking and host
-migration remain explicit omissions in captures. Break/CC uses configurable Resolve and bounded control windows; see [Break/CC](docs/break-cc.md).
+Capture omissions are specific to the launch profile. The village integrates
+objectives, Shub and boss resonance; HTN, timed Ritual escalation, matchmaking
+and host migration remain unimplemented. Break/CC uses configurable Resolve and bounded control windows; see [Break/CC](docs/break-cc.md).
 [Madness core](docs/madness-core.md) provides current/floor, Crisis recovery and private delivery.
 All four [Madness families](docs/madness-families.md) now have playable sandbox effects. Sandbox and smoke-profile values are provisional tuning.
 
@@ -87,14 +99,15 @@ This does not verify matchmaking, host migration or physical controller feel.
 ```
 
 Opens the shell level: main menu, expedition lobby, then the mission streamed in on **Launch
-Expedition**, then a case report showing the run's real Victory or Defeat. It is the same
-encounter, bots and capture that `-Action Play` runs, started from the lobby instead of on load.
-Settings, scenario and seat selection, Leads and the case report's consequence list are drawn as
+Expedition**, then a case report showing the run's real Victory or Defeat. It loads
+the fixed fishing village that `-Action Play` runs, starting from the lobby instead of on load.
+Settings, alternate scenario and seat selection, Leads and the case report's consequence list are drawn as
 explicit placeholders. See [shell flow](docs/shell-flow.md) for the full list and
 `-Action ShellSmoke` for the headless check.
 
-The native map is `Content/DreadMeridian/Maps/L_CombatSandbox.umap`.
-`-Action GenerateMap` creates it if absent and preserves existing authored edits.
+The scenario map is `Content/DreadMeridian/Maps/L_FishingVillage.umap`.
+`-Action GenerateVillage` creates it if absent and preserves existing authored edits.
+`-Action GenerateMap` still creates the separate `L_CombatSandbox`.
 Install Git LFS before committing native assets. Editor Python authors the map;
 the runtime game has no Python or Play Trace service dependency. Packaging the
 dedicated Server target requires a source engine build.

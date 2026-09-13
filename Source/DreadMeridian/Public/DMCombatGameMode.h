@@ -75,7 +75,9 @@ public:
     bool IsCombatActive() const { return bCombatActive; }
     void UseBossOutcome() { if (HasAuthority()) { bBossOutcome=true; } }
     void CompleteBossEncounter(bool bVictory) { if (HasAuthority() && bBossOutcome && bCombatActive) { CompleteCombat(bVictory); } }
-    bool UsesEncounterLayout() const { return SmokeOutcome.IsEmpty() && !bNetworkTest && !bSwampTest; }
+    bool UsesEncounterLayout() const { return !bFishingVillage && SmokeOutcome.IsEmpty() && !bNetworkTest && !bSwampTest; }
+    bool IsFishingVillage() const { return bFishingVillage; }
+    UPROPERTY() TObjectPtr<class ADMFishingVillage> Village;
     const TArray<TObjectPtr<ADMCombatant>>& GetCombatants() const { return Combatants; }
     ADMCombatant* FindCombatant(const FString& EntityId) const;
     /** Call between combat iterations, never while iterating the roster. */
@@ -115,6 +117,8 @@ public:
     void NoteKitCast(EDMKitSlot Slot, const ADMCombatant& Caster);
     const FDMCombatMetrics& GetMetrics() const { return Metrics; }
 protected:
+    bool bFishingVillage=false;
+    virtual uint32 SelectBossDraw(uint32 Draw) const override { return bFishingVillage ? 0 : Draw; }
     virtual void ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& Metadata) override;
     /**
      * False defers the encounter so a shell (menu/lobby) can start it later. The sandbox map starts
