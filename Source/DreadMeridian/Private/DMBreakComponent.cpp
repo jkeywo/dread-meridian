@@ -61,6 +61,7 @@ void UDMBreakComponent::AddPressure(float Amount, ADMCombatant* Source, const FS
     if (!Self()->HasAuthority() || !Mode || !Mode->IsCombatActive() || !IsProtected() || Self()->IsDown()
         || !FMath::IsFinite(Amount) || Amount <= 0) { return; }
     const int32 Tick = Mode->GetCombatTick(); Step(Tick);
+    if (Source) { Amount*=Source->Relics->BreakMultiplierAgainst(Self()); }
     const float Before = Meter.Value;
     const bool bBroke = Meter.Add(Amount, Tick);
     Project(Tick);

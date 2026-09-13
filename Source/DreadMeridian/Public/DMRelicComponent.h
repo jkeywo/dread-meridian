@@ -34,6 +34,8 @@ class DREADMERIDIAN_API UDMRelicComponent : public UActorComponent
     GENERATED_BODY()
 public:
     UDMRelicComponent();
+    virtual void BeginPlay() override;
+    float BreakMultiplierAgainst(const ADMCombatant* Target) const;
     FDMRelicControlEvent AcceptedControl;
     FDMRelicBreakEvent AcceptedBreak;
     FDMRelicOverhealEvent ExcessHealing;
@@ -56,4 +58,7 @@ private:
     UPROPERTY(Replicated) FDMRelicInventory Inventory;
     FDMRelicRuntime Runtime;
     ADMCombatant* Self() const;
+    void OnControl(ADMCombatant* Target,const FDMControl& Control);
+    void OnBreak(ADMCombatant* Source,float Amount,bool bBroke);
+    void PromoteThreat(ADMCombatant* Target);
 };

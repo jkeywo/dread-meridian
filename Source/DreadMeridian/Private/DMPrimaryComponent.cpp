@@ -2,6 +2,7 @@
 #include "DMPrimaryAbility.h"
 #include "DMAbilityMarker.h"
 #include "DMCombatant.h"
+#include "DMRelicComponent.h"
 #include "DMKitComponent.h"
 #include "DMCombatGameMode.h"
 #include "DMEncounterLayout.h"
@@ -174,6 +175,7 @@ bool UDMPrimaryComponent::Resolve()
         else
         {
             HeldTarget = Target; Target->HeldBy = Actor; Target->StopGoal();
+            Actor->Relics->AcceptedControl.Broadcast(Target,FDMControl());
             Target->GetCharacterMovement()->StopMovementImmediately(); Target->InterruptControl(); Actor->StopGoal();
             const uint8 N = Actor->Progression->Node(0);
             HoldEndTick = Now() + (N==1 || N==3 ? 25 : N==2 || N==5 ? 10 : N==4 ? 20 : bDrowned ? 25 : 15);

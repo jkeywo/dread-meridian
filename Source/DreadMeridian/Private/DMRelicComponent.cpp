@@ -3,6 +3,28 @@
 #include "DMCombatGameMode.h"
 #include "Net/UnrealNetwork.h"
 UDMRelicComponent::UDMRelicComponent() { SetIsReplicatedByDefault(true); }
+void UDMRelicComponent::BeginPlay()
+{
+    Super::BeginPlay();
+    AcceptedControl.AddUObject(this,&UDMRelicComponent::OnControl);
+    AcceptedBreak.AddUObject(this,&UDMRelicComponent::OnBreak);
+}
+void UDMRelicComponent::PromoteThreat(ADMCombatant* Target)
+{
+    if (!Self()->HasAuthority() || !Has(EDMRelic::Swagger) || !IsValid(Target) || Target->GetWorld()!=GetWorld() || Target->bIsEnemy==Self()->bIsEnemy || Runtime.Swaggered.Contains(Target->EntityId)) { return; }
+    Runtime.Swaggered.Add(Target->EntityId); Target->Threat.AtLeastHighest(Self()->EntityId);
+}
+void UDMRelicComponent::OnControl(ADMCombatant* Target,const FDMControl& C)
+{ if (C.StunTicks>0 || C.StaggerTicks>0 || !C.Displacement.IsNearlyZero() || (Target && Target->HeldBy==Self())) { PromoteThreat(Target); } }
+void UDMRelicComponent::OnBreak(ADMCombatant* Source,float Amount,bool bBroke)
+{ if (Source && Amount>=5) { Source->Relics->PromoteThreat(Self()); } }
+float UDMRelicComponent::BreakMultiplierAgainst(const ADMCombatant* Target) const
+{
+    if (!Target) { return 1; }
+    const auto* Holder=Target->GetAttackTarget();
+    return Holder && Holder!=Self() && Holder->bIsEnemy==Self()->bIsEnemy && Holder->Relics->Has(EDMRelic::Swagger)
+        && Holder->Relics->Runtime.Swaggered.Contains(Target->EntityId) ? 1.3f : 1.f;
+}
 ADMCombatant* UDMRelicComponent::Self() const { return Cast<ADMCombatant>(GetOwner()); }
 bool UDMRelicComponent::CanAcquire(EDMRelic R) const
 { return Self() && !Self()->bIsEnemy && static_cast<uint8>(R)<static_cast<uint8>(EDMRelic::Count) && !Has(R) && Inventory.Items.Num()<FMath::Clamp(Capacity,1,8); }
