@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "DMKitRules.h"
+#include "DMRelicRuntime.h"
 #include "DMRelicComponent.generated.h"
 class ADMCombatant;
 DECLARE_MULTICAST_DELEGATE_TwoParams(FDMRelicControlEvent,ADMCombatant*,const FDMControl&);
@@ -18,6 +19,14 @@ struct DREADMERIDIAN_API FDMRelicInventory
     UPROPERTY() int32 Version = 1;
     UPROPERTY() TArray<EDMRelic> Items;
     UPROPERTY() TArray<FString> AwardIds;
+};
+USTRUCT()
+struct FDMRelicSnapshot
+{
+    GENERATED_BODY()
+    UPROPERTY() int32 Version=1;
+    UPROPERTY() FDMRelicInventory Inventory;
+    UPROPERTY() FDMRelicRuntime Runtime;
 };
 UCLASS(Config=Game)
 class DREADMERIDIAN_API UDMRelicComponent : public UActorComponent
@@ -36,6 +45,8 @@ public:
     bool Has(EDMRelic Relic) const { return Inventory.Items.Contains(Relic); }
     FDMRelicInventory Capture() const { return Inventory; }
     bool Restore(const FDMRelicInventory& Snapshot);
+    FDMRelicSnapshot CaptureFull() const { FDMRelicSnapshot S; S.Inventory=Inventory; S.Runtime=Runtime; return S; }
+    bool RestoreFull(const FDMRelicSnapshot& Snapshot);
     static FString Name(EDMRelic Relic);
     static FString Description(EDMRelic Relic);
     FString Summary() const;
@@ -43,5 +54,6 @@ public:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 private:
     UPROPERTY(Replicated) FDMRelicInventory Inventory;
+    FDMRelicRuntime Runtime;
     ADMCombatant* Self() const;
 };

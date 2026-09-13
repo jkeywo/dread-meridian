@@ -27,6 +27,19 @@ FString UDMRelicComponent::Name(EDMRelic R)
     static const TCHAR* Names[] = {TEXT("Officer's Swagger"),TEXT("Cracked Saint's Medal"),TEXT("Hangman's Knot"),TEXT("Overheal Shield (name pending)"),TEXT("Soldier's Morphine Tin"),TEXT("Black Glass Rosary"),TEXT("Ferryman's Coin"),TEXT("Saint's Work Gloves")};
     return static_cast<uint8>(R)<8 ? Names[static_cast<uint8>(R)] : TEXT("Unknown relic");
 }
+bool UDMRelicComponent::RestoreFull(const FDMRelicSnapshot& S)
+{
+    const auto& R=S.Runtime;
+    if (!Self() || !Self()->HasAuthority() || S.Version!=1 || R.Version!=1 || !FMath::IsFinite(R.OwnedShield) || R.OwnedShield<0 || R.OwnedShield>Self()->MaxHealth()*.5f
+        || R.PrimeUntil<0 || R.ShieldHoldUntil<0 || R.RosaryUntil<0 || R.HasteUntil<0 || R.ControlUntil<0 || R.MovementWindow<0
+        || R.LastPosition.ContainsNaN() || !FMath::IsFinite(R.Distance) || R.Distance<0 || R.Wakes.Num()>3) { return false; }
+    TSet<FString> Unique;
+    for (const auto& Id : R.Swaggered) { if (Id.IsEmpty() || Unique.Contains(Id)) { return false; } Unique.Add(Id); }
+    for (const auto& Pair : R.Contributions) { if (Pair.Key.IsEmpty() || !FMath::IsFinite(Pair.Value) || Pair.Value<0) { return false; } }
+    for (const auto& Wake : R.Wakes) { if (Wake.Location.ContainsNaN() || Wake.Until<0) { return false; } }
+    if (!Restore(S.Inventory)) { return false; }
+    Runtime=R; return true;
+}
 FString UDMRelicComponent::Description(EDMRelic R)
 {
     static const TCHAR* Text[] = {TEXT("Control draws threat; allies Break your focused enemy more effectively."),TEXT("Contribute to a Break, then spend your primed ability during its vulnerability."),TEXT("Hard control spreads weaker control to nearby enemies."),TEXT("Excess healing becomes temporary, decaying Shield."),TEXT("Remove a specific Injury; future wounds become Grievous. Faster revives both ways."),TEXT("Entering a higher Madness tier briefly strengthens your resource."),TEXT("Rapid movement leaves wakes that help allies and hinder enemies."),TEXT("Protect objective interactions; finishing or releasing grants nearby defense.")};
