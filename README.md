@@ -29,6 +29,7 @@ Use `-Action Editor` to edit the map and press Play inside Unreal.
 | Confirm / cancel an aimed ability | Left-click / right-click or Escape | A / B |
 | Detonate placed satchels | F | Top face button (Y) |
 | Revive nearby downed ally | V | Left face button (X) |
+| Use nearby treatment supply | T | D-pad left |
 | Ping (tap for context, hold for the radial) | G | D-pad up |
 
 Q/W/E/R take the conventional MOBA keys (GDD 3.2), so keyboard movement is
@@ -47,8 +48,9 @@ beat a scarcity-scaled threshold, and latches stop dithering. Companions rescue
 downed allies, retreat toward the leader at low Health, step out of bomber
 circles and answer [pings](docs/pings.md). Tuning lives in per-hero/role data
 assets with C++ defaults. It is a per-bot combat policy, not the GDD team planner.
-Ability evolutions, burst-window and
-named Injury effects, Madness, HTN/objectives, bosses, matchmaking and host
+[Injuries](docs/injuries.md) now use recent Health loss, six named effects,
+Grievous overflow and finite treatment; food heals over time.
+Ability evolutions, Madness, HTN/objectives, bosses, matchmaking and host
 migration remain explicit omissions in captures. Break/CC uses configurable Resolve and bounded control windows; see [Break/CC](docs/break-cc.md).
 Madness remains a declared stub meter. Sandbox and smoke-profile values are provisional tuning.
 

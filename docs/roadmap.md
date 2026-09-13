@@ -8,10 +8,11 @@ and rescue, threat-based companions, four persistent investigator slots,
 human/bot handoffs, Enhanced Input mappings and local Play Trace source/telemetry
 ingestion. All four investigators now have Basic, Q and their named W/E/R at the
 A nodes, used by humans and companions alike; see [named kits](kits.md). The rows
-below retain the full GDD acceptance scope. Ability evolutions, burst/named
-Injuries, the Madness system behind its stub meter, and
+below retain the full GDD acceptance scope. Ability evolutions, the Madness system behind its stub meter, and
 scenario-aware team planning remain outstanding. Break/CC now uses configurable
 Resolve, bounded control windows and recovery resistance; see [Break/CC](break-cc.md).
+[Injuries](injuries.md) now cover burst/down triggers, six effects, Grievous and finite
+recovery supplies. Objective-earned medical resources and authored food placement remain open.
 
 | Slice | Deliverable | Acceptance |
 |---|---|---|

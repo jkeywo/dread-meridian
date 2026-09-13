@@ -16,6 +16,7 @@ public:
     virtual void StartPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+    uint32 DrawRandom(EDMRandomStream Stream);
     bool AdvanceRitual(int32 Points);
     bool Summon();
     bool FinishRun(bool bVictory);

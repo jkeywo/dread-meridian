@@ -9,6 +9,7 @@
 #include "DMEncounterLayout.h"
 #include "DMGameState.h"
 #include "DMScroungePickup.h"
+#include "DMRecoverySupply.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
@@ -39,6 +40,9 @@ void ADMCombatPlayerController::SetupInputComponent()
     AttackAction = NewObject<UInputAction>(this);
     CycleAction = NewObject<UInputAction>(this);
     ReviveAction = NewObject<UInputAction>(this);
+    TreatmentAction = NewObject<UInputAction>(this);
+    Mapping->MapKey(TreatmentAction, EKeys::T); Mapping->MapKey(TreatmentAction, EKeys::Gamepad_DPad_Left);
+    Input->BindAction(TreatmentAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::StartTreatment);
     QAction = NewObject<UInputAction>(this); QPadAction = NewObject<UInputAction>(this);
     WAction = NewObject<UInputAction>(this); EAction = NewObject<UInputAction>(this); RAction = NewObject<UInputAction>(this);
     ConfirmQAction = NewObject<UInputAction>(this); CancelQAction = NewObject<UInputAction>(this);
@@ -379,6 +383,7 @@ void ADMCombatPlayerController::ClientVerifyCombatState_Implementation(const FSt
                 Check(TEXT("name"), Expected->GetStringField(It->EntityId + TEXT(".name")) == It->DisplayName(), It->DisplayName(), Expected->GetStringField(It->EntityId + TEXT(".name")));
                 Check(TEXT("resources"), Expected->GetStringField(It->EntityId + TEXT(".resources")) == It->Investigator->ResourceSummary(), It->Investigator->ResourceSummary(), Expected->GetStringField(It->EntityId + TEXT(".resources")));
                 Check(TEXT("primary"), Expected->GetStringField(It->EntityId + TEXT(".primary")) == It->Primary->ReplicationSummary(), It->Primary->ReplicationSummary(), Expected->GetStringField(It->EntityId + TEXT(".primary")));
+                Check(TEXT("injuries"), Expected->GetStringField(It->EntityId + TEXT(".injuries")) == It->Injuries->Summary(), It->Injuries->Summary(), Expected->GetStringField(It->EntityId + TEXT(".injuries")));
                 Check(TEXT("resolve"), Expected->GetStringField(It->EntityId + TEXT(".resolve")) == It->Resolve->ReplicationSummary(), It->Resolve->ReplicationSummary(), Expected->GetStringField(It->EntityId + TEXT(".resolve")));
                 Check(TEXT("kit"), Expected->GetStringField(It->EntityId + TEXT(".kit")) == It->Kit->ReplicationSummary(), It->Kit->ReplicationSummary(), Expected->GetStringField(It->EntityId + TEXT(".kit")));
             }
@@ -640,4 +645,14 @@ void ADMCombatPlayerController::ServerPing_Implementation(uint8 Kind, FVector Lo
     if (Target && (Target->GetWorld() != GetWorld() || !FDMPingBoard::AllowsTarget(PingKind))) { Target = nullptr; }
     if (Mode->CreatePing(PingKind, Actor->EntityId, false, ClampPlayable(Location), Target ? Target->EntityId : FString()) == INDEX_NONE)
     { ClientQFeedback(TEXT("Ping rejected")); }
+}
+
+void ADMCombatPlayerController::StartTreatment() { ServerTreatment(); }
+void ADMCombatPlayerController::ServerTreatment_Implementation()
+{
+    ADMCombatant* Actor = Cast<ADMCombatant>(GetPawn());
+    if (!Actor) { return; }
+    for (TActorIterator<ADMRecoverySupply> It(GetWorld()); It; ++It)
+    { if (!It->bFood && It->TryUse(Actor)) { ClientQFeedback(TEXT("Treatment applied")); return; } }
+    ClientQFeedback(TEXT("Need an Injury and nearby treatment supplies"));
 }

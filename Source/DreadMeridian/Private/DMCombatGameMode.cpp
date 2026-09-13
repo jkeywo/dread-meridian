@@ -1,6 +1,7 @@
 #include "DMCombatGameMode.h"
 #include "DMEditorPlaySelection.h"
 #include "DMCombatant.h"
+#include "DMRecoverySupply.h"
 #include "DMCombatPlayerController.h"
 #include "DMCombatHUD.h"
 #include "DMSquadController.h"
@@ -43,9 +44,9 @@ void ADMCombatGameMode::ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& 
 {
     Metadata->SetStringField(TEXT("scenario_id"), TEXT("combat-sandbox"));
     Metadata->SetStringField(TEXT("run_kind"), TEXT("combat_sandbox"));
-    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.4.0"));
+    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.5.0"));
     if (UsesEncounterLayout()) { Metadata->SetStringField(TEXT("native_faction"), TEXT("smugglers")); }
-    Metadata->SetStringField(TEXT("combat_rules_version"), TEXT("break-cc-v1"));
+    Metadata->SetStringField(TEXT("combat_rules_version"), TEXT("injuries-v1"));
     Metadata->SetStringField(TEXT("bot_policy"), TEXT("squad-utility-v4"));
     Metadata->SetStringField(TEXT("test_profile"), bNetworkTest ? TEXT("network_probe") : (SmokeOutcome.IsEmpty() ? TEXT("interactive") : SmokeOutcome));
     Metadata->SetNumberField(TEXT("initial_bot_count"), 4);
@@ -54,7 +55,7 @@ void ADMCombatGameMode::ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& 
     TArray<TSharedPtr<FJsonValue>> Omissions;
     // Madness remains a stub; Mythos boss encounters and migration are still absent.
     for (const TCHAR* Missing : { TEXT("ability_evolutions"), TEXT("objectives_htn"), TEXT("madness"),
-        TEXT("mythos_boss_encounters"), TEXT("named_injury_effects"), TEXT("burst_injury_window"),
+        TEXT("mythos_boss_encounters"), TEXT("medical_objectives"),
         TEXT("host_migration"), TEXT("deterministic_physics_navigation") })
     { Omissions.Add(MakeShared<FJsonValueString>(Missing)); }
     Metadata->SetArrayField(TEXT("omissions"), Omissions);
@@ -124,6 +125,12 @@ void ADMCombatGameMode::BeginEncounter()
         Spawn->SetStringField(TEXT("control"), TEXT("bot"));
         Emit(TEXT("combat.spawned"), Spawn);
         AttachBot(Actor);
+    }
+    if (UsesEncounterLayout())
+    {
+        GetWorld()->SpawnActor<ADMRecoverySupply>(FVector(-2200, 350, 40), FRotator::ZeroRotator);
+        auto* Food = GetWorld()->SpawnActor<ADMRecoverySupply>(FVector(-1900, -350, 40), FRotator::ZeroRotator);
+        Food->bFood = true; Food->Charges = 1;
     }
     bCombatActive = true;
     PublishEncounter();
@@ -567,6 +574,7 @@ void ADMCombatGameMode::StepCombat()
     SquadBoard.Step(CombatTick);
     // Expire control for the whole roster before persistent abilities or signatures resolve.
     for (ADMCombatant* Actor : Combatants) { Actor->StepControl(CombatTick); }
+    for (TActorIterator<ADMRecoverySupply> It(GetWorld()); It; ++It) { It->Step(); }
     for (ADMCombatant* Actor : Combatants) { Actor->Primary->Step(CombatTick); Actor->Kit->Step(CombatTick); Actor->Smuggler->Step(*this); }
     if (ADMGameState* Projection = GetGameState<ADMGameState>()) { Projection->SetCombatTick(CombatTick); }
     for (ADMCombatant* Actor : Combatants)
@@ -652,6 +660,7 @@ void ADMCombatGameMode::CompleteCombat(bool bVictory)
             Expected->SetStringField(Actor->EntityId + TEXT(".name"), Actor->DisplayName());
             Expected->SetStringField(Actor->EntityId + TEXT(".resources"), Actor->Investigator->ResourceSummary());
             Expected->SetStringField(Actor->EntityId + TEXT(".primary"), Actor->Primary->ReplicationSummary());
+            Expected->SetStringField(Actor->EntityId + TEXT(".injuries"), Actor->Injuries->Summary());
             Expected->SetStringField(Actor->EntityId + TEXT(".resolve"), Actor->Resolve->ReplicationSummary());
             Expected->SetStringField(Actor->EntityId + TEXT(".kit"), Actor->Kit->ReplicationSummary());
         }

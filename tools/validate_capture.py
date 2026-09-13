@@ -66,7 +66,7 @@ def validate_capture(path: Path) -> dict:
     require(meta.get('production_bots') == 0 and meta.get('investigator_slots') == 4,
             'Harness roster metadata is invalid')
     require(integer(meta.get('seed')) and -(2**31) <= meta['seed'] < 2**31, 'Invalid seed')
-    require(meta.get('rng_schema_version') == 1, 'Unsupported RNG schema')
+    require(meta.get('rng_schema_version') in (1, 2), 'Unsupported RNG schema')
     tuning = meta.get('ritual_points_per_stage')
     require(integer(tuning) and 0 < tuning < 2**31, 'Invalid ritual tuning')
     require(type(meta.get('working_tree_dirty')) is bool, 'Missing working tree status')

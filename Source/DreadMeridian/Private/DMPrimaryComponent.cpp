@@ -61,6 +61,7 @@ bool UDMPrimaryComponent::Ground(FVector Point, FVector& Out) const
 FString UDMPrimaryComponent::Validate(ADMCombatant* Target, FVector Point, bool bDetonate) const
 {
     auto* Actor = Self();
+    if (!Actor->Injuries->CanCast()) { return TEXT("Concussion: pause before casting again"); }
     if (Actor->IsDown() || (Actor->IsRestrained() || Actor->IsStunned()) || Actor->bIsEnemy) { return TEXT("Cannot cast in this state"); }
     if (Point.ContainsNaN()) { return TEXT("Invalid aim point"); }
     if (Target && (!IsValid(Target) || Target->GetWorld() != GetWorld())) { return TEXT("Invalid target"); }
@@ -173,6 +174,7 @@ bool UDMPrimaryComponent::Resolve()
     }
     if (!bRequestedDetonate) { ActiveMode->NoteQCast(); Actor->MulticastPresentation(R->Kind == EDMInvestigator::Smuggler && !HeldTarget ? 3 : 1, Target ? Target->GetActorLocation() : RequestedPoint); }
     Actor->RecordResources(TEXT("q")); Cooldown = FMath::Max(0, NextCastTick - Now()) * .1f; Actor->ForceNetUpdate();
+    Actor->Injuries->OnCast();
     bResolved = true; return true;
 }
 bool UDMPrimaryComponent::SatchelCanHit(const ADMAbilityMarker* Charge, ADMCombatant* Enemy) const

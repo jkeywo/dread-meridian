@@ -25,6 +25,7 @@ FDMHudUnit FDMHudModel::Read(const ADMCombatant& Unit, const FString& LocalEntit
     Row.ReviveProgress = Unit.ReviveProgress;
     Row.bTargetingLocal = !LocalEntityId.IsEmpty() && Unit.AttackTargetId == LocalEntityId;
     Row.Location = Unit.GetActorLocation();
+    Row.SpecificInjuries = Unit.Injuries->Specific;
     Row.Madness = Unit.Investigator->Madness;
     Row.bElite = Unit.bIsEnemy && !Unit.bCommonEnemy;
     Row.BreakFraction = Row.bElite && Unit.Resolve->MaxResolve > 0 ? FMath::Clamp(Unit.Resolve->CurrentResolve / Unit.Resolve->MaxResolve, 0.f, 1.f) : 0.f;

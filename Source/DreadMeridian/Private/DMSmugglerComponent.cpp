@@ -208,7 +208,7 @@ void UDMSmugglerComponent::Step(ADMCombatGameMode& Mode)
             NextFireTick = Tick + 10;
             for (ADMCombatant* T : Mode.GetCombatants())
             { if (!T->bIsEnemy && !T->IsDown() && FVector::DistSquared2D(T->GetActorLocation(), BlastPoint) <= FMath::Square(180.f)
-                && Sight(BlastPoint, T->GetActorLocation())) { A->DealCombatDamage(T, 4, TEXT("ability.smuggler.burning_ground")); } }
+                && Sight(BlastPoint, T->GetActorLocation())) { A->DealCombatDamage(T, 4, TEXT("ability.smuggler.burning_ground"), false, true); } }
         }
     }
 }

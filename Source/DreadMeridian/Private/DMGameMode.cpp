@@ -39,7 +39,7 @@ void ADMGameMode::StartPlay()
     Metadata->SetStringField(TEXT("scenario_id"), TEXT("foundation-harness"));
     Metadata->SetStringField(TEXT("run_kind"), TEXT("foundation_harness"));
     Metadata->SetNumberField(TEXT("seed"), Seed);
-    Metadata->SetNumberField(TEXT("rng_schema_version"), 1);
+    Metadata->SetNumberField(TEXT("rng_schema_version"), 2);
     Metadata->SetNumberField(TEXT("ritual_points_per_stage"), RitualPointsPerStage);
     Metadata->SetNumberField(TEXT("investigator_slots"), FDMRunState::InvestigatorCount);
     Metadata->SetNumberField(TEXT("production_bots"), 0);
@@ -118,3 +118,6 @@ void ADMGameMode::RunSmokeTest()
     UE_LOG(LogDreadMeridian, Display, TEXT("DREAD_MERIDIAN_SMOKE_%s"), bPassed ? TEXT("PASSED") : TEXT("FAILED"));
     FPlatformMisc::RequestExitWithStatus(false, bPassed ? 0 : 1);
 }
+
+uint32 ADMGameMode::DrawRandom(EDMRandomStream Stream)
+{ check(HasAuthority() && RandomStreams); return RandomStreams->Next(Stream); }

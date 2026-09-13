@@ -53,6 +53,14 @@ class CaptureTests(unittest.TestCase):
         events[0]['data']['GameRevision'] = 'unrecorded'
         self.assertFalse(self.validate(events)['provenance_complete'])
 
+    def test_appended_injury_stream_schema(self):
+        events = fixture()
+        events[0]['data']['rng_schema_version'] = 2
+        self.assertTrue(self.validate(events)['provenance_complete'])
+        events[0]['data']['rng_schema_version'] = 3
+        with self.assertRaises(ValueError):
+            self.validate(events)
+
     def test_rejects_bad_envelopes(self):
         for key, bad in [('schema_version', 2), ('sequence', 42), ('authority', 'client'),
                          ('visibility', 'public'), ('run_id', 'bad'), ('run_id', None),

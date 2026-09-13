@@ -84,7 +84,7 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
     S.bCompanionTethered = Mode.UsesEncounterLayout() && !Self->bIsEnemy && Leader != nullptr;
     S.bCasting = Self->Smuggler->IsCasting();
     S.bRestrained = Self->IsRestrained() || Self->IsStunned();
-    S.bAttackReady = Self->NextAttackTick <= Tick && Self->StaggeredUntilTick <= Tick;
+    S.bAttackReady = Self->NextAttackTick <= Tick && Self->StaggeredUntilTick <= Tick && Self->Injuries->CanAttack();
     S.bSetPosition = Self->Smuggler->bSetPosition;
     S.bRanged = Self->Smuggler->IsRanged();
     S.Role = Self->Smuggler->Role;
@@ -98,7 +98,7 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
     S.Satchels = 0; for (ADMAbilityMarker* M : Self->Primary->Satchels) { if (IsValid(M)) { ++S.Satchels; } }
     S.Bindings = 0; for (ADMAbilityMarker* M : Self->Primary->Bindings) { if (IsValid(M)) { ++S.Bindings; } }
     S.Momentum = Self->Investigator->Momentum;
-    S.bQReady = Self->Primary->IsReady(Tick);
+    S.bQReady = Self->Primary->IsReady(Tick) && Self->Injuries->CanCast();
     S.QCooldownRemaining = Self->Primary->CooldownRemaining(Tick);
     S.FrameTarget = IndexOf(Self->Primary->FrameTarget.Get());
     S.HeldTarget = IndexOf(Self->Primary->HeldTarget.Get());

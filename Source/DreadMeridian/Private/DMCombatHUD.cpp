@@ -470,7 +470,7 @@ void ADMCombatHUD::DrawEncounter(const FDMHudModel& Model)
 void ADMCombatHUD::DrawCondition(const FDMHudModel& Model)
 {
     if (!Model.bHasSelf) { return; }
-    const float W = 244 * S, H = 92 * S;
+    const float W = 244 * S, H = 156 * S;
     const float X = 118 * S, Y = Canvas->ClipY - H - 18 * S;
     Panel(X, Y, W, H, DMHud::BrassDim);
     Label(TEXT("CONDITION"), DMHud::Muted, X + 10 * S, Y + 7 * S, .9f);
@@ -480,7 +480,12 @@ void ADMCombatHUD::DrawCondition(const FDMHudModel& Model)
     // The meter is real but the system is not: the label keeps the gap explicit rather than reading as finished data.
     Bar(X + 10 * S, Y + 48 * S, 110 * S, 8 * S, Model.Self.Madness / 100.f, DMHud::Gap);
     Label(FString::Printf(TEXT("Madness %.0f (stub: R spikes only)"), Model.Self.Madness), DMHud::Gap, X + 10 * S, Y + 58 * S, .75f);
-    Label(TEXT("Deplete Resolve to open a control window"), DMHud::Gap, X + 10 * S, Y + 72 * S, .75f);
+    for (int32 I = 0; I < Model.Self.SpecificInjuries.Num(); ++I)
+    {
+        const auto K = Model.Self.SpecificInjuries[I];
+        Label(DMInjuryRules::Name(K), DMHud::Danger, X + 10 * S, Y + (76 + I * 32) * S, .8f);
+        Label(DMInjuryRules::Effect(K), DMHud::Bone, X + 10 * S, Y + (90 + I * 32) * S, .55f);
+    }
 }
 
 void ADMCombatHUD::DrawInvestigator(const FDMHudModel& Model)

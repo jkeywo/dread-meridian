@@ -111,4 +111,7 @@ private:
     void Attack();
     void Cycle();
     void StartRevive();
+    void StartTreatment();
+    UFUNCTION(Server, Reliable) void ServerTreatment();
+    UPROPERTY() TObjectPtr<UInputAction> TreatmentAction;
 };

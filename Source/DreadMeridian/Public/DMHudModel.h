@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "DMRunState.h"
+#include "DMInjuryRules.h"
 #include "DMInvestigatorComponent.h"
 #include "DMPing.h"
 
@@ -31,6 +32,7 @@ struct DREADMERIDIAN_API FDMHudUnit
     bool bTargetingLocal = false;
     FVector Location = FVector::ZeroVector;
     /** Madness remains a stub meter with no symptoms. */
+    TArray<EDMInjury> SpecificInjuries;
     float Madness = 0;
     /** 0..1 remaining elite Resolve; meaningless for common enemies. */
     float BreakFraction = 0;

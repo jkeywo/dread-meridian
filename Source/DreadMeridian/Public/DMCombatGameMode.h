@@ -80,7 +80,8 @@ public:
     void RequestRevive(ADMCombatant* Actor, ADMCombatant* Ally);
     void ReleaseInvestigator(AController* Player);
     /** Grievous stacks lengthen the channel on a nonlinear curve. Sandbox tuning, not locked balance. */
-    static int32 ReviveDurationTicks(int32 GrievousCount) { return 20 + 5 * GrievousCount * GrievousCount; }
+    static int32 ReviveDurationTicks(int32 GrievousCount)
+    { const int64 G = FMath::Clamp<int64>(GrievousCount, 0, 1000000); return static_cast<int32>(FMath::Min<int64>(20 + 5 * G * G, MAX_int32 / 4)); }
 
     // ---- Pings (server-authoritative board, projected to ADMGameState::Pings after every change)
     /** Validates the request against FDMPingBoard rules plus world rules (target must exist and be alive for Enemy/Focus/Ignore; Help targets an investigator; location inside the playable extent). Returns the id or INDEX_NONE. Emits ping.created. */

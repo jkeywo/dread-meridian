@@ -37,6 +37,7 @@ ADMCombatant::ADMCombatant()
     AbilitySystem->SetReplicationMode(EGameplayEffectReplicationMode::Full);
     Attributes = CreateDefaultSubobject<UDMHealthAttributes>(TEXT("Attributes"));
     Smuggler = CreateDefaultSubobject<UDMSmugglerComponent>(TEXT("SmugglerFaction"));
+    Injuries = CreateDefaultSubobject<UDMInjuryComponent>(TEXT("Injuries"));
     Resolve = CreateDefaultSubobject<UDMBreakComponent>(TEXT("Resolve"));
     Primary = CreateDefaultSubobject<UDMPrimaryComponent>(TEXT("Primary"));
     Kit = CreateDefaultSubobject<UDMKitComponent>(TEXT("Kit"));
@@ -96,6 +97,7 @@ void ADMCombatant::InitializeCombatant(const FString& Id, bool bEnemy, float Max
     Attributes->InitHealth(MaxHP);
     Attributes->InitShield(InitialShield);
     Resolve->Reset();
+    Injuries->Reset();
     ForceNetUpdate();
 }
 
@@ -154,7 +156,7 @@ bool ADMCombatant::TryAttack(ADMCombatant* Target)
         || FVector::DistSquared(GetActorLocation(), Target->GetActorLocation()) > FMath::Square(GetAttackRange())) { bTelegraphActive = false; return false; }
     // Bot brain attack-channel gate: the target projection above still updates while held.
     if (bAttackHold) { bTelegraphActive = false; return false; }
-    if (IsRestrained() || IsStunned() || StaggeredUntilTick > 0 || Primary->FrameTarget || Smuggler->IsCasting()) { return false; }
+    if (IsRestrained() || IsStunned() || !Injuries->CanAttack() || StaggeredUntilTick > 0 || Primary->FrameTarget || Smuggler->IsCasting()) { return false; }
     if (bIsEnemy && !bProfileRange)
     {
         if (TelegraphTarget.Get() != Target) { bTelegraphActive = false; }
@@ -190,12 +192,12 @@ bool ADMCombatant::ResolveAttack()
     // Bodies do not absorb basic attacks; world geometry still blocks the shot.
     for (ADMCombatant* Other : Mode->GetCombatants()) { Query.AddIgnoredActor(Other); }
     if (GetWorld()->LineTraceSingleByChannel(Hit, GetActorLocation(), Target->GetActorLocation(), ECC_Visibility, Query)) { return false; }
-    if (IsRestrained() || IsStunned() || StaggeredUntilTick > 0 || Primary->FrameTarget || Smuggler->IsCasting()) { return false; }
+    if (IsRestrained() || IsStunned() || !Injuries->CanAttack() || StaggeredUntilTick > 0 || Primary->FrameTarget || Smuggler->IsCasting()) { return false; }
     NextAttackTick = Mode->GetCombatTick() + AttackIntervalTicks;
     return DealCombatDamage(Target, AttackDamage * Investigator->DamageMultiplier(Target->EntityId, Target->bSuppressed) * (bIsEnemy ? Smuggler->DamageMultiplier(*Mode, Target) : 1.f), TEXT("ability.basic_attack"), true);
 }
 
-bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FString& AbilityId, bool bBasic)
+bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FString& AbilityId, bool bBasic, bool bHazard)
 {
     auto* Mode = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
     if (!HasAuthority() || !Mode || !Mode->IsCombatActive() || IsDown() || !IsValid(Target) || Target->IsDown()
@@ -203,7 +205,8 @@ bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FS
     const float Before = Target->Health();
     const float ShieldBefore = Target->Shield();
     const float Incoming = Target->IncomingUntilTick > Mode->GetCombatTick() ? FMath::Clamp(Target->IncomingMultiplier, 0.f, 2.f) : 1.f;
-    const float ResolvedDamage = Damage * (1 - FMath::Clamp(Target->SpiritProtection, 0.f, .5f)) * Incoming;
+    const float BaseDamage = Damage * (1 - FMath::Clamp(Target->SpiritProtection, 0.f, .5f)) * Incoming;
+    const float ResolvedDamage = BaseDamage * Target->Injuries->Incoming(FMath::Max(0.f, BaseDamage - ShieldBefore), bHazard);
     const float Absorbed = FMath::Min(ShieldBefore, ResolvedDamage);
     if (Absorbed > 0) { Target->ApplyAttributeDelta(UDMHealthAttributes::GetShieldAttribute(), -Absorbed); }
     Target->ApplyAttributeDelta(UDMHealthAttributes::GetHealthAttribute(), -(ResolvedDamage - Absorbed));
@@ -219,7 +222,10 @@ bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FS
     Data->SetNumberField(TEXT("health_after"), Target->Health());
     Data->SetNumberField(TEXT("shield_before"), ShieldBefore);
     Data->SetNumberField(TEXT("shield_after"), Target->Shield());
+    Data->SetBoolField(TEXT("persistent_hazard"), bHazard);
     Mode->Emit(TEXT("combat.damage"), Data);
+    Target->Injuries->RecordLoss(Before - Target->Health(), Target->IsDown(), bHazard, this, AbilityId);
+    if (bBasic) { Injuries->OnAttack(); }
     const bool bFinisher = bBasic && Investigator->OnHit(Target->EntityId, Mode->GetCombatTick());
     Target->Investigator->Pressure(Mode->GetCombatTick(), Before - Target->Health() + Absorbed);
     // Dig In converts absorbed pressure into extra Momentum (doubled while Drowned Man Walking holds the floor).
@@ -242,10 +248,6 @@ bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FS
         for (ADMCombatant* Ally : Mode->GetCombatants())
         { Ally->Investigator->ThinPlace(Target->GetActorLocation(), Target->bIsEnemy ? 15 : 25); Ally->RecordResources(TEXT("thin_place")); }
         if (Target->bIsEnemy) { Target->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision); }
-        if (!Target->bIsEnemy)
-        {
-            if (Target->InjuryCount < 2) { ++Target->InjuryCount; } else { ++Target->GrievousCount; }
-        }
         TSharedRef<FJsonObject> Down = MakeShared<FJsonObject>();
         Down->SetStringField(TEXT("entity_id"), Target->EntityId);
         Down->SetNumberField(TEXT("injuries"), Target->InjuryCount);
@@ -321,12 +323,13 @@ void ADMCombatant::StepInvestigator(int32 Tick)
     if (IncomingUntilTick > 0 && Tick >= IncomingUntilTick) { IncomingUntilTick = 0; IncomingMultiplier = 1; }
     Slows.RemoveAll([&](const FDMSlow& S) { return S.UntilTick <= Tick; });
     const float Slow = FMath::Max(DMKitRules::EffectiveSlow(Slows, Tick), SpiritSlow);
-    ReplicatedMoveSpeed = (bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Speed() : 420) * (1 + Investigator->Stickiness() * .25f) * (1 - Slow * (1 - EffectiveResistance()));
+    ReplicatedMoveSpeed = (bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Speed() : 420) * (1 + Investigator->Stickiness() * .25f) * (1 - Slow * (1 - EffectiveResistance())) * Injuries->MovementFactor;
 }
 void ADMCombatant::StepControl(int32 Tick)
 {
     if (!HasAuthority()) { return; }
     Resolve->Step(Tick);
+    Injuries->Step(Tick);
     if (Tick >= StunnedUntilTick) { StunnedUntilTick = 0; }
     if (Tick >= StaggeredUntilTick) { StaggeredUntilTick = 0; }
 }
@@ -436,7 +439,11 @@ void ADMCombatant::ApplySlow(float Fraction, int32 UntilTick)
     DMKitRules::AddSlow(Slows, Fraction, UntilTick, Mode ? Mode->GetCombatTick() : 0);
 }
 void ADMCombatant::ApplyDisplacement(FVector Delta)
-{ if (HasAuthority() && !IsDown() && !Delta.ContainsNaN()) { SetActorLocation(GetActorLocation() + Delta * (1 - EffectiveResistance()), true); } }
+{
+    if (!HasAuthority() || IsDown() || Delta.ContainsNaN()) { return; }
+    const FVector Before = GetActorLocation(); SetActorLocation(Before + Delta * (1 - EffectiveResistance()), true);
+    Injuries->OnDisplacement(FVector::Dist2D(Before, GetActorLocation()));
+}
 void ADMCombatant::MulticastAttackFX_Implementation(FVector From, FVector To, FLinearColor Color, uint8 Style)
 {
     if (GetNetMode() == NM_DedicatedServer) { return; }
@@ -466,3 +473,17 @@ void ADMCombatant::RecordResources(const FString& Reason)
 
 void ADMCombatant::MulticastPresentation_Implementation(uint8 Event, FVector Target)
 { Presentation->Cue(Event, Target); }
+
+float ADMCombatant::HealHealth(float Amount)
+{
+    auto* M = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    if (!HasAuthority() || !M || !M->IsCombatActive() || IsDown() || !FMath::IsFinite(Amount) || Amount <= 0) { return 0; }
+    const float Before = Health();
+    const float Delta = FMath::Min(MaxHealth() - Before, Amount * Injuries->HealingFactor);
+    if (Delta <= 0) { return 0; }
+    ApplyAttributeDelta(UDMHealthAttributes::GetHealthAttribute(), Delta);
+    auto D = MakeShared<FJsonObject>(); D->SetStringField(TEXT("entity_id"), EntityId);
+    D->SetNumberField(TEXT("health_before"), Before); D->SetNumberField(TEXT("health_after"), Health());
+    D->SetNumberField(TEXT("amount"), Health() - Before); M->Emit(TEXT("combat.healed"), D);
+    ForceNetUpdate(); return Health() - Before;
+}

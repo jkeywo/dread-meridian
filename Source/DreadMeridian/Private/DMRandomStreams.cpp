@@ -29,7 +29,7 @@ FDMRandomSnapshot FDMRandomStreams::Capture() const
 
 bool FDMRandomStreams::Restore(const FDMRandomSnapshot& Snapshot)
 {
-    if (Snapshot.SchemaVersion != 1 || Snapshot.Seeds.Num() != Count) { return false; }
+    if (Snapshot.SchemaVersion != 2 || Snapshot.Seeds.Num() != Count) { return false; }
     for (int32 Index = 0; Index < Count; ++Index) { Streams[Index].Initialize(Snapshot.Seeds[Index]); }
     return true;
 }

@@ -37,6 +37,12 @@ before/after Health/Shield. Down, kill, revive and control changes use the same 
 Accepted shield gains emit `combat.shield_gained` with before/after Shield and
 the actual amount granted. This keeps subsequent damage consistent with prior
 recorded state; a gain at the shield cap emits nothing.
+Accepted healing emits `combat.healed` with before/after Health and the actual
+amount restored. Shared validation rejects healing Downed actors, over-healing
+and inconsistent transitions. `injury.gained`, `injury.treated` and `recovery.used`
+are developer observations outside the strict `combat.*` transition namespace.
+The Injury stream is appended at ID 10, making RNG snapshot schema 2; historical
+schema 1 capture provenance is still accepted. See [Injuries](injuries.md).
 
 Shared validation checks lifecycle, finite timing, sequences, actor references,
 health/shield arithmetic and combat outcomes. Unsupported `combat.*` events fail.

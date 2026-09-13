@@ -12,11 +12,12 @@ team/range/line of sight/cooldown; Shield absorbs damage before Health. Attribut
 use [GAS RepNotify handling](https://dev.epicgames.com/documentation/en-us/unreal-engine/gameplay-attributes-and-attribute-sets-for-the-gameplay-ability-system-in-unreal-engine).
 
 Zero Health leaves investigators Downed in the roster. Downing adds an Injury
-counter (two ordinary slots, then Grievous). Revive channels require proximity,
+from the six-name catalogue (two distinct slots, then Grievous). Revive channels require proximity,
 a living rescuer and no incoming damage. Revival restores half Health and reduces
 existing enemy threat to one quarter. These values and the nonlinear Grievous
-duration curve are AI-origin provisional tuning. Named/burst Injury effects,
-and treatment remain unsupported.
+duration curve are AI-origin provisional tuning. `UDMInjuryComponent` owns server-only
+rolling Health-loss history and the six effects; public names and active gates replicate.
+Finite recovery supplies distinguish Injury treatment from Health healing; see [Injuries](injuries.md).
 
 `UDMKitComponent` owns the W/E/R slots beside `UDMPrimaryComponent`'s Q, with the
 same shape: `Request` validates and activates a server-only GAS shim, `Resolve`

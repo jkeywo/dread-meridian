@@ -8,6 +8,7 @@
 #include "DMPrimaryComponent.h"
 #include "DMKitComponent.h"
 #include "DMKitRules.h"
+#include "DMInjuryComponent.h"
 #include "DMBreakComponent.h"
 #include "DMSmugglerComponent.h"
 #include "DMCombatant.generated.h"
@@ -49,6 +50,8 @@ public:
     void ApplySuppression(int32 UntilTick, ADMCombatant* Source);
     /** Shield capped at half MaxHealth (DMHealthAttributes clamps the GE path too). */
     void AddShield(float Amount);
+    float HealHealth(float Amount);
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UDMInjuryComponent> Injuries;
     bool IsBraced() const { return BraceResistance > 0; }
     float EffectiveResistance() const;
     UFUNCTION(NetMulticast, Unreliable) void MulticastAttackFX(FVector From, FVector To, FLinearColor Color, uint8 Style);
@@ -62,7 +65,7 @@ public:
     bool IsDown() const { return Health() <= 0; }
     bool TryAttack(ADMCombatant* Target);
     bool ResolveAttack();
-    bool DealCombatDamage(ADMCombatant* Target, float Damage, const FString& AbilityId, bool bBasic = false);
+    bool DealCombatDamage(ADMCombatant* Target, float Damage, const FString& AbilityId, bool bBasic = false, bool bHazard = false);
     bool IsRestrained() const { return IsValid(HeldBy); }
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UDMPrimaryComponent> Primary;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UDMKitComponent> Kit;

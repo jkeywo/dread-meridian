@@ -6,12 +6,12 @@
 enum class EDMRandomStream : uint8
 {
     RunGeneration, ElderOne, Madness, Relics, HTN, Director, Combat, AIChoice,
-    Faction, BossVariation, Count
+    Faction, BossVariation, Injury, Count
 };
 
 struct FDMRandomSnapshot
 {
-    int32 SchemaVersion = 1;
+    int32 SchemaVersion = 2;
     TArray<int32> Seeds;
 };
 
