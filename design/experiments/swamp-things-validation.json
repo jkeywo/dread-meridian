@@ -1,0 +1,103 @@
+{
+  "date": "2026-09-13",
+  "platform": "Win64",
+  "engine": "5.8.2",
+  "foundation_passed": 36,
+  "full_editor_passed": 43,
+  "final_swamp_followup_passed": 5,
+  "python_export_passed": 14,
+  "smoke": {
+    "contract": "dread-meridian.foundation-capture.v1",
+    "run_id": "ebf3ec1f-4807-2e58-9771-c59778793a1e",
+    "outcome": "victory",
+    "event_count": 6,
+    "event_counts": {
+      "run.started": 1,
+      "run.state_changed": 2,
+      "ritual.advanced": 1,
+      "ritual.summoned": 1,
+      "run.ended": 1
+    },
+    "provenance_complete": true,
+    "working_tree_dirty": true,
+    "evidence_scope": "foundation_harness_only",
+    "supports_gameplay_balance_claims": false,
+    "limitations": [
+      "No production bots, combat, objectives, or boss encounter.",
+      "Recorded source digests identify inputs; retain those inputs separately.",
+      "Wall-clock event timing is not deterministic simulation time."
+    ]
+  },
+  "four_bot_swamp_outcome": "victory",
+  "four_bot_swamp_ticks": 76,
+  "two_client_role_and_faction_projection_passed": true,
+  "network_privacy_and_disconnect_takeover_passed": true,
+  "captures": [
+    {
+      "SourceDigest": "9524ae5eec33e2eca56920bf4fa169b9b39ea6c65d35cc7d52576baadb33440f",
+      "kind": "four_bot_swamp",
+      "GameRevision": "900e85d992f7ea2b2663bdb5eb078b4f06c6dfe1",
+      "outcome": "victory",
+      "roles": [
+        "Crawler",
+        "Lurker",
+        "Spitter",
+        "Grasper",
+        "OldThing"
+      ],
+      "GDDDigest": "427d848e5a92838e5fd8ab41fb15f4cb43351d0b3af1af10a5d95ea0e88ba40a",
+      "capture_version": "0.13.0",
+      "combat_rules_version": "swamp-things-v1",
+      "events": 261,
+      "actions": [
+        "Grasper:windup",
+        "Spitter:windup",
+        "Grasper:resolved",
+        "Spitter:resolved",
+        "OldThing:windup",
+        "OldThing:resolved",
+        "Lurker:windup"
+      ],
+      "run_id": "394fccc0-4ef0-bb51-1537-d4a04927a9f9",
+      "working_tree_dirty": true
+    },
+    {
+      "SourceDigest": "9524ae5eec33e2eca56920bf4fa169b9b39ea6c65d35cc7d52576baadb33440f",
+      "kind": "two_client_swamp",
+      "GameRevision": "900e85d992f7ea2b2663bdb5eb078b4f06c6dfe1",
+      "outcome": "victory",
+      "roles": [
+        "Crawler",
+        "Lurker",
+        "Spitter",
+        "Grasper",
+        "OldThing"
+      ],
+      "GDDDigest": "427d848e5a92838e5fd8ab41fb15f4cb43351d0b3af1af10a5d95ea0e88ba40a",
+      "capture_version": "0.13.0",
+      "combat_rules_version": "swamp-things-v1",
+      "events": 459,
+      "actions": [
+        "Spitter:windup",
+        "Grasper:windup",
+        "OldThing:windup",
+        "Spitter:resolved",
+        "Grasper:resolved",
+        "OldThing:resolved",
+        "Spitter:pool_expired"
+      ],
+      "run_id": "d7e136ea-4f13-f269-167c-4ba7c7f81616",
+      "working_tree_dirty": true
+    }
+  ],
+  "scope": "Native mechanics and existing-arena fixtures for five Swamp Thing roles; no art changes.",
+  "limitations": [
+    "The full 43-test Editor pass preceded the last caster-displacement and forced-target fixes; all five Swamp tests were rerun afterward.",
+    "Numbers are provisional; one bot victory is not balance acceptance.",
+    "Lurker uses visible ambush commitment; reed concealment awaits scenario vision.",
+    "No swamp map, patrol director, full faction registry or Ritual relationship overrides.",
+    "No host migration, deterministic gameplay replay, controller parity or Play Trace ingestion claim.",
+    "Other platform SDKs unavailable; Win64 only."
+  ],
+  "source_verification": "Working tree excluding this evidence JSON was rehashed before commit and matched the captured SourceDigest. Git checkout line-ending conversion may change byte digests."
+}
