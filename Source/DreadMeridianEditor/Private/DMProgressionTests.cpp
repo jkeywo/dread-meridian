@@ -43,6 +43,7 @@ public:
                 if (!A->bIsEnemy && !Hero.IsValid()) { Hero = A; }
                 if (A->bIsEnemy && !Enemy.IsValid()) { Enemy = A; }
             }
+            Hero->MadnessCore->Reset();
             auto* C = Hero->Progression.Get();
             Hero->ControlKind = TEXT("human");
             Test->TestFalse(TEXT("Cannot spend without XP"), C->Choose(0, 1));
@@ -50,14 +51,19 @@ public:
             Test->TestFalse(TEXT("Event not awarded twice"), C->Award(TEXT("objective:test"), 1200));
             Test->TestFalse(TEXT("No tier skip"), C->Choose(0, 3));
             Test->TestTrue(TEXT("First Q evolution"), C->Choose(0, 1));
+            Test->TestEqual(TEXT("First evolution floor"), Hero->MadnessCore->View().Floor, 5.f);
             Test->TestTrue(TEXT("Hybrid via B"), C->Choose(0, 4));
             Test->TestFalse(TEXT("Invalid cross branch"), C->Choose(0, 5));
+            Test->TestEqual(TEXT("Rejected choice adds no floor"), Hero->MadnessCore->View().Floor, 15.f);
             Test->TestTrue(TEXT("First W evolution"), C->Choose(1, 2));
             Test->TestTrue(TEXT("Hybrid via C"), C->Choose(1, 4));
             Test->TestFalse(TEXT("Enemies cannot gain XP"), Enemy->Progression->Award(TEXT("objective:test"), 100));
             Hero->ControlKind = TEXT("bot"); C->ChooseForBot();
             Test->TestEqual(TEXT("Bot spends remaining earned choices"), C->Get().Opportunities(), 0);
             Test->TestTrue(TEXT("All three abilities fully evolved"), C->Node(2) >= 3);
+            Hero->MadnessCore->Recover(100, TEXT("test"));
+            Test->TestEqual(TEXT("Six choices total floor"), Hero->MadnessCore->View().Floor, 45.f);
+            Test->TestEqual(TEXT("Recovery respects evolution floor"), Hero->MadnessCore->View().Current, 45.f);
             Hero->ControlKind = TEXT("human");
             Test->TestEqual(TEXT("Handoff preserves build"), C->Node(0), uint8(4));
             GEditor->RequestEndPlayMap(); Stage = 4; return false;

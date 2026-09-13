@@ -17,6 +17,9 @@ bool FDMProgressionTest::RunTest(const FString&)
     const auto Saved = S; TestFalse(TEXT("Cap stable"), S.Add(5));
     TestEqual(TEXT("Copy retains progression"), Saved.Level(), S.Level());
     TestTrue(TEXT("Ordinary levels improve basic attack"), S.BasicMultiplier() > 1.f);
+    TestEqual(TEXT("First tier floor cost"), FDMProgressionState::FloorCost(1), 5.f);
+    TestEqual(TEXT("Deep tier floor cost"), FDMProgressionState::FloorCost(4), 10.f);
+    TestEqual(TEXT("Base has no floor cost"), FDMProgressionState::FloorCost(0), 0.f);
     TSet<FString> Ids;
     for (uint8 K = 1; K <= 4; ++K)
     { for (uint8 Slot = 0; Slot < 3; ++Slot)

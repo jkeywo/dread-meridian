@@ -568,7 +568,7 @@ void ADMCombatHUD::DrawInvestigator(const FDMHudModel& Model)
                 const auto C = Choices[I];
                 const auto* Entry = DMEvolution::Find(Actor->Investigator->Kind, C.X, C.Y);
                 if (!Entry) { continue; }
-                Label(FString::Printf(TEXT("%s %c > %s"), I == P->EvolutionCursor() ? TEXT(">") : TEXT(" "), TEXT("QWE")[C.X], *Entry->Name),
+                Label(FString::Printf(TEXT("%s %c > %s  (+%.0f Madness floor)"), I == P->EvolutionCursor() ? TEXT(">") : TEXT(" "), TEXT("QWE")[C.X], *Entry->Name, FDMProgressionState::FloorCost(C.Y)),
                     I == P->EvolutionCursor() ? DMHud::Bone : DMHud::Muted, X + 10*S, MenuY + (32 + I*21)*S, .95f);
                 if (I == P->EvolutionCursor())
                 {

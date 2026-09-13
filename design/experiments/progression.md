@@ -14,3 +14,6 @@ Evolution framework: Q/W/E nodes are publicly replicated; server validates earne
 U / gamepad View opens the selector; Tab / RB cycles, Space / A (or left-click) accepts, U / B closes. Combat actions are suppressed while selecting; movement remains available.
 Catalog contains 72 unique stable IDs including 12 bases and 60 evolved nodes, semantic GDD descriptions, and situational offense/control/protection valuation hooks. Bots evaluate nearby enemies, elites and team danger.
 This framework commit exposes choices; evolved runtime effects follow as separate investigator commits. No claim of controller parity or host-migration restoration.
+
+Madness integration: accepted first-tier choices add 5 to the existing floor; second-tier choices add 10 (45 for all six). These are provisional. Other sources' floor contributions remain intact. Rejected or repeated requests do not charge; recovery cannot remove this contribution. The selector exposes each cost. Private floor stays on MadnessCore's owner-only view, outside the public build projection.
+PIE verifies accepted/rejected costs, both hybrid routes, full-build recovery floor and retained build through control handoff.

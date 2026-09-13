@@ -43,6 +43,8 @@ bool UDMProgressionComponent::Choose(uint8 Slot, uint8 To)
         || !DMEvolution::Find(Actor->Investigator->Kind, Slot, To)) { return false; }
     const uint8 From = Node(Slot);
     if (!State.Choose(Slot, To)) { return false; }
+    // Commit the graph transition before applying its cost; rejected/replayed requests cannot add floor.
+    Actor->MadnessCore->RaiseFloor(Actor->MadnessCore->View().Floor + FDMProgressionState::FloorCost(To), TEXT("ability_evolution"));
     auto Data = MakeShared<FJsonObject>();
     Data->SetStringField(TEXT("entity_id"), Actor->EntityId);
     Data->SetStringField(TEXT("node_id"), DMEvolution::Find(Actor->Investigator->Kind, Slot, To)->Id);

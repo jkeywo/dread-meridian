@@ -15,6 +15,7 @@ struct FDMProgressionState
     UPROPERTY() uint8 W = 0;
     UPROPERTY() uint8 E = 0;
     uint8 Node(uint8 Slot) const { return Slot == 0 ? Q : Slot == 1 ? W : Slot == 2 ? E : 255; }
+    static float FloorCost(uint8 To) { return To == 1 || To == 2 ? 5.f : To >= 3 && To <= 5 ? 10.f : 0.f; }
     static bool Edge(uint8 From, uint8 To)
     { return (From == 0 && (To == 1 || To == 2)) || (From == 1 && (To == 3 || To == 4)) || (From == 2 && (To == 4 || To == 5)); }
     bool Choose(uint8 Slot, uint8 To)
