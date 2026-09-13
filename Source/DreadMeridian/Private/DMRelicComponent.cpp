@@ -15,7 +15,16 @@ void UDMRelicComponent::PromoteThreat(ADMCombatant* Target)
     Runtime.Swaggered.Add(Target->EntityId); Target->Threat.AtLeastHighest(Self()->EntityId);
 }
 void UDMRelicComponent::OnControl(ADMCombatant* Target,const FDMControl& C)
-{ if (C.StunTicks>0 || C.StaggerTicks>0 || !C.Displacement.IsNearlyZero() || (Target && Target->HeldBy==Self())) { PromoteThreat(Target); } }
+{
+    const bool Hard=C.StunTicks>0 || C.StaggerTicks>0 || !C.Displacement.IsNearlyZero() || (Target && Target->HeldBy==Self());
+    if (!Self()->HasAuthority() || !IsValid(Target) || !Hard || bResolvingKnot) { return; }
+    PromoteThreat(Target);
+    auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>(); if (!M || !Has(EDMRelic::Knot)) { return; }
+    TGuardValue<bool> Guard(bResolvingKnot,true);
+    for (ADMCombatant* A : M->GetCombatants())
+    { if (A!=Target && A->bIsEnemy==Target->bIsEnemy && !A->IsDown() && FVector::DistSquared2D(A->GetActorLocation(),Target->GetActorLocation())<=FMath::Square(300.f))
+      { FDMControl Secondary; Secondary.Slow=.3f; Secondary.SlowTicks=20; A->ApplyControl(Secondary,Self(),TEXT("relic.hangmans_knot")); } }
+}
 void UDMRelicComponent::OnBreak(ADMCombatant* Source,float Amount,bool bBroke)
 {
     if (!Self()->HasAuthority()) { return; }

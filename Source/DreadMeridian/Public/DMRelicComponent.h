@@ -63,4 +63,5 @@ private:
     void OnControl(ADMCombatant* Target,const FDMControl& Control);
     void OnBreak(ADMCombatant* Source,float Amount,bool bBroke);
     void PromoteThreat(ADMCombatant* Target);
+    bool bResolvingKnot=false;
 };
