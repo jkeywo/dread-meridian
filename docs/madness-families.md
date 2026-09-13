@@ -21,3 +21,17 @@ player control. Actual combat damage is shared; fixation ownership and cues are 
 Family intervals, pressure, recovery and selection range live in component settings.
 
 Boss-specific reproductive-node targeting remains pending Shub content.
+
+## Compulsion
+
+At an unlocked threshold, a visible enemy becomes an urge to strike; when none is
+available, clear nearby ground becomes an urge to visit. Indulging reduces current
+Madness by 4. High intensity or Crisis also grants 5 Shield, using the ordinary
+authoritative shield API. A location requires approaching within 65 units.
+
+Crisis offers three simultaneous urges: an enemy and two clear ground locations
+when available. Each can be addressed independently. An unfulfilled urge expires
+after 100 ticks and adds 5 pressure; an enemy removed by somebody else is discarded
+without punishment. Normal Crisis timing remains intact. These are choices, not
+movement orders or input restrictions. Objective/corpse urge variants remain future
+content; the implemented contextual variants are combat targets and locations.
