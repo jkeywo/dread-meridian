@@ -197,4 +197,4 @@ float UDMRelicComponent::Value(EDMRelic R) const
     return Score;
 }
 void UDMRelicComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{ Super::GetLifetimeReplicatedProps(OutLifetimeProps); DOREPLIFETIME(UDMRelicComponent,Inventory); }
+{ Super::GetLifetimeReplicatedProps(OutLifetimeProps); DOREPLIFETIME(UDMRelicComponent,Inventory); DOREPLIFETIME(UDMRelicComponent,Capacity); }

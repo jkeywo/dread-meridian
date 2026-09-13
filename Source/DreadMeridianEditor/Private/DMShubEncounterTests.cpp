@@ -17,7 +17,11 @@ bool FDMShubEncounterTest::RunTest(const FString&)
         auto* Arena=W->SpawnActor<ADMBossArena>(); Arena->BuildFixture(FVector(-700,0,0));
         auto* Encounter=W->SpawnActor<ADMShubEncounter>(); TestTrue(TEXT("Start Shub in shared arena"),Encounter->Begin(Arena));
         TestFalse(TEXT("Cannot start twice"),Encounter->Begin(Arena));
-        auto* Boss=Encounter->Boss.Get(); const int32 Tick=M->GetCombatTick()+1;
+        auto* Boss=Encounter->Boss.Get(); const int32 Tick=M->GetCombatTick()+3;
+        Boss->Threat.Add(Roster[1]->EntityId,100); Encounter->Step(Tick-2);
+        TestEqual(TEXT("Shub uses highest threat rather than nearest investigator"),Boss->GetAttackTarget(),Roster[1]);
+        Boss->Threat.Override(Hero->EntityId,Tick+10); Encounter->Step(Tick-1);
+        TestEqual(TEXT("Explicit threat override takes precedence"),Boss->GetAttackTarget(),Hero);
         Hero->DealCombatDamage(Boss,800,TEXT("test.mobile_threshold"));
         Encounter->Step(Tick); TestEqual(TEXT("Health transition enters mobile phase"),M->ElderOne->Phase(),EDMBossPhase::Mobile);
         Hero->DealCombatDamage(Boss,500,TEXT("test.frenzy_threshold"));

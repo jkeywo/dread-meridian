@@ -11,8 +11,8 @@ outside this change. GDD statuses and balance remain unchanged.
   deadlines, explicit repair preserving completed steps, reward idempotence,
   snapshot validation, combat tick integration and server interaction requests.
   Development console: `DMObjectiveInteract [symbol]`, `DMObjectiveRelease`.
-  Relic reward delivery, real vision entitlement and basin navigation require
-  their respective integrations; the core exposes accepted world-state results.
+  Relic rewards now create shared loot rolls. Real vision entitlement and basin
+  navigation require scenario consumers; the core exposes completion results.
 
 All fixture durations, distances, XP and treatment charges are provisional.
 These subsystem snapshots are not a complete run or host-migration save.
@@ -49,3 +49,28 @@ These subsystem snapshots are not a complete run or host-migration save.
   complete swamp navigation, full-run balance or host-migration claim.
   Subsystem snapshots restore into an existing actor roster; they are not a
   replacement for a future full-run snapshot and actor reconstruction service.
+
+- Relic infrastructure: native run inventory with a provisional replicated cap
+  of two; named-stream shared Need/Greed/Pass rolls; authority validation and
+  duplicate-award rejection; bot valuation; objective loot delivery; accepted
+  combat, control, Break, healing, tier-entry and interaction hooks; public
+  inventory/roll UI; private runtime snapshots for effect budgets and timers.
+  Keyboard N/M/P votes directly; I or controller Menu opens the pending roll,
+  Tab/right shoulder cycles, Space/south confirms, Escape/east closes.
+  Controller bindings are compiled, not a manual parity acceptance result.
+
+- Each of the eight relics has its own implementation commit and focused PIE
+  test: Swagger threat/ally Break, Medal contribution/primed ability, Knot
+  secondary control, overheal Shield accounting/decay, Morphine injury conversion
+  and revive factors, Rosary across all four investigator resources, Coin
+  movement wakes, and Gloves objective protection/nearby defense. Explicit
+  interrupts still cancel Gloves interactions; its defense reduces both melee
+  and ranged damage. All magnitudes and durations remain provisional.
+
+- Integration review: Shub consumes the shared threat table and explicit target
+  overrides; encounter spawns emit accepted combat spawn records; loot capacity
+  replicates; the loopback network probe exercises a shared relic roll through
+  real client votes and compares final winner, inventory and capacity. Combat
+  capture version is 0.12.0, rules version objectives-shub-relics-v1. Named stream
+  IDs retain their existing serialized order. This is not Play Trace ingestion
+  acceptance or deterministic gameplay replay.

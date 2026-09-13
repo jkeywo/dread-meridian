@@ -52,9 +52,15 @@ void ADMShubEncounter::Step(int32 Tick)
         return;
     }
     if (State.Move!=EDMShubMove::Idle) { if (Tick>=State.Until) { Execute(Tick); } return; }
-    ADMCombatant* Target=nullptr; float Best=MAX_flt;
+    Boss->Threat.Cleanup([&](const FString& Id) { const auto* A=M->FindCombatant(Id); return A && !A->bIsEnemy && !A->IsDown(); },Tick);
+    ADMCombatant* Target=M->FindCombatant(Boss->Threat.Forced(Tick));
+    if (!Target) { Target=M->FindCombatant(Boss->Threat.Highest()); }
+    float Best=MAX_flt;
+    if (!Target)
+    {
     for (ADMCombatant* A : M->GetCombatants())
     { const float D=FVector::DistSquared2D(A->GetActorLocation(),Boss->GetActorLocation()); if (!A->bIsEnemy && !A->IsDown() && D<Best) { Best=D; Target=A; } }
+    }
     Boss->SetAttackTarget(Target); Boss->SetAttackHold(false);
     if (Target && M->ElderOne->Phase()!=EDMBossPhase::Rooted && Arena->Contains(TEXT("MovementLane"),Target->GetActorLocation())) { Boss->MoveToward(Target->GetActorLocation()); } else { Boss->StopGoal(); }
     if (Tick>=State.NextMove) { Windup(Tick); }

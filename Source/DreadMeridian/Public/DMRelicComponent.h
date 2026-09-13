@@ -51,7 +51,7 @@ public:
     FDMRelicOverhealEvent ExcessHealing;
     FDMRelicTierEvent TierEntered;
     FDMRelicObjectiveEvent ObjectiveFinished;
-    UPROPERTY(Config,EditAnywhere) int32 Capacity = 2; // Provisional, not a locked cap.
+    UPROPERTY(Config,EditAnywhere,Replicated) int32 Capacity = 2; // Provisional, not a locked cap.
     bool CanAcquire(EDMRelic Relic) const;
     bool Acquire(EDMRelic Relic,const FString& AwardId);
     bool Has(EDMRelic Relic) const { return Inventory.Items.Contains(Relic); }

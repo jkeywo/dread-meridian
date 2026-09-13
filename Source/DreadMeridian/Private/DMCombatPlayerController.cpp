@@ -392,6 +392,7 @@ void ADMCombatPlayerController::PlayerTick(float DeltaTime)
             GetWorldTimerManager().SetTimer(ExitTimer, [] { FPlatformMisc::RequestExit(false); }, 7.f, false);
         }
         if ((FParse::Param(FCommandLine::Get(), TEXT("DMNetworkProbe")) || FParse::Param(FCommandLine::Get(), TEXT("DMVisualProbe"))) && (!SelectedTarget.IsValid() || SelectedTarget->IsDown() || !bAutoAttack)) { Attack(); }
+        if (FParse::Param(FCommandLine::Get(),TEXT("DMNetworkProbe")) && !HasAuthority() && PendingRelic()) { ChooseRelic(static_cast<uint8>(EDMRelicChoice::Greed)); }
         if (FParse::Param(FCommandLine::Get(),TEXT("DMNetworkProbe")) && !HasAuthority() && !bEvolutionProbeSent && Actor->Progression->Get().Opportunities()>0)
         { bEvolutionProbeSent=true; ServerEvolve(0,1); }
         // Authority pawns think through ADMSquadController; the probe only drives the client's Q by RPC.
@@ -475,8 +476,14 @@ void ADMCombatPlayerController::ClientVerifyCombatState_Implementation(const FSt
                 Check(TEXT("injuries"), Expected->GetStringField(It->EntityId + TEXT(".injuries")) == It->Injuries->Summary(), It->Injuries->Summary(), Expected->GetStringField(It->EntityId + TEXT(".injuries")));
                 Check(TEXT("resolve"), Expected->GetStringField(It->EntityId + TEXT(".resolve")) == It->Resolve->ReplicationSummary(), It->Resolve->ReplicationSummary(), Expected->GetStringField(It->EntityId + TEXT(".resolve")));
                 Check(TEXT("kit"), Expected->GetStringField(It->EntityId + TEXT(".kit")) == It->Kit->ReplicationSummary(), It->Kit->ReplicationSummary(), Expected->GetStringField(It->EntityId + TEXT(".kit")));
+                Check(TEXT("relics"), Expected->GetStringField(It->EntityId + TEXT(".relics")) == It->Relics->Summary(), It->Relics->Summary(), Expected->GetStringField(It->EntityId + TEXT(".relics")));
+                Check(TEXT("relic_capacity"), Expected->GetIntegerField(It->EntityId + TEXT(".relic_capacity")) == It->Relics->Capacity, FString::FromInt(It->Relics->Capacity), FString::FromInt(Expected->GetIntegerField(It->EntityId + TEXT(".relic_capacity"))));
             }
             const ADMGameState* State = GetWorld()->GetGameState<ADMGameState>();
+            bool RelicResolved=false;
+            for (TActorIterator<ADMRelicDrop> It(GetWorld());It;++It)
+            { if (It->Roll.AwardId==TEXT("network:shared_relic")) { RelicResolved=It->Roll.bResolved && !It->Roll.Winner.IsEmpty() && It->Roll.Winner==Expected->GetStringField(TEXT("relic_winner")); } }
+            bPassed &= RelicResolved;
             bPassed &= State && Expected->GetStringField(TEXT("phase")) == StaticEnum<EDMRunPhase>()->GetNameStringByValue(static_cast<int64>(State->GetRunState().Phase));
         }
         bPassed &= Count == 7;

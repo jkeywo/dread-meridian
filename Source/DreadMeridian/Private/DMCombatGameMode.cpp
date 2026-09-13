@@ -52,9 +52,9 @@ void ADMCombatGameMode::ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& 
 {
     Metadata->SetStringField(TEXT("scenario_id"), TEXT("combat-sandbox"));
     Metadata->SetStringField(TEXT("run_kind"), TEXT("combat_sandbox"));
-    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.11.0"));
+    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.12.0"));
     if (UsesEncounterLayout()) { Metadata->SetStringField(TEXT("native_faction"), TEXT("smugglers")); }
-    Metadata->SetStringField(TEXT("combat_rules_version"), TEXT("evolved-investigators-v1"));
+    Metadata->SetStringField(TEXT("combat_rules_version"), TEXT("objectives-shub-relics-v1"));
     Metadata->SetStringField(TEXT("bot_policy"), TEXT("squad-utility-v5"));
     Metadata->SetStringField(TEXT("test_profile"), bNetworkTest ? TEXT("network_probe") : (SmokeOutcome.IsEmpty() ? TEXT("interactive") : SmokeOutcome));
     Metadata->SetNumberField(TEXT("initial_bot_count"), 4);
@@ -601,6 +601,13 @@ ADMCombatant* ADMCombatGameMode::SpawnEncounterActor(const FString& Id, FVector 
     A->InitializeCombatant(Id,true,HP,Damage); A->bHumanEnemy = false; Combatants.Add(A);
     if (bStatic) { A->Tags.Add(TEXT("Objective")); A->Tags.Add(TEXT("Destructible")); A->GetCharacterMovement()->DisableMovement(); A->SetAttackHold(true); }
     else { AttachBot(A); }
+    auto Spawn=MakeShared<FJsonObject>();
+    Spawn->SetStringField(TEXT("entity_id"),A->EntityId); Spawn->SetStringField(TEXT("team"),TEXT("enemy"));
+    Spawn->SetNumberField(TEXT("health"),A->Health()); Spawn->SetNumberField(TEXT("shield"),A->Shield());
+    Spawn->SetNumberField(TEXT("attack_damage"),A->AttackDamage); Spawn->SetStringField(TEXT("display_name"),A->DisplayName());
+    Spawn->SetNumberField(TEXT("attack_range"),A->GetAttackRange()); Spawn->SetNumberField(TEXT("attack_interval_ticks"),A->AttackIntervalTicks);
+    Spawn->SetNumberField(TEXT("initial_next_attack_tick"),A->NextAttackTick); Spawn->SetStringField(TEXT("control"),TEXT("bot"));
+    Emit(TEXT("combat.spawned"),Spawn);
     return A;
 }
 void ADMCombatGameMode::StepCombat()
@@ -616,11 +623,13 @@ void ADMCombatGameMode::StepCombat()
 #if !UE_BUILD_SHIPPING
     if (bNetworkTest && CombatTick == 1)
     {
+        auto* Drop=GetWorld()->SpawnActor<ADMRelicDrop>(); Drop->Initialize(TEXT("network:shared_relic"));
         // Distinct private test cues exercise real owner delivery, without claiming family content.
         for (ADMCombatant* A : Combatants)
         {
             if (A->bIsEnemy) { continue; }
             A->Progression->Award(TEXT("network:progression_probe"),300);
+            A->Relics->Acquire(Drop->Roll.Relic==EDMRelic::Gloves ? EDMRelic::Rosary : EDMRelic::Gloves,TEXT("network:held_relic:")+A->EntityId);
             A->MadnessCore->Add(25, TEXT("network_privacy_probe"));
             A->MadnessCore->Manifest(TEXT("test.private.") + A->EntityId,
                 TEXT("Private cue for ") + A->EntityId, 1, 10000);
@@ -741,8 +750,12 @@ void ADMCombatGameMode::CompleteCombat(bool bVictory)
             Expected->SetStringField(Actor->EntityId + TEXT(".injuries"), Actor->Injuries->Summary());
             Expected->SetStringField(Actor->EntityId + TEXT(".resolve"), Actor->Resolve->ReplicationSummary());
             Expected->SetStringField(Actor->EntityId + TEXT(".kit"), Actor->Kit->ReplicationSummary());
+            Expected->SetStringField(Actor->EntityId + TEXT(".relics"), Actor->Relics->Summary());
+            Expected->SetNumberField(Actor->EntityId + TEXT(".relic_capacity"), Actor->Relics->Capacity);
         }
         Expected->SetStringField(TEXT("phase"), bVictory ? TEXT("Victory") : TEXT("Defeat"));
+        for (TActorIterator<ADMRelicDrop> It(GetWorld());It;++It)
+        { if (It->Roll.AwardId==TEXT("network:shared_relic")) { Expected->SetStringField(TEXT("relic_winner"),It->Roll.Winner); } }
         FString Json;
         FJsonSerializer::Serialize(Expected, TJsonWriterFactory<>::Create(&Json));
         for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)

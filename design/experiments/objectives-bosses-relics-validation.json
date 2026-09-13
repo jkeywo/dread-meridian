@@ -1,0 +1,78 @@
+{
+  "date": "2026-09-13",
+  "platform": "Win64",
+  "engine": "5.8.2",
+  "foundation_passed": 36,
+  "full_editor_passed": 38,
+  "python_export_passed": 14,
+  "smoke": {
+    "contract": "dread-meridian.foundation-capture.v1",
+    "run_id": "542d5ac1-44ab-ae1d-b456-87a36fdb306a",
+    "outcome": "victory",
+    "event_count": 6,
+    "event_counts": {
+      "run.started": 1,
+      "run.state_changed": 2,
+      "ritual.advanced": 1,
+      "ritual.summoned": 1,
+      "run.ended": 1
+    },
+    "provenance_complete": true,
+    "working_tree_dirty": true,
+    "evidence_scope": "foundation_harness_only",
+    "supports_gameplay_balance_claims": false,
+    "limitations": [
+      "No production bots, combat, objectives, or boss encounter.",
+      "Recorded source digests identify inputs; retain those inputs separately.",
+      "Wall-clock event timing is not deterministic simulation time."
+    ]
+  },
+  "network_two_clients_passed": true,
+  "network_owner_privacy_passed": true,
+  "network_disconnect_takeover_passed": true,
+  "network_shared_relic_result_passed": true,
+  "smuggler_outcome": "victory",
+  "smuggler_ticks": 507,
+  "captures": [
+    {
+      "GameRevision": "ac47647df22c0d5a9c722749a23c97ebde77f19b",
+      "relic_acquisitions": 5,
+      "capture_version": "0.12.0",
+      "events": 482,
+      "relic_offers": 1,
+      "working_tree_dirty": true,
+      "kind": "network",
+      "SourceDigest": "27dfb073f49ba491f288332a48bcbd1745fff7fb6a0859b3b068c267e4c71b8a",
+      "relic_allocations": 1,
+      "GDDDigest": "427d848e5a92838e5fd8ab41fb15f4cb43351d0b3af1af10a5d95ea0e88ba40a",
+      "outcome": "victory",
+      "run_id": "63932797-4deb-a6df-0aee-6bb1bb241aa4",
+      "combat_rules_version": "objectives-shub-relics-v1"
+    },
+    {
+      "GameRevision": "ac47647df22c0d5a9c722749a23c97ebde77f19b",
+      "relic_acquisitions": 0,
+      "capture_version": "0.12.0",
+      "events": 1556,
+      "relic_offers": 0,
+      "working_tree_dirty": true,
+      "kind": "smugglers",
+      "SourceDigest": "27dfb073f49ba491f288332a48bcbd1745fff7fb6a0859b3b068c267e4c71b8a",
+      "relic_allocations": 0,
+      "GDDDigest": "427d848e5a92838e5fd8ab41fb15f4cb43351d0b3af1af10a5d95ea0e88ba40a",
+      "outcome": "victory",
+      "run_id": "4702268d-49cb-68bc-7328-c7b3587fc810",
+      "combat_rules_version": "objectives-shub-relics-v1"
+    }
+  ],
+  "limitations": [
+    "Ritual integration intentionally deferred.",
+    "Objective catalogue and Shub run as developer fixtures; full swamp scenario, HTN, lighthouse fog entitlement and basin navigation consumers remain separate work.",
+    "PIE mechanics tests drive accepted APIs; no full four-bot Shub scenario or gameplay balance acceptance.",
+    "Subsystem snapshots assume existing configured actors; no host migration or deterministic gameplay replay.",
+    "Controller bindings compiled, without manual parity acceptance.",
+    "Only Win64 validated; other platform SDKs unavailable.",
+    "Foundation provenance validation does not validate combat capture semantics or Play Trace ingestion."
+  ],
+  "fingerprint_reconstruction": "Before committing, the working tree excluding this validation JSON was rehashed with the Unreal.ps1 algorithm and matched the captured SourceDigest. All tested inputs are committed; Git checkout line-ending conversion can change byte digests."
+}
