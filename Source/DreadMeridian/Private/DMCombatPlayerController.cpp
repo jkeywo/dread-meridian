@@ -46,11 +46,26 @@ void ADMCombatPlayerController::DMObjectiveInteract(int32 Symbol)
 }
 void ADMCombatPlayerController::DMObjectiveRelease()
 { for (TActorIterator<ADMObjective> It(GetWorld()); It; ++It) { ServerObjective(*It,-1,true); } }
+void ADMCombatPlayerController::DMSpawnObjective(const FString& TemplateId, int32 Difficulty)
+{
+#if !UE_BUILD_SHIPPING
+    if (!HasAuthority() || !GetPawn()) { return; }
+    auto* O = GetWorld()->SpawnActor<ADMObjective>();
+    if (!O->ConfigureAuthored(TemplateId,GetPawn()->GetActorLocation() + FVector(120,0,-60),Difficulty,O->GetName())) { O->Destroy(); }
+#endif
+}
 void ADMCombatPlayerController::SetupInputComponent()
 {
     Super::SetupInputComponent();
     UEnhancedInputComponent* Input = CastChecked<UEnhancedInputComponent>(InputComponent);
     Mapping = NewObject<UInputMappingContext>(this);
+    auto BindObjective = [&](FKey Key, void (ADMCombatPlayerController::*Handler)())
+    { auto* Action = NewObject<UInputAction>(Mapping); Mapping->MapKey(Action,Key); Input->BindAction(Action,ETriggerEvent::Started,this,Handler); };
+    BindObjective(EKeys::I,&ADMCombatPlayerController::ObjectiveUse);
+    BindObjective(EKeys::Gamepad_Special_Right,&ADMCombatPlayerController::ObjectiveUse);
+    BindObjective(EKeys::One,&ADMCombatPlayerController::BellOne);
+    BindObjective(EKeys::Two,&ADMCombatPlayerController::BellTwo);
+    BindObjective(EKeys::Three,&ADMCombatPlayerController::BellThree);
     MoveAction = NewObject<UInputAction>(this);
     MoveAction->ValueType = EInputActionValueType::Axis2D;
     ClickAction = NewObject<UInputAction>(this);
@@ -776,3 +791,4 @@ void ADMCombatPlayerController::ServerEvolve_Implementation(uint8 Slot, uint8 No
     if (!Actor || !Actor->Progression->Choose(Slot, Node)) { ClientQFeedback(TEXT("Evolution unavailable: earn an opportunity and choose a valid next node.")); }
     else { ClientQFeedback(Actor->Progression->Name(Slot)); }
 }
+

@@ -1,4 +1,5 @@
 #include "DMObjective.h"
+#include "DMObjectiveCatalogue.h"
 #include "DMCombatant.h"
 #include "DMCombatGameMode.h"
 #include "DMRecoverySupply.h"
@@ -25,6 +26,18 @@ bool ADMObjective::Configure(const FString& Id, const FString& Title, const TArr
     Steps = Plan; Reward = RewardKind; DisplayTitle = Title; PublicState.PayloadLocation = Plan[0].Location;
     SetActorLocation(Plan[0].Location); Publish(TEXT("available")); return true;
 }
+bool ADMObjective::ConfigureAuthored(const FString& TemplateId, FVector Origin, int32 InDifficulty, const FString& InstanceId)
+{
+    FDMObjectiveDefinition D;
+    auto* M = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    if (!HasAuthority() || !M || !DMObjectiveCatalogue::Build(TemplateId,Origin,InDifficulty,D) || !Configure(InstanceId,D.Title,D.Steps,D.Reward)) { return false; }
+    bDisruption = D.bDisruption; Difficulty = InDifficulty;
+    Targets.SetNum(Steps.Num());
+    for (int32 I=0; I<Steps.Num(); ++I)
+    { if (Steps[I].Verb == EDMObjectiveVerb::Destroy) { Targets[I] = M->SpawnEncounterActor(InstanceId + FString::Printf(TEXT(".idol.%d"),I),Steps[I].Location + FVector(0,0,80),150,0,true); } }
+    if (Targets.IsValidIndex(0)) { Destructible = Targets[0]; }
+    return true;
+}
 const FDMObjectiveStep* ADMObjective::Current() const { return Steps.IsValidIndex(PublicState.Step) ? &Steps[PublicState.Step] : nullptr; }
 bool ADMObjective::IsTerminal() const { return PublicState.State == EDMObjectiveState::Completed || PublicState.State == EDMObjectiveState::Failed; }
 bool ADMObjective::Eligible(ADMCombatant* A, FVector At) const
@@ -48,9 +61,10 @@ bool ADMObjective::Interact(ADMCombatant* A, int32 Symbol)
     if (S->Verb == EDMObjectiveVerb::Destroy) { return false; }
     if (S->Verb == EDMObjectiveVerb::Sequence)
     {
+        if (!bSequenceReady) { return false; }
         if (Symbol < 0) { return false; }
         if (!S->Sequence.IsValidIndex(PublicState.Progress) || Symbol != S->Sequence[PublicState.Progress])
-        { PublicState.Progress = 0; Publish(TEXT("sequence_mistake")); return false; }
+        { PublicState.Progress = 0; bSequenceReady = false; SequenceStarted = -1; Publish(TEXT("sequence_mistake")); return false; }
         ++PublicState.Progress; PublicState.State = EDMObjectiveState::Active;
         if (PublicState.Progress >= S->Sequence.Num()) { Advance(); } else { Publish(TEXT("sequence_input")); }
         return true;
@@ -77,6 +91,21 @@ void ADMObjective::Step(int32 Tick)
         if (Urgency != PublicState.State) { PublicState.State = Urgency; Publish(TEXT("urgency")); }
     }
     const FDMObjectiveStep S = *Current();
+    if (S.Verb == EDMObjectiveVerb::Sequence && !bSequenceReady)
+    {
+        if (SequenceStarted < 0) { SequenceStarted = Tick; }
+        const int32 Index = (Tick - SequenceStarted) / 10;
+        ObservedSymbol = S.Sequence.IsValidIndex(Index) ? S.Sequence[Index] : 0;
+        bSequenceReady = Index >= S.Sequence.Num();
+    }
+    if (Difficulty >= 2 && bDisruption)
+    {
+        auto* M = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+        for (ADMCombatant* Idol : Targets)
+        { if (IsValid(Idol) && !Idol->IsDown() && M)
+          { for (ADMCombatant* Enemy : M->GetCombatants())
+            { if (Enemy != Idol && Enemy->bIsEnemy && !Enemy->IsDown() && FVector::DistSquared2D(Enemy->GetActorLocation(),Idol->GetActorLocation()) < FMath::Square(400.f)) { Enemy->SpiritProtection = FMath::Max(Enemy->SpiritProtection,.2f); } } } }
+    }
     if (S.Verb == EDMObjectiveVerb::Destroy)
     { if (IsValid(Destructible) && Destructible->IsDown()) { Advance(); } return; }
     auto* A = Participant.Get();
@@ -100,8 +129,9 @@ void ADMObjective::Step(int32 Tick)
 }
 void ADMObjective::Advance()
 {
-    Participant.Reset(); CarrierId.Reset(); Destructible = nullptr; PublicState.Progress = 0;
+    Participant.Reset(); CarrierId.Reset(); Destructible = nullptr; PublicState.Progress = 0; SequenceStarted = -1; bSequenceReady = false; ObservedSymbol = 0;
     ++PublicState.Step;
+    if (Targets.IsValidIndex(PublicState.Step)) { Destructible = Targets[PublicState.Step]; }
     if (const auto* S = Current()) { PublicState.PayloadLocation = S->Location; SetActorLocation(S->Location); Publish(TEXT("step_completed")); }
     else { PublicState.State = EDMObjectiveState::Completed; GrantReward(); Publish(TEXT("completed")); }
 }
@@ -153,6 +183,8 @@ void ADMObjective::Tick(float Delta)
     const auto* S = Current();
     SetActorLocation(PublicState.PayloadLocation);
     Label->SetText(FText::FromString(DisplayTitle + TEXT("\n") + (S ? S->Instruction : TEXT("Completed")) + FString::Printf(TEXT(" | %d"),PublicState.Progress)));
+    if (S && S->Verb == EDMObjectiveVerb::Sequence)
+    { Label->SetText(FText::FromString(DisplayTitle + (bSequenceReady ? TEXT("\nRepeat: keys 1 / 2 / 3") : FString::Printf(TEXT("\nObserve bell: %d"),ObservedSymbol)))); }
 }
 void ADMObjective::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -160,5 +192,6 @@ void ADMObjective::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
     DOREPLIFETIME(ADMObjective,PublicState); DOREPLIFETIME(ADMObjective,DisplayTitle); DOREPLIFETIME(ADMObjective,RepairExplanation);
     DOREPLIFETIME(ADMObjective,Steps); DOREPLIFETIME(ADMObjective,Reward); DOREPLIFETIME(ADMObjective,Destructible); DOREPLIFETIME(ADMObjective,CarrierId);
     DOREPLIFETIME(ADMObjective,bVisionOnline); DOREPLIFETIME(ADMObjective,bBasinDrained);
+    DOREPLIFETIME(ADMObjective,Targets); DOREPLIFETIME(ADMObjective,Difficulty); DOREPLIFETIME(ADMObjective,ObservedSymbol); DOREPLIFETIME(ADMObjective,bSequenceReady);
 }
 

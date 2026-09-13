@@ -16,3 +16,13 @@ outside this change. GDD statuses and balance remain unchanged.
 
 All fixture durations, distances, XP and treatment charges are provisional.
 These subsystem snapshots are not a complete run or host-migration save.
+
+- Authored catalogue: all 16 variants run through real interactions in the
+  ObjectiveCatalogue PIE test; static idols register in the combat roster and
+  surviving late-form idols protect nearby enemies. Bell sequences have an
+  observation phase with truthful visual symbols. `DMSpawnObjective <id> [0..4]`
+  creates a developer fixture; I / controller Menu interacts, 1/2/3 enter bells.
+  No HTN selection or automatic Ritual subscription. Escort presentation and
+  layouts are greybox fixtures, not the finished swamp scenario or navigation
+  acceptance. Lighthouse/drain completion projections await scenario consumers.
+  Verified: Foundation Test, ObjectiveCatalogue EditorTest (16 variants), Smoke.

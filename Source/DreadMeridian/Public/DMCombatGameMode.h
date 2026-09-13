@@ -76,6 +76,8 @@ public:
     bool UsesEncounterLayout() const { return SmokeOutcome.IsEmpty() && !bNetworkTest; }
     const TArray<TObjectPtr<ADMCombatant>>& GetCombatants() const { return Combatants; }
     ADMCombatant* FindCombatant(const FString& EntityId) const;
+    /** Call between combat iterations, never while iterating the roster. */
+    ADMCombatant* SpawnEncounterActor(const FString& Id, FVector Location, float HP, float Damage, bool bStatic = false);
     void Emit(const FString& Type, const TSharedRef<FJsonObject>& Data);
     void RequestRevive(ADMCombatant* Actor, ADMCombatant* Ally);
     void ReleaseInvestigator(AController* Player);

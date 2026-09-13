@@ -50,6 +50,7 @@ public:
     virtual void Tick(float Delta) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const override;
     bool Configure(const FString& Id, const FString& Title, const TArray<FDMObjectiveStep>& Plan, EDMObjectiveReward RewardKind, int32 Deadline = 0);
+    bool ConfigureAuthored(const FString& TemplateId, FVector Origin, int32 Difficulty, const FString& InstanceId);
     bool Interact(ADMCombatant* Actor, int32 Symbol = -1);
     void Release(ADMCombatant* Actor, bool bExplicitInterrupt = false);
     void Step(int32 Tick);
@@ -67,6 +68,10 @@ public:
     UPROPERTY(Replicated) TArray<FDMObjectiveStep> Steps;
     UPROPERTY(Replicated) EDMObjectiveReward Reward = EDMObjectiveReward::None;
     UPROPERTY(Replicated) TObjectPtr<ADMCombatant> Destructible;
+    UPROPERTY(Replicated) TArray<TObjectPtr<ADMCombatant>> Targets;
+    UPROPERTY(Replicated) int32 Difficulty = 0;
+    UPROPERTY(Replicated) int32 ObservedSymbol = 0;
+    UPROPERTY(Replicated) bool bSequenceReady = false;
     UPROPERTY(Replicated) FString CarrierId;
     UPROPERTY(Replicated) bool bVisionOnline = false;
     UPROPERTY(Replicated) bool bBasinDrained = false;
@@ -78,6 +83,7 @@ private:
     TWeakObjectPtr<ADMCombatant> Participant;
     int32 DamageAtStart = -1;
     int32 LastTick = -1;
+    int32 SequenceStarted = -1;
     bool Eligible(ADMCombatant* Actor, FVector At) const;
     bool Contested(FVector At) const;
     void Advance();

@@ -577,6 +577,17 @@ void ADMCombatGameMode::LogResult(const FString& Outcome)
     UE_LOG(LogTemp, Display, TEXT("DREAD_AI_RESULT %s"), *Json);
 }
 
+ADMCombatant* ADMCombatGameMode::SpawnEncounterActor(const FString& Id, FVector Location, float HP, float Damage, bool bStatic)
+{
+    if (!HasAuthority() || Id.IsEmpty() || FindCombatant(Id) || Location.ContainsNaN() || HP <= 0 || Damage < 0) { return nullptr; }
+    FActorSpawnParameters P; P.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    auto* A = GetWorld()->SpawnActor<ADMCombatant>(Location,FRotator::ZeroRotator,P);
+    if (!A) { return nullptr; }
+    A->InitializeCombatant(Id,true,HP,Damage); A->bHumanEnemy = false; Combatants.Add(A);
+    if (bStatic) { A->Tags.Add(TEXT("Objective")); A->Tags.Add(TEXT("Destructible")); A->GetCharacterMovement()->DisableMovement(); A->SetAttackHold(true); }
+    else { AttachBot(A); }
+    return A;
+}
 void ADMCombatGameMode::StepCombat()
 {
     if (!bCombatActive) { return; }

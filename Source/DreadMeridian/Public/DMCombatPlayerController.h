@@ -19,6 +19,7 @@ public:
     UFUNCTION(Server, Reliable) void ServerObjective(class ADMObjective* Objective, int32 Symbol, bool bRelease);
     UFUNCTION(Exec) void DMObjectiveInteract(int32 Symbol = -1);
     UFUNCTION(Exec) void DMObjectiveRelease();
+    UFUNCTION(Exec) void DMSpawnObjective(const FString& TemplateId, int32 Difficulty = 0);
     UFUNCTION(Server, Reliable) void ServerEvolve(uint8 Slot, uint8 Node);
     bool EvolutionOpen() const { return bEvolutionOpen; }
     int32 EvolutionCursor() const { return EvolutionSelection; }
@@ -74,6 +75,10 @@ public:
     static constexpr float PingHoldSeconds = .3f;
     static constexpr float PingRadialDeadZone = 28.f;
 private:
+    void ObjectiveUse() { DMObjectiveInteract(); }
+    void BellOne() { DMObjectiveInteract(1); }
+    void BellTwo() { DMObjectiveInteract(2); }
+    void BellThree() { DMObjectiveInteract(3); }
     bool bEvolutionOpen = false;
     int32 EvolutionSelection = 0;
     void ToggleEvolution();
