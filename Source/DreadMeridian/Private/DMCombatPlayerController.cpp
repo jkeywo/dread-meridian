@@ -13,6 +13,7 @@
 #include "DMObjective.h"
 #include "DMShubEncounter.h"
 #include "DMBossArena.h"
+#include "DMRelicDrop.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
@@ -31,6 +32,11 @@ ADMCombatPlayerController::ADMCombatPlayerController()
 {
     bShowMouseCursor = true;
     DefaultMouseCursor = EMouseCursor::Crosshairs;
+}
+void ADMCombatPlayerController::ServerRelicVote_Implementation(ADMRelicDrop* Drop,uint8 Choice)
+{
+    auto* A=Cast<ADMCombatant>(GetPawn());
+    if (!IsValid(Drop) || Drop->GetWorld()!=GetWorld() || !A || !Drop->Vote(A,static_cast<EDMRelicChoice>(Choice))) { ClientQFeedback(TEXT("Relic choice unavailable")); }
 }
 void ADMCombatPlayerController::ServerObjective_Implementation(ADMObjective* O, int32 Symbol, bool bRelease)
 {

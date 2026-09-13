@@ -3,6 +3,7 @@
 #include "DMCombatant.h"
 #include "DMCombatGameMode.h"
 #include "DMRecoverySupply.h"
+#include "DMRelicDrop.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -143,6 +144,8 @@ void ADMObjective::GrantReward()
     { for (ADMCombatant* A : M->GetCombatants()) { if (!A->bIsEnemy) { A->Progression->Award(TEXT("objective.") + PublicState.Id, XPReward); } } }
     if (Reward == EDMObjectiveReward::Treatment)
     { auto* Supply = GetWorld()->SpawnActor<ADMRecoverySupply>(PublicState.PayloadLocation,FRotator::ZeroRotator); if (Supply) { Supply->Charges = 3; } }
+    if (Reward == EDMObjectiveReward::Relic)
+    { auto* Drop=GetWorld()->SpawnActor<ADMRelicDrop>(); if (Drop && !Drop->Initialize(TEXT("objective.")+PublicState.Id)) { Drop->Destroy(); } }
     bVisionOnline = Reward == EDMObjectiveReward::Vision;
     bBasinDrained = Reward == EDMObjectiveReward::DrainBasin;
 }

@@ -9,6 +9,7 @@
 #include "DMCorpse.h"
 #include "DMShubMinion.h"
 #include "DMShubEncounter.h"
+#include "DMRelicDrop.h"
 #include "DMCombatPlayerController.h"
 #include "DMCombatHUD.h"
 #include "DMSquadController.h"
@@ -644,6 +645,7 @@ void ADMCombatGameMode::StepCombat()
     for (TActorIterator<ADMShubEncounter> It(GetWorld()); It; ++It) { It->Step(CombatTick); }
     if (!bCombatActive) { return; }
     for (TActorIterator<ADMObjective> It(GetWorld()); It; ++It) { It->Step(CombatTick); }
+    for (TActorIterator<ADMRelicDrop> It(GetWorld()); It; ++It) { It->Step(CombatTick); }
     for (ADMCombatant* Actor : Combatants) { Actor->Primary->Step(CombatTick); Actor->Kit->Step(CombatTick); Actor->Smuggler->Step(*this); }
     if (ADMGameState* Projection = GetGameState<ADMGameState>()) { Projection->SetCombatTick(CombatTick); }
     for (ADMCombatant* Actor : Combatants)
