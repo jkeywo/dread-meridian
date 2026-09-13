@@ -70,8 +70,10 @@ private:
     bool bCameraHeld = false;
     float ActionUntil = 0;
     float LastHitTime = -1;
-    /** Yaw offset (relative to the actor) left over from the last attack facing; cleared once real movement resumes. */
+    /** Yaw offset (relative to the actor), eased each tick toward FacingOffsetTarget so it never snaps. */
     float FacingOffset = 0;
+    /** Desired FacingOffset: the cursor direction while aiming, an attack's facing while its hold lasts, else 0. */
+    float FacingOffsetTarget = 0;
     FVector AimPoint = FVector::ZeroVector;
     float AimUntil = -1;
     /** Camera raised until this time, for the Photographer's flash and ultimate. */

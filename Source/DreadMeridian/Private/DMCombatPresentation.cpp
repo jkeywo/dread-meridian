@@ -1,5 +1,6 @@
 #include "DMCombatPresentation.h"
 #include "DMCombatant.h"
+#include "DMCombatPlayerController.h"
 #include "DMShubMinion.h"
 #include "DMAttackFX.h"
 #include "Animation/AnimSequence.h"
@@ -13,7 +14,10 @@
 
 // Index into Clips: the two Paths entries first, then AnimNames in order. Append only, and keep both lists in step.
 namespace { enum EClip { Idle, Jog, RifleIdle, RifleAim, RifleJog, RifleFire, RifleAimFire, Death, Hit, GetUp, JabR, JabL, FightIdle, Grenade, Hold, CastGesture, Place, Start, Stop, TurnL, TurnR, RifleStart, RifleStop, RifleTurnL, RifleTurnR,
-    Cast1, CastUp, BlockStart, BlockEnd, Superpunch, SkipFwd, Backelbow, GroundSlam, CameraCheck, MGShoot, CallOut, ClipCount }; }
+    Cast1, CastUp, BlockStart, BlockEnd, Superpunch, SkipFwd, Backelbow, GroundSlam, CameraCheck, MGShoot, CallOut,
+    // Strafe/reverse jog set, keyed by FDMLocomotionPresentation::StrafeOctant order (Fwd is Jog/RifleJog above).
+    UnarmedFwdR, UnarmedRight, UnarmedBwdR, UnarmedBwd, UnarmedBwdL, UnarmedLeft, UnarmedFwdL,
+    RifleFwdR, RifleRight, RifleBwdR, RifleBwd, RifleBwdL, RifleLeft, RifleFwdL, ClipCount }; }
 UDMCombatPresentation::UDMCombatPresentation()
 {
     for (const TCHAR* Path : {TEXT("SwampThings/Lurker/SKM_Lurker"), TEXT("SwampThings/Grasper/SKM_Grasper"),
@@ -46,7 +50,19 @@ UDMCombatPresentation::UDMCombatPresentation()
         TEXT("KB_Projectile_1"), TEXT("KB_Projectile_Up"), TEXT("KB_Block_Start"), TEXT("KB_Block_End"), TEXT("KB_Superpunch"),
         TEXT("KB_SkipFwd_1"), TEXT("KB_m_Backelbow_R"), TEXT("KB_GroundAttack"), TEXT("Anim_IN_check_CO"), TEXT("MG_shoot"), TEXT("Anim_EM_call_out") };
     for (const TCHAR* Name : AnimNames) { ConstructorHelpers::FObjectFinder<UAnimSequence> Clip(*FString::Printf(TEXT("/Game/DreadMeridian/Presentation/Animations/A_DM_%s"), Name)); Clips.Add(Clip.Object); }
-    static_assert(UE_ARRAY_COUNT(AnimNames) + UE_ARRAY_COUNT(Paths) == ClipCount, "EClip out of sync with the clip lists");
+    // Strafe/reverse set for the player's two pose families, appended last to match the EClip entries added after
+    // CallOut. Order is StrafeOctant's 1..7 (Fwd/0 reuses Jog/RifleJog above): FwdR,Right,BwdR,Bwd,BwdL,Left,FwdL.
+    const TCHAR* DirectionalPaths[] = {
+        TEXT("/Game/Characters/Mannequins/Anims/Unarmed/Jog/MF_Unarmed_Jog_Fwd_Right"), TEXT("/Game/Characters/Mannequins/Anims/Unarmed/Jog/MF_Unarmed_Jog_Right"),
+        TEXT("/Game/Characters/Mannequins/Anims/Unarmed/Jog/MF_Unarmed_Jog_Bwd_Right"), TEXT("/Game/Characters/Mannequins/Anims/Unarmed/Walk/MF_Unarmed_Walk_Bwd"),
+        TEXT("/Game/Characters/Mannequins/Anims/Unarmed/Jog/MF_Unarmed_Jog_Bwd_Left"), TEXT("/Game/Characters/Mannequins/Anims/Unarmed/Jog/MF_Unarmed_Jog_Left"),
+        TEXT("/Game/Characters/Mannequins/Anims/Unarmed/Jog/MF_Unarmed_Jog_Fwd_Left"),
+        TEXT("/Game/Characters/Mannequins/Anims/Rifle/Jog/MF_Rifle_Jog_Fwd_Right"), TEXT("/Game/Characters/Mannequins/Anims/Rifle/Jog/MF_Rifle_Jog_Right"),
+        TEXT("/Game/Characters/Mannequins/Anims/Rifle/Jog/MF_Rifle_Jog_Bwd_Right"), TEXT("/Game/Characters/Mannequins/Anims/Rifle/Walk/MF_Rifle_Walk_Bwd"),
+        TEXT("/Game/Characters/Mannequins/Anims/Rifle/Jog/MF_Rifle_Jog_Bwd_Left"), TEXT("/Game/Characters/Mannequins/Anims/Rifle/Jog/MF_Rifle_Jog_Left"),
+        TEXT("/Game/Characters/Mannequins/Anims/Rifle/Jog/MF_Rifle_Jog_Fwd_Left") };
+    for (const TCHAR* Path : DirectionalPaths) { ConstructorHelpers::FObjectFinder<UAnimSequence> Clip(Path); Clips.Add(Clip.Object); }
+    static_assert(UE_ARRAY_COUNT(AnimNames) + UE_ARRAY_COUNT(Paths) + UE_ARRAY_COUNT(DirectionalPaths) == ClipCount, "EClip out of sync with the clip lists");
     const TCHAR* PropNames[] = { TEXT("SapperCarbine_Held"), TEXT("PhotographerRifle_Held"), TEXT("PhotographerCamera_Stowed"), TEXT("PhotographerCamera_Held"), TEXT("PhotographerRifle_Stowed"), TEXT("MediumWisp_Held") };
     for (const TCHAR* Name : PropNames) { ConstructorHelpers::FObjectFinder<UStaticMesh> Item(*FString::Printf(TEXT("/Game/DreadMeridian/Presentation/Props/SM_%s"), Name)); Items.Add(Item.Object); }
     ConstructorHelpers::FObjectFinder<UNiagaraSystem> Blast(TEXT("/Game/Explosions_W3Vol1/Niagara/NS_ImpactExplosion")); Explosion = Blast.Object;
@@ -213,32 +229,64 @@ void UDMCombatPresentation::UpdatePresentation()
     if (bCamera) { Play(Clips[RifleAim], true); return; }
     if (Actor->Primary->HeldTarget || Actor->IsRestrained()) { Play(Clips[Hold], true); return; }
     if (Actor->ReviveProgress > 0) { Play(Clips[Place], true); return; }
-    const EDMLocomotion Previous = Locomotion.Phase;
-    const EDMLocomotion Motion = Locomotion.Update(Speed, Yaw, Now);
     const bool bRifle = UsesGunPose();
+    // While an ability is being aimed, facing is held on the cursor rather than the move direction, so
+    // movement no longer implies a turn: pick straight from the strafe/reverse set below instead of the
+    // free-turn state machine, which has no directional clips of its own.
+    ADMCombatPlayerController* AimingPC = Actor->IsLocallyControlled() ? Cast<ADMCombatPlayerController>(Actor->GetController()) : nullptr;
+    const bool bIsAimingNow = AimingPC && AimingPC->IsAiming();
     int32 Index = bRifle ? RifleIdle : (Kind == 4 ? FightIdle : Idle);
-    float Duration = 0;
-    switch (Motion)
+    UAnimSequence* MotionClip;
+    float Rate = 1.f;
+    if (bIsAimingNow)
     {
-    case EDMLocomotion::Run: Index = bRifle ? RifleJog : Jog; break;
-    case EDMLocomotion::Start: Index = bRifle ? RifleStart : Start; Duration = FDMLocomotionPresentation::StartDuration; break;
-    case EDMLocomotion::Stop: Index = bRifle ? RifleStop : Stop; Duration = FDMLocomotionPresentation::StopDuration; break;
-    case EDMLocomotion::TurnLeft: Index = bRifle ? RifleTurnL : TurnL; Duration = FDMLocomotionPresentation::TurnDuration; break;
-    case EDMLocomotion::TurnRight: Index = bRifle ? RifleTurnR : TurnR; Duration = FDMLocomotionPresentation::TurnDuration; break;
-    default: break;
+        Locomotion.Reset(Speed, Yaw, Now);
+        if (Speed > 35.f)
+        {
+            static const EClip UnarmedOctant[8] = { Jog, UnarmedFwdR, UnarmedRight, UnarmedBwdR, UnarmedBwd, UnarmedBwdL, UnarmedLeft, UnarmedFwdL };
+            static const EClip RifleOctant[8] = { RifleJog, RifleFwdR, RifleRight, RifleBwdR, RifleBwd, RifleBwdL, RifleLeft, RifleFwdL };
+            const int32 Octant = FDMLocomotionPresentation::StrafeOctant(Yaw + FacingOffset, Yaw);
+            Index = bRifle ? RifleOctant[Octant] : UnarmedOctant[Octant];
+            Rate = FMath::Clamp(Speed / 420.f, .4f, 1.5f);
+        }
+        MotionClip = Clips[Index];
+        Play(MotionClip, true, Rate);
     }
-    UAnimSequence* MotionClip = Clips[Index];
-    if (Kind >= 11 && Kind <= 15)
+    else
     {
-        const int32 MotionIndex = Motion == EDMLocomotion::Run ? 1 : Motion == EDMLocomotion::Start ? 2 :
-            Motion == EDMLocomotion::Stop ? 3 : Motion == EDMLocomotion::TurnLeft ? 4 : Motion == EDMLocomotion::TurnRight ? 5 : 0;
-        MotionClip = EnemyLocomotion[(Kind-11)*6 + MotionIndex];
+        const EDMLocomotion Previous = Locomotion.Phase;
+        const EDMLocomotion Motion = Locomotion.Update(Speed, Yaw, Now);
+        float Duration = 0;
+        switch (Motion)
+        {
+        case EDMLocomotion::Run: Index = bRifle ? RifleJog : Jog; break;
+        case EDMLocomotion::Start: Index = bRifle ? RifleStart : Start; Duration = FDMLocomotionPresentation::StartDuration; break;
+        case EDMLocomotion::Stop: Index = bRifle ? RifleStop : Stop; Duration = FDMLocomotionPresentation::StopDuration; break;
+        case EDMLocomotion::TurnLeft: Index = bRifle ? RifleTurnL : TurnL; Duration = FDMLocomotionPresentation::TurnDuration; break;
+        case EDMLocomotion::TurnRight: Index = bRifle ? RifleTurnR : TurnR; Duration = FDMLocomotionPresentation::TurnDuration; break;
+        default: break;
+        }
+        MotionClip = Clips[Index];
+        if (Kind >= 11 && Kind <= 15)
+        {
+            const int32 MotionIndex = Motion == EDMLocomotion::Run ? 1 : Motion == EDMLocomotion::Start ? 2 :
+                Motion == EDMLocomotion::Stop ? 3 : Motion == EDMLocomotion::TurnLeft ? 4 : Motion == EDMLocomotion::TurnRight ? 5 : 0;
+            MotionClip = EnemyLocomotion[(Kind-11)*6 + MotionIndex];
+        }
+        Rate = Duration > 0 && MotionClip ? MotionClip->GetPlayLength() / Duration :
+            Motion == EDMLocomotion::Run ? FMath::Clamp(Speed / 420.f, .4f, 1.5f) : 1.f;
+        Play(MotionClip, Duration == 0, Rate, Previous != Motion);
     }
-    const float Rate = Duration > 0 && MotionClip ? MotionClip->GetPlayLength() / Duration :
-        Motion == EDMLocomotion::Run ? FMath::Clamp(Speed / 420.f, .4f, 1.5f) : 1.f;
-    Play(MotionClip, Duration == 0, Rate, Previous != Motion);
-    // Real movement supersedes the cosmetic attack-facing hold; stationary poses keep facing the last attack target.
-    if (Speed > 35.f) { FacingOffset = 0.f; }
+    // While aiming, ease the mesh toward the cursor; otherwise ease any held attack-facing back to true
+    // forward. Both cases interpolate through FacingOffset so a fast turn eases in rather than snapping.
+    if (bIsAimingNow)
+    {
+        ADMCombatant* CursorTarget; FVector CursorPoint; AimingPC->GetAim(CursorTarget, CursorPoint);
+        const FVector ToCursor = CursorPoint - Actor->GetActorLocation();
+        if (!ToCursor.IsNearlyZero()) { FacingOffsetTarget = FRotator::NormalizeAxis(ToCursor.Rotation().Yaw - Yaw); }
+    }
+    else if (Speed > 35.f) { FacingOffsetTarget = 0.f; }
+    FacingOffset = FMath::FInterpTo(FacingOffset, FacingOffsetTarget, GetWorld()->GetDeltaSeconds(), 10.f);
     Actor->GetMesh()->SetRelativeRotation(FRotator(0, -90 + Locomotion.VisualYaw(Now) + FacingOffset, 0));
 }
 FString UDMCombatPresentation::CurrentClip() const { return Playing ? Playing->GetName() : TEXT("none"); }
@@ -348,12 +396,11 @@ void UDMCombatPresentation::Cue(uint8 Event, FVector Target)
     else if (Event == 22) { Burst(Target, Target, FLinearColor(2.2f, 1.6f, .8f), 9); }
     else if (Event == 23) { Action(Clips[BlockStart], .35f); }
     else if (Event == 24) { Action(Clips[Backelbow], .5f); }
+    // Sets the hold target only; UpdatePresentation eases FacingOffset toward it every tick so the snap-to-target
+    // read on an attack lands smoothly instead of popping the mesh instantly (this used to hard-set the rotation).
     const FVector Direction = Target - Actor->GetActorLocation();
     if (!Direction.IsNearlyZero())
-    {
-        FacingOffset = FRotator::NormalizeAxis(Direction.Rotation().Yaw - Actor->GetActorRotation().Yaw);
-        Actor->GetMesh()->SetRelativeRotation(FRotator(0, FacingOffset - 90, 0));
-    }
+    { FacingOffsetTarget = FRotator::NormalizeAxis(Direction.Rotation().Yaw - Actor->GetActorRotation().Yaw); }
 }
 
 void UDMCombatPresentation::UpdateCreature()

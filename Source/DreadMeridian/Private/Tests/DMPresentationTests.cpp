@@ -111,7 +111,8 @@ bool FDMLocomotionTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("Deceleration stops"), M.Update(0,0,.4f) == EDMLocomotion::Stop);
     TestTrue(TEXT("Restart interrupts stop immediately"), M.Update(420,0,.41f) == EDMLocomotion::Start);
     TestTrue(TEXT("Left turn direction"), M.Update(420,-90,.5f) == EDMLocomotion::TurnLeft);
-    TestTrue(TEXT("Turn initially preserves previous visual heading"), FMath::IsNearlyEqual(M.VisualYaw(.5f),90.f));
+    TestTrue(TEXT("Turn eases in rather than snapping"), FMath::IsNearlyZero(M.VisualYaw(.5f)));
+    TestTrue(TEXT("Turn reaches its held heading shortly after"), M.VisualYaw(.5f + FDMLocomotionPresentation::TurnBlendIn) > 70.f);
     TestTrue(TEXT("Turn offset settles"), FMath::IsNearlyZero(M.VisualYaw(.97f)));
     TestTrue(TEXT("Turn returns to gait"), M.Update(420,-90,.97f) == EDMLocomotion::Run);
     M.Reset(0,179,1);
