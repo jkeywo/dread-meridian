@@ -13,6 +13,7 @@ class DREADMERIDIAN_API ADMGameMode : public AGameModeBase
 
 public:
     ADMGameMode();
+    UPROPERTY(VisibleAnywhere) TObjectPtr<class UDMElderOne> ElderOne;
     virtual void StartPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 

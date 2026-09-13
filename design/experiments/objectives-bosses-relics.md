@@ -26,3 +26,9 @@ These subsystem snapshots are not a complete run or host-migration save.
   layouts are greybox fixtures, not the finished swamp scenario or navigation
   acceptance. Lighthouse/drain completion projections await scenario consumers.
   Verified: Foundation Test, ObjectiveCatalogue EditorTest (16 variants), Smoke.
+
+- Elder 1: server-only seeded identity and encounter lifecycle, guarded phase and
+  terminal transitions, versioned authority snapshot, RNG restoration coverage.
+  `-DMElderOne=Shub` or `Nyarlathotep` forces developer selection while consuming
+  the same named selection draw. Capture records boss_selection_version=1, never
+  a player-visible secret projection. Foundation Test and Smoke passed.

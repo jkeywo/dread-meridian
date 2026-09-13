@@ -1,4 +1,5 @@
 #include "DMGameMode.h"
+#include "DMElderOne.h"
 #include "DMGameState.h"
 #include "DMPlayerController.h"
 #include "DMHarnessHUD.h"
@@ -15,6 +16,7 @@ DEFINE_LOG_CATEGORY_STATIC(LogDreadMeridian, Log, All);
 
 ADMGameMode::ADMGameMode()
 {
+    ElderOne = CreateDefaultSubobject<UDMElderOne>(TEXT("ElderOneAuthority"));
     GameStateClass = ADMGameState::StaticClass();
     PlayerControllerClass = ADMPlayerController::StaticClass();
     DefaultPawnClass = ASpectatorPawn::StaticClass();
@@ -27,6 +29,13 @@ void ADMGameMode::StartPlay()
     int32 Seed = DefaultRunSeed;
     FParse::Value(FCommandLine::Get(), TEXT("DMSeed="), Seed);
     RandomStreams = MakeUnique<FDMRandomStreams>(Seed);
+    uint32 BossDraw = DrawRandom(EDMRandomStream::ElderOne);
+#if !UE_BUILD_SHIPPING
+    FString ForcedBoss;
+    if (FParse::Value(FCommandLine::Get(),TEXT("DMElderOne="),ForcedBoss))
+    { if (ForcedBoss == TEXT("Shub")) { BossDraw = 0; } else if (ForcedBoss == TEXT("Nyarlathotep")) { BossDraw = 1; } }
+#endif
+    ElderOne->Select(BossDraw);
 
     if (RitualPointsPerStage <= 0)
     {
@@ -40,6 +49,7 @@ void ADMGameMode::StartPlay()
     Metadata->SetStringField(TEXT("run_kind"), TEXT("foundation_harness"));
     Metadata->SetNumberField(TEXT("seed"), Seed);
     Metadata->SetNumberField(TEXT("rng_schema_version"), 2);
+    Metadata->SetNumberField(TEXT("boss_selection_version"), 1);
     Metadata->SetNumberField(TEXT("ritual_points_per_stage"), RitualPointsPerStage);
     Metadata->SetNumberField(TEXT("investigator_slots"), FDMRunState::InvestigatorCount);
     Metadata->SetNumberField(TEXT("production_bots"), 0);
