@@ -2,6 +2,7 @@
 #include "DMEditorPlaySelection.h"
 #include "DMCombatant.h"
 #include "DMRecoverySupply.h"
+#include "DMObjective.h"
 #include "DMCombatPlayerController.h"
 #include "DMCombatHUD.h"
 #include "DMSquadController.h"
@@ -610,6 +611,7 @@ void ADMCombatGameMode::StepCombat()
     // Expire control for the whole roster before persistent abilities or signatures resolve.
     for (ADMCombatant* Actor : Combatants) { Actor->StepControl(CombatTick); }
     for (TActorIterator<ADMRecoverySupply> It(GetWorld()); It; ++It) { It->Step(); }
+    for (TActorIterator<ADMObjective> It(GetWorld()); It; ++It) { It->Step(CombatTick); }
     for (ADMCombatant* Actor : Combatants) { Actor->Primary->Step(CombatTick); Actor->Kit->Step(CombatTick); Actor->Smuggler->Step(*this); }
     if (ADMGameState* Projection = GetGameState<ADMGameState>()) { Projection->SetCombatTick(CombatTick); }
     for (ADMCombatant* Actor : Combatants)

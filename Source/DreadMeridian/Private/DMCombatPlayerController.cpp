@@ -10,6 +10,7 @@
 #include "DMGameState.h"
 #include "DMScroungePickup.h"
 #include "DMRecoverySupply.h"
+#include "DMObjective.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
@@ -29,6 +30,22 @@ ADMCombatPlayerController::ADMCombatPlayerController()
     bShowMouseCursor = true;
     DefaultMouseCursor = EMouseCursor::Crosshairs;
 }
+void ADMCombatPlayerController::ServerObjective_Implementation(ADMObjective* O, int32 Symbol, bool bRelease)
+{
+    auto* A = Cast<ADMCombatant>(GetPawn());
+    if (!IsValid(O) || O->GetWorld() != GetWorld() || !A) { return; }
+    if (bRelease) { O->Release(A); } else if (!O->Interact(A,Symbol)) { ClientQFeedback(TEXT("Objective interaction unavailable")); }
+}
+void ADMCombatPlayerController::DMObjectiveInteract(int32 Symbol)
+{
+    auto* A = Cast<ADMCombatant>(GetPawn()); if (!A) { return; }
+    ADMObjective* Best = nullptr; float Distance = FMath::Square(180.f);
+    for (TActorIterator<ADMObjective> It(GetWorld()); It; ++It)
+    { const float D = FVector::DistSquared2D(A->GetActorLocation(),It->PublicState.PayloadLocation); if (!It->IsTerminal() && D <= Distance) { Best = *It; Distance = D; } }
+    if (Best) { ServerObjective(Best,Symbol,false); }
+}
+void ADMCombatPlayerController::DMObjectiveRelease()
+{ for (TActorIterator<ADMObjective> It(GetWorld()); It; ++It) { ServerObjective(*It,-1,true); } }
 void ADMCombatPlayerController::SetupInputComponent()
 {
     Super::SetupInputComponent();

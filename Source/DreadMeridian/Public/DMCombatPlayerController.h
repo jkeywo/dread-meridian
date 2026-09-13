@@ -16,6 +16,9 @@ class DREADMERIDIAN_API ADMCombatPlayerController : public APlayerController
     GENERATED_BODY()
 public:
     ADMCombatPlayerController();
+    UFUNCTION(Server, Reliable) void ServerObjective(class ADMObjective* Objective, int32 Symbol, bool bRelease);
+    UFUNCTION(Exec) void DMObjectiveInteract(int32 Symbol = -1);
+    UFUNCTION(Exec) void DMObjectiveRelease();
     UFUNCTION(Server, Reliable) void ServerEvolve(uint8 Slot, uint8 Node);
     bool EvolutionOpen() const { return bEvolutionOpen; }
     int32 EvolutionCursor() const { return EvolutionSelection; }
