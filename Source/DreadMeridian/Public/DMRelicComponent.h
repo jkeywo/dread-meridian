@@ -43,6 +43,8 @@ public:
     float ResourceMultiplier() const;
     float MovementMultiplier() const;
     float ControlExposure() const;
+    bool ProtectsObjective() const;
+    float IncomingMultiplier() const;
     void ShieldSpent(float Amount) { if (Self() && GetOwner()->HasAuthority()) { Runtime.OwnedShield=FMath::Max(0.f,Runtime.OwnedShield-Amount); } }
     FDMRelicControlEvent AcceptedControl;
     FDMRelicBreakEvent AcceptedBreak;
@@ -75,5 +77,6 @@ private:
     void BoostResource(int32 Before,int32 After);
     void StepWakes(int32 Tick);
     void ProjectWakes();
+    void OnObjectiveFinished();
     UPROPERTY() TArray<TObjectPtr<class ADMAbilityMarker>> WakeMarkers;
 };

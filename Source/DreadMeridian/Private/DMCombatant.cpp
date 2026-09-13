@@ -2,6 +2,8 @@
 #include "DMCombatPresentation.h"
 #include "DMHealthAttributes.h"
 #include "DMRelicComponent.h"
+#include "DMObjective.h"
+#include "EngineUtils.h"
 #include "DMAttackFX.h"
 #include "DMScroungePickup.h"
 #include "Serialization/JsonSerializer.h"
@@ -210,7 +212,7 @@ bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FS
     Damage*=Relics->SpendMedal(Target,AbilityId,bBasic);
     const float ShieldBefore = Target->Shield();
     const float Incoming = Target->IncomingUntilTick > Mode->GetCombatTick() ? FMath::Clamp(Target->IncomingMultiplier, 0.f, 2.f) : 1.f;
-    const float BaseDamage = Damage * Kit->OutgoingTo(Target) * Target->Progression->IncomingFrom(this) * MadnessCore->Outgoing(Target) * (1 - FMath::Clamp(Target->SpiritProtection, 0.f, .5f)) * Incoming;
+    const float BaseDamage = Damage * Kit->OutgoingTo(Target) * Target->Progression->IncomingFrom(this) * Target->Relics->IncomingMultiplier() * MadnessCore->Outgoing(Target) * (1 - FMath::Clamp(Target->SpiritProtection, 0.f, .5f)) * Incoming;
     const float ResolvedDamage = BaseDamage * Target->Injuries->Incoming(FMath::Max(0.f, BaseDamage - ShieldBefore), bHazard);
     const float Absorbed = FMath::Min(ShieldBefore, ResolvedDamage);
     if (Absorbed > 0) { Target->Relics->ShieldSpent(Absorbed); Target->ApplyAttributeDelta(UDMHealthAttributes::GetShieldAttribute(), -Absorbed); }
@@ -322,7 +324,7 @@ FString ADMCombatant::DisplayName() const
 { return !EncounterLabel.IsEmpty() ? EncounterLabel : bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Name() : bIsEnemy ? Investigator->DisplayName() + TEXT(" ") + EntityId.Mid(EntityId.Find(TEXT(".")) + 1) : Investigator->DisplayName(); }
 float ADMCombatant::GetAttackRange() const
 { return (bProfileRange ? 420 : bIsEnemy && Smuggler->Role != EDMSmuggler::None ? Smuggler->Range() : Investigator->Range()) + ReachBonus; }
-float ADMCombatant::EffectiveResistance() const { return FMath::Max3(Investigator->Resistance(), BraceResistance, Kit->ChargeResistance()); }
+float ADMCombatant::EffectiveResistance() const { return FMath::Max(FMath::Max3(Investigator->Resistance(), BraceResistance, Kit->ChargeResistance()),Relics->ProtectsObjective() ? .75f : 0.f); }
 void ADMCombatant::StepInvestigator(int32 Tick)
 {
     if (!HasAuthority()) { return; }
@@ -351,6 +353,7 @@ void ADMCombatant::InterruptControl()
 {
     if (HasAuthority()) { ++ControlInterruptSerial; }
     if (!HasAuthority()) { return; }
+    for (TActorIterator<ADMObjective> It(GetWorld()); It; ++It) { if (It->IsInteracting(this)) { It->Release(this,true); } }
     bTelegraphActive = false;
     Primary->CancelChannel(); Primary->ReleaseClinch();
     Kit->ChargeUntilTick = 0;
@@ -378,6 +381,7 @@ void ADMCombatant::ApplyControl(const FDMControl& Control, ADMCombatant* Source,
     const int32 Tick = Mode->GetCombatTick(); StepControl(Tick);
     // The breaking hit opens the window for subsequent control; it resolves against the preceding state.
     FDMControl Empowered=Control;
+    if (Relics->ProtectsObjective()) { Empowered.Slow*=.25f; Empowered.StunTicks=FMath::CeilToInt(Empowered.StunTicks*.25f); Empowered.StaggerTicks=FMath::CeilToInt(Empowered.StaggerTicks*.25f); }
     const float Medal=Source ? Source->Relics->SpendMedal(this,AbilityId,false) : 1.f;
     Empowered.Damage*=Medal; Empowered.BreakPressure*=Medal;
     Empowered.Slow=FMath::Min(1.f,Empowered.Slow*Relics->ControlExposure());

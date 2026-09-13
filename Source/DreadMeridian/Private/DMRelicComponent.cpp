@@ -2,6 +2,8 @@
 #include "DMCombatant.h"
 #include "DMCombatGameMode.h"
 #include "DMAbilityMarker.h"
+#include "DMObjective.h"
+#include "EngineUtils.h"
 #include "Net/UnrealNetwork.h"
 UDMRelicComponent::UDMRelicComponent() { SetIsReplicatedByDefault(true); }
 void UDMRelicComponent::BeginPlay()
@@ -11,7 +13,24 @@ void UDMRelicComponent::BeginPlay()
     AcceptedBreak.AddUObject(this,&UDMRelicComponent::OnBreak);
     ExcessHealing.AddUObject(this,&UDMRelicComponent::StoreOverheal);
     TierEntered.AddUObject(this,&UDMRelicComponent::BoostResource);
+    ObjectiveFinished.AddUObject(this,&UDMRelicComponent::OnObjectiveFinished);
 }
+bool UDMRelicComponent::ProtectsObjective() const
+{
+    if (!Self() || !Self()->HasAuthority() || !Has(EDMRelic::Gloves)) { return false; }
+    for (TActorIterator<ADMObjective> It(GetWorld()); It; ++It)
+    { const auto* S=It->Current(); if (It->IsInteracting(Self()) && S && (S->Verb==EDMObjectiveVerb::Carry || S->Verb==EDMObjectiveVerb::Operate || S->Verb==EDMObjectiveVerb::Inspect)) { return true; } }
+    return false;
+}
+void UDMRelicComponent::OnObjectiveFinished()
+{
+    auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    if (!M || !ProtectsObjective()) { return; }
+    for (ADMCombatant* A : M->GetCombatants())
+    { if (!A->IsDown() && A->bIsEnemy==Self()->bIsEnemy && FVector::DistSquared2D(A->GetActorLocation(),Self()->GetActorLocation())<=FMath::Square(300.f)) { A->Relics->Runtime.DefenseUntil=FMath::Max(A->Relics->Runtime.DefenseUntil,M->GetCombatTick()+20); } }
+}
+float UDMRelicComponent::IncomingMultiplier() const
+{ const auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>(); return M && Runtime.DefenseUntil>M->GetCombatTick() ? .8f : 1.f; }
 void UDMRelicComponent::PromoteThreat(ADMCombatant* Target)
 {
     if (!Self()->HasAuthority() || !Has(EDMRelic::Swagger) || !IsValid(Target) || Target->GetWorld()!=GetWorld() || Target->bIsEnemy==Self()->bIsEnemy || Runtime.Swaggered.Contains(Target->EntityId)) { return; }
@@ -148,7 +167,7 @@ bool UDMRelicComponent::RestoreFull(const FDMRelicSnapshot& S)
 {
     const auto& R=S.Runtime;
     if (!Self() || !Self()->HasAuthority() || S.Version!=1 || R.Version!=1 || !FMath::IsFinite(R.OwnedShield) || R.OwnedShield<0 || R.OwnedShield>Self()->MaxHealth()*.5f
-        || R.PrimeUntil<0 || R.ShieldHoldUntil<0 || R.RosaryUntil<0 || R.HasteUntil<0 || R.ControlUntil<0 || R.MovementWindow<0
+        || R.PrimeUntil<0 || R.ShieldHoldUntil<0 || R.RosaryUntil<0 || R.HasteUntil<0 || R.ControlUntil<0 || R.DefenseUntil<0 || R.MovementWindow<0
         || R.LastPosition.ContainsNaN() || !FMath::IsFinite(R.Distance) || R.Distance<0 || R.Wakes.Num()>3) { return false; }
     TSet<FString> Unique;
     for (const auto& Id : R.Swaggered) { if (Id.IsEmpty() || Unique.Contains(Id)) { return false; } Unique.Add(Id); }

@@ -113,7 +113,7 @@ void ADMObjective::Step(int32 Tick)
     auto* A = Participant.Get();
     if (!A) { return; }
     const bool bCarry = S.Verb == EDMObjectiveVerb::Carry;
-    if (!Eligible(A,bCarry ? A->GetActorLocation() : PublicState.PayloadLocation) || A->LastDamageTick != DamageAtStart)
+    if (!Eligible(A,bCarry ? A->GetActorLocation() : PublicState.PayloadLocation) || (A->LastDamageTick != DamageAtStart && !A->Relics->ProtectsObjective()))
     { Release(A,true); return; }
     if (bCarry)
     {

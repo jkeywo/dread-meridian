@@ -23,6 +23,7 @@ struct FDMRelicRuntime
     UPROPERTY() int32 RosaryUntil=0;
     UPROPERTY() int32 HasteUntil=0;
     UPROPERTY() int32 ControlUntil=0;
+    UPROPERTY() int32 DefenseUntil=0;
     UPROPERTY() FVector LastPosition=FVector::ZeroVector;
     UPROPERTY() bool bHasPosition=false;
     UPROPERTY() float Distance=0;
