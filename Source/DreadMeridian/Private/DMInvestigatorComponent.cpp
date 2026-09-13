@@ -11,6 +11,7 @@ void UDMInvestigatorComponent::Initialize(EDMInvestigator Value)
     if (!Authority()) { return; }
     Kind = Value; Charges = Kind == EDMInvestigator::Sapper ? 2 : 0;
     Momentum = 0; Components = 0; Combo = 0; Exposure.Reset(); Spirits.Reset(); SpiritTargets.Reset();
+    CastChecked<ADMCombatant>(GetOwner())->MadnessCore->Reset();
     Madness = 0; MomentumFloor = 0; bExposureFrozen = false;
     LastPressureTick = -100; LastTarget.Reset();
 }
@@ -134,14 +135,7 @@ float UDMInvestigatorComponent::PeekAttention(const FString& SpiritId) const
 void UDMInvestigatorComponent::AddMadness(float Amount, const FString& Reason)
 {
     if (!Authority() || Kind == EDMInvestigator::None || !FMath::IsFinite(Amount) || Amount <= 0) { return; }
-    Madness = FMath::Min(100.f, Madness + Amount);
-    if (auto* Mode = GetWorld()->GetAuthGameMode<ADMCombatGameMode>())
-    {
-        auto Data = MakeShared<FJsonObject>();
-        Data->SetStringField(TEXT("entity_id"), GetOwner() ? Cast<ADMCombatant>(GetOwner())->EntityId : FString());
-        Data->SetNumberField(TEXT("amount"), Amount); Data->SetNumberField(TEXT("value"), Madness); Data->SetStringField(TEXT("reason"), Reason);
-        Mode->Emit(TEXT("investigator.madness"), Data);
-    }
+    CastChecked<ADMCombatant>(GetOwner())->MadnessCore->Add(Amount, Reason);
 }
 bool UDMInvestigatorComponent::OnHit(const FString& TargetId, int32 Tick)
 {
@@ -212,7 +206,6 @@ FString UDMInvestigatorComponent::ResourceSummary(const FString& TargetId) const
         break; }
     case EDMInvestigator::Smuggler: Result = FString::Printf(TEXT("Momentum %.0f/100 | Combo %d/3 | Resistance %.0f%%"), Momentum, Combo, Resistance() * 100); break;
     default: return TEXT(""); }
-    if (Madness > 0) { Result += FString::Printf(TEXT(" | Madness %.0f"), Madness); }
     return Result;
 }
 void UDMInvestigatorComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -222,5 +215,4 @@ void UDMInvestigatorComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProper
     DOREPLIFETIME(UDMInvestigatorComponent, Charges); DOREPLIFETIME(UDMInvestigatorComponent, Components);
     DOREPLIFETIME(UDMInvestigatorComponent, Combo); DOREPLIFETIME(UDMInvestigatorComponent, Exposure);
     DOREPLIFETIME(UDMInvestigatorComponent, Spirits); DOREPLIFETIME(UDMInvestigatorComponent, SpiritTargets);
-    DOREPLIFETIME(UDMInvestigatorComponent, Madness);
 }

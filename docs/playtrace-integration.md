@@ -43,6 +43,10 @@ and inconsistent transitions. `injury.gained`, `injury.treated` and `recovery.us
 are developer observations outside the strict `combat.*` transition namespace.
 The Injury stream is appended at ID 10, making RNG snapshot schema 2; historical
 schema 1 capture provenance is still accepted. See [Injuries](injuries.md).
+The [Madness core](madness-core.md) adds developer-only `madness.changed`,
+`madness.threshold`, Crisis entry/exit and `madness.symptom` observations. Shared
+ingestion accepts that namespace without claiming to replay family mechanics.
+Private gameplay delivery uses the owning PlayerController, separately from capture.
 
 Shared validation checks lifecycle, finite timing, sequences, actor references,
 health/shield arithmetic and combat outcomes. Unsupported `combat.*` events fail.

@@ -1,6 +1,7 @@
 #include "DMHudModel.h"
 #include "DMCombatant.h"
 #include "DMGameState.h"
+#include "DMCombatPlayerController.h"
 #include "EngineUtils.h"
 
 FDMHudUnit FDMHudModel::Read(const ADMCombatant& Unit, const FString& LocalEntityId)
@@ -26,7 +27,14 @@ FDMHudUnit FDMHudModel::Read(const ADMCombatant& Unit, const FString& LocalEntit
     Row.bTargetingLocal = !LocalEntityId.IsEmpty() && Unit.AttackTargetId == LocalEntityId;
     Row.Location = Unit.GetActorLocation();
     Row.SpecificInjuries = Unit.Injuries->Specific;
-    Row.Madness = Unit.Investigator->Madness;
+    if (Row.bLocal)
+    {
+        FDMMadnessView V;
+        if (Unit.HasAuthority()) { V = Unit.MadnessCore->View(); }
+        else if (const auto* P = Cast<ADMCombatPlayerController>(Unit.GetController())) { V = P->PrivateMadness(); }
+        Row.Madness = V.Current; Row.MadnessFloor = V.Floor; Row.MadnessBand = V.Band;
+        Row.bCrisis = V.CrisisUntil > 0; Row.bGrounding = V.GroundUntil > 0; Row.Symptom = V.SymptomText;
+    }
     Row.bElite = Unit.bIsEnemy && !Unit.bCommonEnemy;
     Row.BreakFraction = Row.bElite && Unit.Resolve->MaxResolve > 0 ? FMath::Clamp(Unit.Resolve->CurrentResolve / Unit.Resolve->MaxResolve, 0.f, 1.f) : 0.f;
     Row.bResisting = Unit.Resolve->bResisting;

@@ -40,6 +40,9 @@ void ADMCombatPlayerController::SetupInputComponent()
     AttackAction = NewObject<UInputAction>(this);
     CycleAction = NewObject<UInputAction>(this);
     ReviveAction = NewObject<UInputAction>(this);
+    GroundAction = NewObject<UInputAction>(this);
+    Mapping->MapKey(GroundAction, EKeys::H); Mapping->MapKey(GroundAction, EKeys::Gamepad_DPad_Right);
+    Input->BindAction(GroundAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::StartGrounding);
     TreatmentAction = NewObject<UInputAction>(this);
     Mapping->MapKey(TreatmentAction, EKeys::T); Mapping->MapKey(TreatmentAction, EKeys::Gamepad_DPad_Left);
     Input->BindAction(TreatmentAction, ETriggerEvent::Started, this, &ADMCombatPlayerController::StartTreatment);
@@ -655,4 +658,39 @@ void ADMCombatPlayerController::ServerTreatment_Implementation()
     for (TActorIterator<ADMRecoverySupply> It(GetWorld()); It; ++It)
     { if (!It->bFood && It->TryUse(Actor)) { ClientQFeedback(TEXT("Treatment applied")); return; } }
     ClientQFeedback(TEXT("Need an Injury and nearby treatment supplies"));
+}
+
+void ADMCombatPlayerController::ClientMadness_Implementation(const FDMMadnessView& View) { MadnessView = View; }
+void ADMCombatPlayerController::OnPossess(APawn* InPawn)
+{
+    Super::OnPossess(InPawn);
+    const auto* A = Cast<ADMCombatant>(InPawn);
+    ClientMadness(A ? A->MadnessCore->View() : FDMMadnessView());
+}
+FDMMadnessView ADMCombatPlayerController::PrivateMadness() const
+{
+    const auto* A = Cast<ADMCombatant>(GetPawn());
+    if (!A || A->EntityId != MadnessView.EntityId) { return FDMMadnessView(); }
+    return MadnessView;
+}
+void ADMCombatPlayerController::StartGrounding() { ServerGround(); }
+void ADMCombatPlayerController::ServerGround_Implementation()
+{
+    auto* A = Cast<ADMCombatant>(GetPawn());
+    if (!A || !A->MadnessCore->BeginGrounding()) { ClientQFeedback(TEXT("Cannot ground now")); return; }
+    A->StopGoal(); A->SetAttackTarget(nullptr);
+    ClientQFeedback(TEXT("Grounding: stay still and avoid attacks or casts"));
+}
+void ADMCombatPlayerController::ClientVerifyMadness_Implementation(const FDMMadnessView& Expected)
+{
+    if (!FParse::Param(FCommandLine::Get(), TEXT("DMNetworkProbe"))) { return; }
+    bool bGood = PrivateMadness().Summary() == Expected.Summary()
+        && Expected.SymptomId == TEXT("test.private.") + Expected.EntityId;
+    for (TActorIterator<ADMCombatant> It(GetWorld()); It; ++It)
+    {
+        // No actor (including our own) receives the authoritative private component state.
+        bGood &= It->MadnessCore->View().EntityId.IsEmpty() && It->Investigator->Madness == 0;
+    }
+    UE_LOG(LogTemp, Display, TEXT("DREAD_MADNESS_PRIVACY_%s"), bGood ? TEXT("PASSED") : TEXT("FAILED"));
+    if (!bGood) { FPlatformMisc::RequestExitWithStatus(false, 1); }
 }

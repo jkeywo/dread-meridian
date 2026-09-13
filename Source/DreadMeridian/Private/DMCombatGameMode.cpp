@@ -44,17 +44,17 @@ void ADMCombatGameMode::ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& 
 {
     Metadata->SetStringField(TEXT("scenario_id"), TEXT("combat-sandbox"));
     Metadata->SetStringField(TEXT("run_kind"), TEXT("combat_sandbox"));
-    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.5.0"));
+    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.6.0"));
     if (UsesEncounterLayout()) { Metadata->SetStringField(TEXT("native_faction"), TEXT("smugglers")); }
-    Metadata->SetStringField(TEXT("combat_rules_version"), TEXT("injuries-v1"));
+    Metadata->SetStringField(TEXT("combat_rules_version"), TEXT("madness-core-v1"));
     Metadata->SetStringField(TEXT("bot_policy"), TEXT("squad-utility-v4"));
     Metadata->SetStringField(TEXT("test_profile"), bNetworkTest ? TEXT("network_probe") : (SmokeOutcome.IsEmpty() ? TEXT("interactive") : SmokeOutcome));
     Metadata->SetNumberField(TEXT("initial_bot_count"), 4);
     Metadata->RemoveField(TEXT("production_bots"));
     Metadata->SetNumberField(TEXT("logical_step_seconds"), .1);
     TArray<TSharedPtr<FJsonValue>> Omissions;
-    // Madness remains a stub; Mythos boss encounters and migration are still absent.
-    for (const TCHAR* Missing : { TEXT("ability_evolutions"), TEXT("objectives_htn"), TEXT("madness"),
+    // Core Madness is implemented; family content and hidden boss resonance are separate.
+    for (const TCHAR* Missing : { TEXT("ability_evolutions"), TEXT("objectives_htn"), TEXT("madness_families"), TEXT("madness_resonance"),
         TEXT("mythos_boss_encounters"), TEXT("medical_objectives"),
         TEXT("host_migration"), TEXT("deterministic_physics_navigation") })
     { Omissions.Add(MakeShared<FJsonValueString>(Missing)); }
@@ -564,6 +564,17 @@ void ADMCombatGameMode::StepCombat()
     }
     ++CombatTick;
 #if !UE_BUILD_SHIPPING
+    if (bNetworkTest && CombatTick == 1)
+    {
+        // Distinct private test cues exercise real owner delivery, without claiming family content.
+        for (ADMCombatant* A : Combatants)
+        {
+            if (A->bIsEnemy) { continue; }
+            A->MadnessCore->Add(25, TEXT("network_privacy_probe"));
+            A->MadnessCore->Manifest(TEXT("test.private.") + A->EntityId,
+                TEXT("Private cue for ") + A->EntityId, 1, 10000);
+        }
+    }
     if (FParse::Param(FCommandLine::Get(),TEXT("DMSmugglerSoak")) && CombatTick > 1800)
     { UE_LOG(LogTemp,Error,TEXT("DREAD_SMUGGLER_SOAK_TIMEOUT")); LogResult(TEXT("timeout")); FPlatformMisc::RequestExitWithStatus(false,1); return; }
 #endif
@@ -668,7 +679,7 @@ void ADMCombatGameMode::CompleteCombat(bool bVictory)
         FString Json;
         FJsonSerializer::Serialize(Expected, TJsonWriterFactory<>::Create(&Json));
         for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-        { if (ADMCombatPlayerController* Player = Cast<ADMCombatPlayerController>(It->Get())) { Player->ClientVerifyCombatState(Json); } }
+        { if (ADMCombatPlayerController* Player = Cast<ADMCombatPlayerController>(It->Get())) { Player->ClientVerifyCombatState(Json); if (auto* A = Cast<ADMCombatant>(Player->GetPawn())) { Player->ClientVerifyMadness(A->MadnessCore->View()); } } }
         UE_LOG(LogTemp, Display, TEXT("DREAD_NETWORK_SERVER_COMPLETE"));
         FTimerHandle ExitTimer;
         GetWorldTimerManager().SetTimer(ExitTimer, [] { FPlatformMisc::RequestExit(false); }, 8.f, false);

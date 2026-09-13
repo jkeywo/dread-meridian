@@ -35,7 +35,9 @@ Broken, recovery resistance and independent interrupt windows. Encounter setting
 component data, with provisional defaults in `DefaultGame.ini`. The whole roster expires
 control before any persistent ability or signature resolves. The breaking hit uses pre-hit
 protection; subsequent control is capped at recovery. See [Break/CC](break-cc.md).
-Madness remains a stub value that ultimates spike, without symptoms or floor.
+`UDMMadnessComponent` owns private current/floor, thresholds and Crisis clocks.
+Only the owning controller receives its view; shared resource summaries omit it.
+See [Madness core](madness-core.md) for the family-content boundary.
 
 `ADMCombatPlayerController` creates Enhanced Input mappings. Q/W/E/R take the
 conventional MOBA keys, so keyboard movement is right-click only and revive moved

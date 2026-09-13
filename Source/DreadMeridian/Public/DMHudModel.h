@@ -31,9 +31,12 @@ struct DREADMERIDIAN_API FDMHudUnit
     /** This unit is currently attacking the locally controlled investigator. */
     bool bTargetingLocal = false;
     FVector Location = FVector::ZeroVector;
-    /** Madness remains a stub meter with no symptoms. */
+    /** Private local-owner Madness projection. */
     TArray<EDMInjury> SpecificInjuries;
-    float Madness = 0;
+    float Madness = 0, MadnessFloor = 0;
+    int32 MadnessBand = 0;
+    bool bCrisis = false, bGrounding = false;
+    FString Symptom;
     /** 0..1 remaining elite Resolve; meaningless for common enemies. */
     float BreakFraction = 0;
     bool bElite = false;
@@ -86,7 +89,7 @@ struct DREADMERIDIAN_API FDMHudAbility
 /**
  * Everything the combat HUD draws, assembled once per frame from replicated state.
  * It reports only what the sandbox actually simulates: evolutions, objectives and the full
- * Madness system remain gaps. Madness appears as a declared stub meter; Resolve is public combat state.
+ * Madness family content remain gaps. Core Madness is private to the owner; Resolve is public combat state.
  */
 struct DREADMERIDIAN_API FDMHudModel
 {

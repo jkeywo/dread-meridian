@@ -57,7 +57,7 @@ void UDMInjuryComponent::RecordLoss(float Loss, bool bDown, bool bHazard, ADMCom
     }
     Project();
 }
-void UDMInjuryComponent::OnCast() { if (Self()->HasAuthority() && !Self()->bIsEnemy) { State.Cast(Now(), Settings); Project(); } }
+void UDMInjuryComponent::OnCast() { Self()->MadnessCore->InterruptGrounding(); if (Self()->HasAuthority() && !Self()->bIsEnemy) { State.Cast(Now(), Settings); Project(); } }
 void UDMInjuryComponent::OnAttack() { if (Self()->HasAuthority() && !Self()->bIsEnemy) { State.Attack(Now(), Settings); Project(); } }
 void UDMInjuryComponent::OnDisplacement(float Distance)
 {

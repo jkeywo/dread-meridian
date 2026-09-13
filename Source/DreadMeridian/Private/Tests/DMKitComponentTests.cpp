@@ -21,7 +21,7 @@ bool FDMKitComponentTest::RunTest(const FString& Parameters)
     ADMCombatant* Hero = World->SpawnActor<ADMCombatant>();
     UDMInvestigatorComponent* R = Hero->Investigator;
 
-    // Madness: a clamped stub the ultimates spike. No decay, because GDD 4.6 describes none.
+    // Kit pressure forwards to the authoritative Madness core; recovery is explicit.
     R->Initialize(EDMInvestigator::Sapper);
     TestEqual(TEXT("Madness starts clear"), R->Madness, 0.f);
     R->AddMadness(30, TEXT("dead_ground"));
@@ -32,7 +32,7 @@ bool FDMKitComponentTest::RunTest(const FString& Parameters)
     R->AddMadness(-5, TEXT("bad")); R->AddMadness(0, TEXT("bad"));
     TestEqual(TEXT("Madness ignores non-positive spikes"), R->Madness, 60.f);
     R->AddMadness(1000, TEXT("crisis")); TestEqual(TEXT("Madness clamps"), R->Madness, 100.f);
-    TestTrue(TEXT("Madness reaches the resource summary"), R->ResourceSummary().Contains(TEXT("Madness")));
+    TestFalse(TEXT("Private Madness stays out of shared resource summary"), R->ResourceSummary().Contains(TEXT("Madness")));
     R->Initialize(EDMInvestigator::Sapper); TestEqual(TEXT("Madness resets with the kit"), R->Madness, 0.f);
 
     // Exposure: Impossible Photograph freezes decay and lets Develop read the same value repeatedly.

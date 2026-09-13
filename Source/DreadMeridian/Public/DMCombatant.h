@@ -9,6 +9,7 @@
 #include "DMKitComponent.h"
 #include "DMKitRules.h"
 #include "DMInjuryComponent.h"
+#include "DMMadnessComponent.h"
 #include "DMBreakComponent.h"
 #include "DMSmugglerComponent.h"
 #include "DMCombatant.generated.h"
@@ -23,6 +24,7 @@ class DREADMERIDIAN_API ADMCombatant : public ACharacter, public IAbilitySystemI
     GENERATED_BODY()
 public:
     ADMCombatant();
+    UPROPERTY(VisibleAnywhere) TObjectPtr<UDMMadnessComponent> MadnessCore;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UDMSmugglerComponent> Smuggler;
     UPROPERTY(VisibleAnywhere) TObjectPtr<class UDMCombatPresentation> Presentation;
     UFUNCTION(NetMulticast, Unreliable) void MulticastPresentation(uint8 Event, FVector Target);

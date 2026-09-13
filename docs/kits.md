@@ -26,8 +26,9 @@ Control effects convert through the Break/Resolve layer (GDD 4.4 LOCKED, O.6):
 
 Break uses the authoritative Resolve component described in [Break/CC](break-cc.md). Its values are
 provisional encounter data. Broken control durations and clinch end at recovery. An independent interrupt
-window permits interrupts without granting hard control. Madness remains a **stub meter** that the ultimates
-spike; it has no symptoms, floor or decay. Actual Mythos boss encounters remain unimplemented.
+window permits interrupts without granting hard control. Ultimates feed the
+[Madness core](madness-core.md), with private current/floor and timed Crisis recovery.
+Family effects and actual Mythos boss encounters remain unimplemented.
 
 Slows stack by strength rather than overwriting, so a root is not cut short by a weaker slow landing on top.
 

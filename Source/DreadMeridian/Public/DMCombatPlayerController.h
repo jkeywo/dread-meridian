@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "DMPing.h"
+#include "DMMadnessRules.h"
 
 #include "DMCombatPlayerController.generated.h"
 
@@ -15,6 +16,11 @@ class DREADMERIDIAN_API ADMCombatPlayerController : public APlayerController
     GENERATED_BODY()
 public:
     ADMCombatPlayerController();
+    virtual void OnPossess(APawn* InPawn) override;
+    UFUNCTION(Client, Reliable) void ClientMadness(const FDMMadnessView& View);
+    UFUNCTION(Client, Reliable) void ClientVerifyMadness(const FDMMadnessView& Expected);
+    UFUNCTION(Server, Reliable) void ServerGround();
+    FDMMadnessView PrivateMadness() const;
     virtual void SetupInputComponent() override;
     virtual void PlayerTick(float DeltaTime) override;
     virtual void PawnLeavingGame() override;
@@ -59,6 +65,9 @@ public:
     static constexpr float PingHoldSeconds = .3f;
     static constexpr float PingRadialDeadZone = 28.f;
 private:
+    FDMMadnessView MadnessView;
+    void StartGrounding();
+    UPROPERTY() TObjectPtr<UInputAction> GroundAction;
     UPROPERTY() TObjectPtr<class UInputMappingContext> Mapping;
     UPROPERTY() TObjectPtr<UInputAction> MoveAction;
     UPROPERTY() TObjectPtr<UInputAction> ClickAction;

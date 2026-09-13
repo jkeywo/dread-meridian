@@ -37,6 +37,7 @@ ADMCombatant::ADMCombatant()
     AbilitySystem->SetReplicationMode(EGameplayEffectReplicationMode::Full);
     Attributes = CreateDefaultSubobject<UDMHealthAttributes>(TEXT("Attributes"));
     Smuggler = CreateDefaultSubobject<UDMSmugglerComponent>(TEXT("SmugglerFaction"));
+    MadnessCore = CreateDefaultSubobject<UDMMadnessComponent>(TEXT("MadnessCore"));
     Injuries = CreateDefaultSubobject<UDMInjuryComponent>(TEXT("Injuries"));
     Resolve = CreateDefaultSubobject<UDMBreakComponent>(TEXT("Resolve"));
     Primary = CreateDefaultSubobject<UDMPrimaryComponent>(TEXT("Primary"));
@@ -224,6 +225,8 @@ bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FS
     Data->SetNumberField(TEXT("shield_after"), Target->Shield());
     Data->SetBoolField(TEXT("persistent_hazard"), bHazard);
     Mode->Emit(TEXT("combat.damage"), Data);
+    Target->MadnessCore->InterruptGrounding();
+    if (bBasic) { MadnessCore->InterruptGrounding(); }
     Target->Injuries->RecordLoss(Before - Target->Health(), Target->IsDown(), bHazard, this, AbilityId);
     if (bBasic) { Injuries->OnAttack(); }
     const bool bFinisher = bBasic && Investigator->OnHit(Target->EntityId, Mode->GetCombatTick());
@@ -330,6 +333,7 @@ void ADMCombatant::StepControl(int32 Tick)
     if (!HasAuthority()) { return; }
     Resolve->Step(Tick);
     Injuries->Step(Tick);
+    MadnessCore->Step(Tick);
     if (Tick >= StunnedUntilTick) { StunnedUntilTick = 0; }
     if (Tick >= StaggeredUntilTick) { StaggeredUntilTick = 0; }
 }

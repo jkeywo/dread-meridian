@@ -55,11 +55,12 @@ public:
     /** Intercession normally exhausts the spirit it calls on; Keep is the fraction of Attention left behind. */
     void SpendAttention(const FString& SpiritId, float Keep);
     float PeekAttention(const FString& SpiritId) const;
-    /** Madness stub: a clamped meter the ultimates spike (GDD 4.6). No symptoms, no floor, no decay; emits investigator.madness. */
+    /** Compatibility entry for kit pressure; authoritative state lives in MadnessCore. */
     void AddMadness(float Amount, const FString& Reason);
     UPROPERTY(Replicated, BlueprintReadOnly) EDMInvestigator Kind = EDMInvestigator::None;
     UPROPERTY(Replicated, BlueprintReadOnly) float Momentum = 0;
-    UPROPERTY(Replicated, BlueprintReadOnly) float Madness = 0;
+    /** Server-only compatibility projection; never replicated or placed in public summaries. */
+    UPROPERTY(BlueprintReadOnly) float Madness = 0;
     /** Smuggler R: Momentum never falls below this while it is set. */
     float MomentumFloor = 0;
     /** Photographer R: Exposure decay paused and Develop does not consume. */
