@@ -28,7 +28,7 @@
   "smuggler": {
     "passed": true,
     "sampled_poses": 15,
-    "maximum_radius_m": 1.1653273524343322,
+    "maximum_radius_m": 1.0987952336942879,
     "joints": 88,
     "textures": 3,
     "sockets": 8,

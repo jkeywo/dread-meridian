@@ -10,7 +10,7 @@ from pathlib import Path
 from mathutils import Vector,Matrix
 
 OUT=Path(__file__).resolve().parent
-SRC=OUT/'prepared'
+SRC=Path(sys.argv[sys.argv.index('--prepared-dir')+1]) if '--prepared-dir' in sys.argv else OUT/'prepared'
 asset=sys.argv[sys.argv.index('--')+1]
 bpy.ops.wm.open_mainfile(filepath=str(OUT.parent/'investigators/roster-rigged-v1/manny-reference.blend'))
 bpy.context.preferences.filepaths.save_version=0
@@ -58,6 +58,26 @@ for side,s in [('l',1),('r',-1)]:
     if False:thumb=[(.833,-.001,z-.003),(.86,-.041,z-.011),(.878,-.05,z-.014)]
     for j,pos in enumerate(thumb,1):points[f'thumb_{j:02d}_{side}']=Vector((s*pos[0],pos[1],pos[2]))
     ends['thumb_03_'+side]=points['thumb_03_'+side]+Vector((s*.016,-.005,-.002))
+
+if asset=='smuggler':
+    # Fit the supplied bent-forward arms in three dimensions, not a planar T pose.
+    for n in points:
+        if not n.endswith(('_l','_r')):points[n].y+=.50
+    for side,sign in [('l',1),('r',-1)]:
+        for n,y in [('clavicle',.53),('upperarm',.53),('lowerarm',.40),('hand',.10),('thigh',.49),('calf',.45),('foot',.40),('ball',.25)]:points[n+'_'+side].y=y
+        points['hand_'+side].x=sign*.66
+        ends['hand_'+side]=Vector((sign*.755,-.045,z))
+        fingers={'index':((.755,-.080),(.827,-.190)), 'middle':((.778,-.055),(.873,-.180)), 'ring':((.799,-.022),(.870,-.115)), 'pinky':((.810,.012),(.855,-.045))}
+        for finger,(start,end) in fingers.items():
+            a=Vector((sign*start[0],start[1],z));b=Vector((sign*end[0],end[1],z-.006))
+            points[finger+'_metacarpal_'+side]=points['hand_'+side].lerp(a,.3)
+            for j,t in enumerate([0,.5,.78],1):points[f'{finger}_{j:02d}_{side}']=a.lerp(b,t)
+            ends[finger+'_03_'+side]=b
+        for j,p in enumerate([(.690,.042,z),(.706,-.041,z-.006),(.714,-.099,z-.008)],1):points[f'thumb_{j:02d}_{side}']=Vector((sign*p[0],p[1],p[2]))
+        ends['thumb_03_'+side]=Vector((sign*.716,-.139,z-.010))
+        ends['ball_'+side]=points['ball_'+side]+Vector((0,-.075,0))
+    ends['head']=points['head']+Vector((0,0,.16))
+
 
 nextbone={'pelvis':'spine_01',**{spines[i]:spines[i+1] for i in range(4)},'spine_05':'neck_01','neck_01':'neck_02','neck_02':'head'}
 for side in ['l','r']:
@@ -146,10 +166,10 @@ for side,s in [('l',1),('r',-1)]:
     linear(mask,['foot_'+side,'calf_'+side,'calf_'+side,'thigh_'+side,'thigh_'+side,'pelvis'],[.15,.23,c['knee']-.06,c['knee']+.06,c['hip']-.045,c['hip']+.04],height[mask])
     # Preserve rigid boots, with a short ankle blend instead of shin stretching.
     low=mask&(height<.17);weights[low]=0;add(low,'foot_'+side,1)
-    hand=arms&sideMask&(x>c['wrist']+.005)
+    hand=arms&sideMask&(x>(.665 if asset=='smuggler' else c['wrist']+.005))
     arm=arms&sideMask&~hand
     linear(arm,['spine_05','clavicle_'+side,'upperarm_'+side,'upperarm_'+side,'lowerarm_'+side,'lowerarm_'+side,'hand_'+side],[c['sx']*.65,c['sx']*.85,c['sx']+.035,c['elbow']-.055,c['elbow']+.055,c['wrist']-.035,c['wrist']+.025],x[arm])
-    palm=hand&(x<c['palm']+.030*c['size'])&(verts[:,1]>-.012*c['size'])
+    palm=hand&(verts[:,1]>.035) if asset=='smuggler' else hand&(x<c['palm']+.030*c['size'])&(verts[:,1]>-.012*c['size'])
     add(palm,'hand_'+side,1)
     fingers=hand&~palm;rows=np.flatnonzero(fingers);v=verts[fingers]
     candidates=['hand_'+side]+[n for n in names if n.endswith('_'+side) and n.startswith(('thumb','index','middle','ring','pinky'))]
@@ -184,15 +204,25 @@ keep=np.argsort(weights,axis=1)[:,-8:];mask=np.zeros_like(weights,dtype=bool)
 np.put_along_axis(mask,keep,True,axis=1);weights[~mask]=0
 weights/=np.maximum(weights.sum(axis=1)[:,None],1e-15)
 assert np.all(np.abs(weights.sum(axis=1)-1)<1e-5),'Unweighted vertex'
-# Bake the fitted source T-pose into the actual stock reference bind pose.
-new=np.zeros_like(verts)
-for n,i in idx.items():
-    rows=weights[:,i]>.000001
-    if not np.any(rows):continue
-    m=np.array(ref[n]@source[n].inverted())
-    new[rows]+=(verts[rows]@m[:3,:3].T+m[:3,3])*weights[rows,i,None]
-    group=mesh.vertex_groups.new(name=n)
-    for vi in np.flatnonzero(rows):group.add([int(vi)],float(weights[vi,i]),'REPLACE')
+if asset=='smuggler':
+    # Invert the blended forward skin map per vertex, preserving the source pose.
+    blend=np.zeros((len(verts),4,4),dtype=np.float64)
+    for n,i in idx.items():
+        blend+=weights[:,i,None,None]*np.array(source[n]@ref[n].inverted())[None,:,:]
+        rows=weights[:,i]>.000001
+        group=mesh.vertex_groups.new(name=n)
+        for vi in np.flatnonzero(rows):group.add([int(vi)],float(weights[vi,i]),'REPLACE')
+    new=np.linalg.solve(blend[:,:3,:3],(verts-blend[:,:3,3])[...,None])[...,0]
+else:
+    # Bake the fitted source T-pose into the actual stock reference bind pose.
+    new=np.zeros_like(verts)
+    for n,i in idx.items():
+        rows=weights[:,i]>.000001
+        if not np.any(rows):continue
+        m=np.array(ref[n]@source[n].inverted())
+        new[rows]+=(verts[rows]@m[:3,:3].T+m[:3,3])*weights[rows,i,None]
+        group=mesh.vertex_groups.new(name=n)
+        for vi in np.flatnonzero(rows):group.add([int(vi)],float(weights[vi,i]),'REPLACE')
 mesh.data.vertices.foreach_set('co',(new*100).astype(np.float32).ravel());mesh.data.update()
 # Mesh and armature share centimetre-local coordinates and the same object
 # scale, avoiding a compensating 100x mesh transform in the FBX bind pose.

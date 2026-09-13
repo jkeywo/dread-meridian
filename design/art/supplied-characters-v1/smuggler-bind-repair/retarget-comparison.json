@@ -1,0 +1,14 @@
+[
+  {
+    "clip": "/Game/DreadMeridian/Presentation/RetargetReview/A_DM_KB_Idle_1.A_DM_KB_Idle_1",
+    "maximum_joint_change_cm": 0
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/RetargetReview/A_DM_KB_p_Jab_R_1.A_DM_KB_p_Jab_R_1",
+    "maximum_joint_change_cm": 0
+  },
+  {
+    "clip": "/Game/DreadMeridian/Presentation/RetargetReview/A_DM_KB_Superpunch.A_DM_KB_Superpunch",
+    "maximum_joint_change_cm": 0
+  }
+]

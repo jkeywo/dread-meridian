@@ -1,0 +1,58 @@
+{
+  "crawler": {
+    "passed": true,
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/SwampThings/Crawler/SM_Crawler.SM_Crawler",
+    "materials": [
+      "/Game/DreadMeridian/Characters/Enemies/SwampThings/Crawler/M_crawler.M_crawler"
+    ],
+    "humanoid": false
+  },
+  "lurker": {
+    "passed": true,
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/SwampThings/Lurker/SKM_Lurker.SKM_Lurker",
+    "materials": [
+      "/Game/DreadMeridian/Characters/Enemies/SwampThings/Lurker/M_lurker.M_lurker"
+    ],
+    "humanoid": true
+  },
+  "spitter": {
+    "passed": true,
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/SwampThings/Spitter/SM_Spitter.SM_Spitter",
+    "materials": [
+      "/Game/DreadMeridian/Characters/Enemies/SwampThings/Spitter/M_spitter.M_spitter"
+    ],
+    "humanoid": false
+  },
+  "grasper": {
+    "passed": true,
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/SwampThings/Grasper/SKM_Grasper.SKM_Grasper",
+    "materials": [
+      "/Game/DreadMeridian/Characters/Enemies/SwampThings/Grasper/M_grasper.M_grasper"
+    ],
+    "humanoid": true
+  },
+  "oldThing": {
+    "passed": true,
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/SwampThings/OldThing/SKM_OldThing.SKM_OldThing",
+    "materials": [
+      "/Game/DreadMeridian/Characters/Enemies/SwampThings/OldThing/M_oldThing.M_oldThing"
+    ],
+    "humanoid": true
+  },
+  "broodling": {
+    "passed": true,
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Shub/Broodling/SM_Broodling.SM_Broodling",
+    "materials": [
+      "/Game/DreadMeridian/Characters/Enemies/Shub/Broodling/M_broodling.M_broodling"
+    ],
+    "humanoid": false
+  },
+  "blackgoat": {
+    "passed": true,
+    "mesh": "/Game/DreadMeridian/Characters/Enemies/Shub/BlackGoat/SKM_BlackGoat.SKM_BlackGoat",
+    "materials": [
+      "/Game/DreadMeridian/Characters/Enemies/Shub/BlackGoat/M_blackgoat.M_blackgoat"
+    ],
+    "humanoid": true
+  }
+}

@@ -45,3 +45,14 @@ These are skinned supplied concept meshes, not a finished animation set. Dense c
 ## Rebuild
 
 Blender 5.0.1 Python: inspect_sources.py (copies the named Downloads inputs), prepare.py, build_rig.py -- CHARACTER for each manifest key, then finish.py. Use --python-exit-code 1 and stop on errors. The stock reference file is `../investigators/roster-rigged-v1/manny-reference.blend`.
+
+## Smuggler bind correction (2026-09-13)
+
+The apparent retargeting problem was a source-pose fitting error. All 71 presentation clips already target the stock Manny skeleton. A fresh UE4-to-Manny retarget of the fighting idle, right jab and superpunch produced the same sampled joint positions as the existing clips. The supplied Smuggler appears to be in a T-pose from the front, but its arms bend substantially forward in the top view. The previous planar landmarks placed its torso, elbows, wrists and fingers outside the actual geometry, producing inflated sleeves and displaced hands during animation.
+
+`build_rig.py` now uses Smuggler-specific three-dimensional landmarks and inverts the blended forward skin transform per vertex. The stock Manny reference skeleton, runtime animation assets, eight attachment sockets, texture maps and 1.20 runtime scale remain intact. The correction applies only to the Smuggler. Before/after renders of three native fighting clips, the source top view, skeleton audit and import reference-transform checks are retained in `smuggler-bind-repair/`. These renders show a substantial improvement; coarse finger topology and clothing still limit close-up articulation, and facial/cloth animation remains outside this change.
+
+To rebuild this character alone, extract the original `character+3d+model.zip` into an ignored working folder, then run Blender with `--python-exit-code 1 --python prepare_smuggler_source.py -- PATH_TO_EXTRACTED_FBX`. This reuses the accepted packed materials and writes a normalized GLB under `Saved/SmugglerAnimationProbe`. Run `build_rig.py -- smuggler --prepared-dir C:/Coding/dread-meridian/Saved/SmugglerAnimationProbe`, then `finish.py -- smuggler`. Import the resulting FBX at the canonical Smuggler path with the stock skeleton, no skeleton reference-pose update, and retain its sockets and material. Material slot assignment must be saved in a fresh Unreal process after import.
+
+Saved-asset readback passed for all nine supplied characters, including textures, skeletal material usage, sockets and animation evaluation. All 37 foundation tests passed at `Saved/Automation/98b66e10bf6f41cb931ba1b8dcef8d20/index.json`. Unreal reconstructed the FBX bind pose; the imported reference transforms passed the numeric checks. Existing ChaosNiagara/plugin warnings remain in the commandlet output.
+Smoke also passed: Saved/Logs/smoke-1167ed465ae7442f8900bb658f56aa92.log.

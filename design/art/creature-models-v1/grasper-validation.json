@@ -1,0 +1,15 @@
+{
+  "asset": "grasper",
+  "blender_bones": 88,
+  "unreal_root_node": "root",
+  "vertices": 2600,
+  "weighted_vertices": 2600,
+  "max_influences": 8,
+  "weight_sum_max_error": 1.7881393432617188e-07,
+  "sockets": 0,
+  "actions": [
+    "Manny_Idle",
+    "Manny_Walk",
+    "T_Pose"
+  ]
+}

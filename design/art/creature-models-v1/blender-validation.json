@@ -1,0 +1,54 @@
+{
+  "lurker": {
+    "passed": true,
+    "sampled_poses": 15,
+    "maximum_radius_m": 1.169944960377557,
+    "joints": 88,
+    "textures": 1,
+    "sockets": 0,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ]
+  },
+  "grasper": {
+    "passed": true,
+    "sampled_poses": 15,
+    "maximum_radius_m": 1.9991809939418932,
+    "joints": 88,
+    "textures": 1,
+    "sockets": 0,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ]
+  },
+  "oldThing": {
+    "passed": true,
+    "sampled_poses": 15,
+    "maximum_radius_m": 1.4714285656301147,
+    "joints": 88,
+    "textures": 1,
+    "sockets": 0,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ]
+  },
+  "blackgoat": {
+    "passed": true,
+    "sampled_poses": 15,
+    "maximum_radius_m": 1.1228547305057284,
+    "joints": 88,
+    "textures": 1,
+    "sockets": 0,
+    "animations": [
+      "Manny_Idle",
+      "Manny_Walk",
+      "T_Pose"
+    ]
+  }
+}

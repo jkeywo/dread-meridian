@@ -1,8 +1,10 @@
-import bpy,json,math,struct
+import bpy,json,math,struct,sys
 from pathlib import Path
 from mathutils import Vector
-P=Path(__file__).resolve().parent;reports={}
+P=Path(__file__).resolve().parent;reports=json.loads((P/'blender-validation.json').read_text()) if (P/'blender-validation.json').exists() else {}
+only=sys.argv[sys.argv.index('--')+1] if '--' in sys.argv else None
 for asset in json.loads((P/'manifest.json').read_text()):
+    if only and asset!=only:continue
     bpy.ops.wm.open_mainfile(filepath=str(P/f'{asset}-rigged.blend'));bpy.context.preferences.filepaths.save_version=0
     rig=next(o for o in bpy.context.scene.objects if o.type=='ARMATURE');mesh=next(o for o in bpy.context.scene.objects if o.type=='MESH')
     assert all(v.groups and abs(sum(g.weight for g in v.groups)-1)<1e-5 for v in mesh.data.vertices)

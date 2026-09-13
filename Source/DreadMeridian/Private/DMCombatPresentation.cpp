@@ -1,5 +1,6 @@
 #include "DMCombatPresentation.h"
 #include "DMCombatant.h"
+#include "DMShubMinion.h"
 #include "DMAttackFX.h"
 #include "Animation/AnimSequence.h"
 #include "Components/StaticMeshComponent.h"
@@ -15,6 +16,11 @@ namespace { enum EClip { Idle, Jog, RifleIdle, RifleAim, RifleJog, RifleFire, Ri
     Cast1, CastUp, BlockStart, BlockEnd, Superpunch, SkipFwd, Backelbow, GroundSlam, CameraCheck, MGShoot, CallOut, ClipCount }; }
 UDMCombatPresentation::UDMCombatPresentation()
 {
+    for (const TCHAR* Path : {TEXT("SwampThings/Lurker/SKM_Lurker"), TEXT("SwampThings/Grasper/SKM_Grasper"),
+        TEXT("SwampThings/OldThing/SKM_OldThing"), TEXT("Shub/BlackGoat/SKM_BlackGoat")})
+    { ConstructorHelpers::FObjectFinder<USkeletalMesh> M(*(FString(TEXT("/Game/DreadMeridian/Characters/Enemies/"))+Path)); CreatureSkins.Add(M.Object); }
+    for (const TCHAR* Path : {TEXT("SwampThings/Crawler/SM_Crawler"), TEXT("SwampThings/Spitter/SM_Spitter"), TEXT("Shub/Broodling/SM_Broodling")})
+    { ConstructorHelpers::FObjectFinder<UStaticMesh> M(*(FString(TEXT("/Game/DreadMeridian/Characters/Enemies/"))+Path)); CreatureStatics.Add(M.Object); }
     const TCHAR* Names[] = { TEXT("Sapper"), TEXT("Photographer"), TEXT("Medium"), TEXT("Smuggler") };
     for (const TCHAR* Name : Names)
     {
@@ -132,18 +138,44 @@ void UDMCombatPresentation::UpdatePresentation()
 {
     if (GetNetMode() == NM_DedicatedServer) { return; }
     auto* Actor = CastChecked<ADMCombatant>(GetOwner());
-    const uint8 NewKind = Actor->bIsEnemy ? (Actor->Smuggler->Role == EDMSmuggler::None ? 0 : 10 + static_cast<uint8>(Actor->Smuggler->Role)) : static_cast<uint8>(Actor->Investigator->Kind);
+    const auto* Shub = Actor->FindComponentByClass<UDMShubMinion>();
+    const uint8 NewKind = Shub && Shub->Capture().Kind != EDMShubMinionKind::None ? 30 + static_cast<uint8>(Shub->Capture().Kind) :
+        Actor->bSwampThing && Actor->Swamp->Capture().Role != EDMSwampThing::None ? 20 + static_cast<uint8>(Actor->Swamp->Capture().Role) :
+        Actor->bIsEnemy ? (Actor->Smuggler->Role == EDMSmuggler::None ? 0 : 10 + static_cast<uint8>(Actor->Smuggler->Role)) : static_cast<uint8>(Actor->Investigator->Kind);
     if (Kind != NewKind)
     {
         Kind = NewKind;
+        ActionClip = nullptr; ActionUntil = 0; bWasDown = false;
+        Actor->GetMesh()->SetVisibility(true);
+        if (CreatureBody) { CreatureBody->SetVisibility(false); }
         // Scale from the feet without changing gameplay collision or movement.
         const float VisualScale = (Kind == 4 || Kind == 12) ? 1.2f :
             (Kind == 1 || Kind == 11 || Kind == 15) ? 1.1f : 1.f;
         Actor->GetMesh()->SetRelativeScale3D(FVector(VisualScale));
         if (Kind >= 1 && Kind <= 4 && Skins[Kind - 1]) { Actor->GetMesh()->SetSkeletalMeshAsset(Skins[Kind - 1]); }
         if (Kind >= 11 && Kind <= 15 && EnemySkins[Kind-11]) { Actor->GetMesh()->SetSkeletalMeshAsset(EnemySkins[Kind-11]); }
+        const int32 SkinIndex = Kind==22 ? 0 : Kind==24 ? 1 : Kind==25 ? 2 : Kind==32 ? 3 : INDEX_NONE;
+        if (SkinIndex != INDEX_NONE)
+        {
+            Actor->GetMesh()->SetSkeletalMeshAsset(CreatureSkins[SkinIndex]);
+            Actor->GetMesh()->SetRelativeScale3D(FVector(Kind==25 || Kind==32 ? 1.45f : 1.1f));
+        }
+        const int32 StaticIndex = Kind==21 ? 0 : Kind==23 ? 1 : Kind==31 ? 2 : INDEX_NONE;
+        if (StaticIndex != INDEX_NONE)
+        {
+            if (!CreatureBody)
+            {
+                CreatureBody=NewObject<UStaticMeshComponent>(Actor,TEXT("CreatureBody"));
+                Actor->AddInstanceComponent(CreatureBody); CreatureBody->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+                CreatureBody->SetupAttachment(Actor->GetRootComponent()); CreatureBody->RegisterComponent();
+            }
+            CreatureBody->SetStaticMesh(CreatureStatics[StaticIndex]);
+            CreatureBody->SetRelativeLocation(FVector(0,0,-90)); CreatureBody->SetRelativeRotation(FRotator(0,-90,0));
+            CreatureBody->SetVisibility(true); Actor->GetMesh()->SetVisibility(false);
+        }
         Playing = nullptr; Equip(false);
     }
+    if (Kind>=21) { UpdateCreature(); return; }
     if ((Kind == 1 || Kind == 2) && HeldItem && HeldItem->DoesSocketExist(TEXT("Support")))
     {
         // Keep the authored grip in the right hand and orient its support axis toward the left hand.
@@ -216,6 +248,15 @@ void UDMCombatPresentation::Cue(uint8 Event, FVector Target)
     if (Event == 0) { AimPoint = Target; AimUntil = GetWorld()->GetTimeSeconds() + .3f; }
     UpdatePresentation();
     auto* Actor = CastChecked<ADMCombatant>(GetOwner());
+    if (Kind>=21)
+    {
+        if (Kind!=21 && Kind!=23 && Kind!=31 && !Actor->IsDown())
+        {
+            if (Event==0) { Action(Clips[Kind==24 ? JabL : JabR],.55f); }
+            else if (Event==2) { Action(Clips[Hit],.3f); }
+        }
+        return;
+    }
     auto Burst = [&](FVector From, FVector To, FLinearColor Color, uint8 Style)
     { if (auto* FX = GetWorld()->SpawnActor<ADMAttackFX>()) { FX->Initialize(From, To, Color, Style); } };
     if (Event == 4)
@@ -315,6 +356,27 @@ void UDMCombatPresentation::Cue(uint8 Event, FVector Target)
     }
 }
 
+void UDMCombatPresentation::UpdateCreature()
+{
+    auto* Actor=CastChecked<ADMCombatant>(GetOwner());
+    // Nonhumanoids retain their supplied resting meshes until creature-specific rigs are authored.
+    if (Kind==21 || Kind==23 || Kind==31)
+    {
+        if (CreatureBody) { CreatureBody->SetRelativeRotation(FRotator(Actor->IsDown() ? -70 : 0,-90,0)); }
+        return;
+    }
+    if (Actor->IsDown())
+    {
+        if (!bWasDown) { ActionClip=nullptr; Play(Clips[Death],false,1,true); }
+        bWasDown=true; return;
+    }
+    if (bWasDown) { bWasDown=false; Action(Clips[GetUp],1.f); }
+    if (ActionClip && GetWorld()->GetTimeSeconds()<ActionUntil) { return; }
+    ActionClip=nullptr;
+    const float Speed=Actor->GetVelocity().Size2D();
+    Play(Clips[Speed>12 ? Jog : Idle],true,Speed>12 ? FMath::Clamp(Speed/420.f,.4f,1.5f) : 1.f);
+    Actor->GetMesh()->SetRelativeRotation(FRotator(0,-90,0));
+}
 bool UDMCombatPresentation::UsesGunPose() const { return Kind == 1 || Kind == 2 || Kind == 11 || Kind == 13 || Kind == 15; }
 void UDMCombatPresentation::UpdateEnemyGrip()
 {

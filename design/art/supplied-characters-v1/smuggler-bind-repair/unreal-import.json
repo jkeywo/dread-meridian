@@ -1,0 +1,12 @@
+{
+  "smuggler": {
+    "mesh": "/Game/DreadMeridian/Characters/Investigators/Smuggler/SKM_Smuggler.SKM_Smuggler",
+    "skeleton": "/Game/Characters/Mannequins/Meshes/SK_Mannequin.SK_Mannequin",
+    "bones": 89,
+    "sockets": 8,
+    "material": "/Game/DreadMeridian/Characters/Investigators/Smuggler/M_Supplied_smuggler.M_Supplied_smuggler",
+    "reference_rotation_error_degrees": 0.01798290257227388,
+    "reference_translation_error_cm": 0.0007437087238227325,
+    "saved": true
+  }
+}

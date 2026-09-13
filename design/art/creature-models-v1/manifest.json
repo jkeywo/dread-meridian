@@ -1,0 +1,65 @@
+{
+  "crawler": {
+    "source_file": "crawler.glb",
+    "source_sha256": "f22c7fdd39954f3e0c5a1ae9c7782c591724ba5dcf3497a6e92086491db77213",
+    "humanoid": false,
+    "textures": {
+      "basecolor": "C:\\Coding\\dread-meridian\\design\\art\\creature-models-v1\\textures\\crawler-basecolor.png"
+    },
+    "native_path": "/Game/DreadMeridian/Characters/Enemies/SwampThings/Crawler/SM_Crawler"
+  },
+  "lurker": {
+    "source_file": "lurker.glb",
+    "source_sha256": "7643b9ad7d95ca68d2a644bbb2131bf1f90a820eaefef8ab9357271f6ead75a6",
+    "humanoid": true,
+    "textures": {
+      "basecolor": "C:\\Coding\\dread-meridian\\design\\art\\creature-models-v1\\textures\\lurker-basecolor.png"
+    },
+    "native_path": "/Game/DreadMeridian/Characters/Enemies/SwampThings/Lurker/SKM_Lurker"
+  },
+  "spitter": {
+    "source_file": "spitter.glb",
+    "source_sha256": "3ffb94ab4ada201bf1839c0d125a3c51e21076be9eca7026ef9fbb8d6833e006",
+    "humanoid": false,
+    "textures": {
+      "basecolor": "C:\\Coding\\dread-meridian\\design\\art\\creature-models-v1\\textures\\spitter-basecolor.png"
+    },
+    "native_path": "/Game/DreadMeridian/Characters/Enemies/SwampThings/Spitter/SM_Spitter"
+  },
+  "grasper": {
+    "source_file": "grasper.glb",
+    "source_sha256": "24e79b25d8fdac00a7a5e708e1e1d026f9e46d1788b69ae26af1828cc87c2c4b",
+    "humanoid": true,
+    "textures": {
+      "basecolor": "C:\\Coding\\dread-meridian\\design\\art\\creature-models-v1\\textures\\grasper-basecolor.png"
+    },
+    "native_path": "/Game/DreadMeridian/Characters/Enemies/SwampThings/Grasper/SKM_Grasper"
+  },
+  "oldThing": {
+    "source_file": "oldThing.glb",
+    "source_sha256": "d58de2dcb6dfd5033cf0bf4c39400ae0d763d766d323cd4b6e05544a8274291f",
+    "humanoid": true,
+    "textures": {
+      "basecolor": "C:\\Coding\\dread-meridian\\design\\art\\creature-models-v1\\textures\\oldThing-basecolor.png"
+    },
+    "native_path": "/Game/DreadMeridian/Characters/Enemies/SwampThings/OldThing/SKM_OldThing"
+  },
+  "broodling": {
+    "source_file": "broodling.glb",
+    "source_sha256": "7a23b0568d2a205cc3f6d5f2c930e79bb428e4ff55a725439f36be939c4bc44c",
+    "humanoid": false,
+    "textures": {
+      "basecolor": "C:\\Coding\\dread-meridian\\design\\art\\creature-models-v1\\textures\\broodling-basecolor.png"
+    },
+    "native_path": "/Game/DreadMeridian/Characters/Enemies/Shub/Broodling/SM_Broodling"
+  },
+  "blackgoat": {
+    "source_file": "blackgoat.glb",
+    "source_sha256": "00d55979107bb3a4edff12ff28b7fccee0516c86537a7d2c9b60035ba62de069",
+    "humanoid": true,
+    "textures": {
+      "basecolor": "C:\\Coding\\dread-meridian\\design\\art\\creature-models-v1\\textures\\blackgoat-basecolor.png"
+    },
+    "native_path": "/Game/DreadMeridian/Characters/Enemies/Shub/BlackGoat/SKM_BlackGoat"
+  }
+}

@@ -21,6 +21,7 @@ public:
     UFUNCTION(BlueprintCallable) FString CurrentClip() const;
     UStaticMeshComponent* GetHeldItem() const { return HeldItem; }
     UStaticMeshComponent* GetStowedItem() const { return StowedItem; }
+    UStaticMeshComponent* GetCreatureBody() const { return CreatureBody; }
 private:
     void Play(UAnimSequence* Clip, bool bLoop, float Rate = 1, bool bRestart = false);
     void Action(UAnimSequence* Clip, float Duration);
@@ -31,6 +32,10 @@ private:
     void Equip(bool bCamera);
     bool UsesGunPose() const;
     void UpdateEnemyGrip();
+    void UpdateCreature();
+    UPROPERTY() TArray<TObjectPtr<USkeletalMesh>> CreatureSkins;
+    UPROPERTY() TArray<TObjectPtr<UStaticMesh>> CreatureStatics;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> CreatureBody;
     UPROPERTY() TArray<TObjectPtr<UAnimSequence>> EnemyLocomotion;
     UPROPERTY() TArray<TObjectPtr<UAnimSequence>> EnemyActions;
     UPROPERTY() TArray<TObjectPtr<USkeletalMesh>> EnemySkins;
