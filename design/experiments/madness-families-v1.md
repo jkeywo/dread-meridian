@@ -20,3 +20,13 @@ The live test verifies strike and location indulgence, high-intensity benefit,
 three Crisis urges and pressure for resistance. Editor report
 `de811c504da74658b2e99b1c52003a48`. New smoke capture validated with required
 provenance (`Saved/compulsion-validation.json`). This adds no public cue channel.
+
+## Dissociation — 2026-09-13
+
+29 foundation tests, 14 export tests, the live Dissociation test and smoke passed.
+The live test checks a real Develop cast, weaker delayed damage at the original
+location after caster movement, unchanged cooldown/resource semantics, rejected
+casts, Crisis Q/W echoes, no recursion and downing cancellation. Editor report
+`4ced640be5494fc8b6d9f786c2049760`. New smoke capture validated with required
+provenance (`Saved/dissociation-validation.json`). Other signature variants share
+the effect resolver; this test is not an exhaustive balance comparison of all kits.

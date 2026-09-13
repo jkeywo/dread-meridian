@@ -175,6 +175,7 @@ bool UDMPrimaryComponent::Resolve()
     if (!bRequestedDetonate) { ActiveMode->NoteQCast(); Actor->MulticastPresentation(R->Kind == EDMInvestigator::Smuggler && !HeldTarget ? 3 : 1, Target ? Target->GetActorLocation() : RequestedPoint); }
     Actor->RecordResources(TEXT("q")); Cooldown = FMath::Max(0, NextCastTick - Now()) * .1f; Actor->ForceNetUpdate();
     Actor->Injuries->OnCast();
+    if (!bRequestedDetonate) { Actor->MadnessCore->ScheduleEcho(0, Target, RequestedPoint); }
     bResolved = true; return true;
 }
 bool UDMPrimaryComponent::SatchelCanHit(const ADMAbilityMarker* Charge, ADMCombatant* Enemy) const

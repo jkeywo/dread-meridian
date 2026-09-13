@@ -37,7 +37,8 @@ void UDMMadnessComponent::StepFamily(int32 Tick)
 {
     auto* A = CastChecked<ADMCombatant>(GetOwner()); auto* M = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
     if (!M || Family == EDMMadnessFamily::None) { return; }
-    if (A->IsDown()) { Cues.Reset(); NextFamilyTick = Tick; return; }
+    if (A->IsDown()) { Echoes.Reset(); Cues.Reset(); NextFamilyTick = Tick; return; }
+    if (Family == EDMMadnessFamily::Dissociation) { StepEchoes(Tick); return; }
     if (bFamilyCrisis != !!State.CrisisUntil)
     { bFamilyCrisis = !!State.CrisisUntil; Cues.Reset(); NextFamilyTick = Tick; }
     if (State.Band(Settings) == 0 && !State.CrisisUntil) { Cues.Reset(); return; }

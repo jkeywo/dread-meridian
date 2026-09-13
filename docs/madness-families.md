@@ -35,3 +35,26 @@ after 100 ticks and adds 5 pressure; an enemy removed by somebody else is discar
 without punishment. Normal Crisis timing remains intact. These are choices, not
 movement orders or input restrictions. Objective/corpse urge variants remain future
 content; the implemented contextual variants are combat targets and locations.
+
+## Dissociation
+
+Accepted casts create predictable, weaker signature echoes after 20 ticks. Early
+Madness echoes Q, mid adds W, and high/Crisis echoes Q/W/E. R and rejected casts do
+not queue echoes. Early/mid footprints move with the caster's displacement; high
+and Crisis footprints retain the original cast position, aim and sampled strength.
+Owner-only markers show where and when they resolve. At most eight can be pending;
+downing clears them. Recovery does not cancel already accepted echoes.
+
+Echoes use explicit weak signature effects, not recursive ability activation:
+
+| Investigator | Q echo | W echo | E echo |
+|---|---|---|---|
+| Sapper | 19.25 damage in a 150-unit blast | 1.4 damage and brief slow in the suppression cone | 5.25 damage and brief stagger/slow along the recorded wire |
+| Photographer | 8 Exposure at the framed location | 8.75 Exposure and weaker flash slow/stagger | 35% of Develop's recorded Exposure-based damage at the photographed location |
+| Medium | Small shield/slow pulse at the binding | Small shield/slow pulse at the call location | 7 damage and 3 Shield intervention pulse around the original caster position |
+| Smuggler | Short control shove | 5.25 damage and short push along the charge path | 3.5 damage and short counter-shove |
+
+These signatures do not create another persistent summon, force another caster
+movement, spend resources, reset cooldowns or echo themselves. Existing line of
+sight, team, Shield, Injury and Break/control rules govern accepted effects.
+The Medium echoes are deliberately brief pulses rather than duplicate spirits.

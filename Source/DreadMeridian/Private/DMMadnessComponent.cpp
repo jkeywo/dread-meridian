@@ -9,6 +9,7 @@ int32 UDMMadnessComponent::Now() const
 void UDMMadnessComponent::Reset()
 {
     if (!Authority()) { return; }
+    Echoes.Reset();
     Family = EDMMadnessFamily::None; Cues.Reset(); NextFamilyTick = NextIgnoreTick = 0; bFamilyCrisis = false;
     Settings.Sanitize(); State = FDMMadnessState(); GroundUntil = SymptomUntil = 0;
     SymptomId.Reset(); SymptomText.Reset(); LastSent.Reset(); LastOwner.Reset();

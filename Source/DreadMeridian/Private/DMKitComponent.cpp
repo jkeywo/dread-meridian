@@ -181,8 +181,10 @@ bool UDMKitComponent::Resolve()
     ADMCombatant* Target = RequestedTarget.Get();
     LastFailure = Validate(RequestedSlot, Target, RequestedPoint);
     if (!LastFailure.IsEmpty()) { return false; }
+    const float EchoStrength = Target ? Actor->Investigator->PeekExposure(Target->EntityId) : 0;
+    const FVector EchoWireStart = PendingWireStart;
     if (!ResolveAbility(RequestedSlot, Target, RequestedPoint)) { return false; }
-    if (!(RequestedSlot == EDMKitSlot::E && bWirePending)) { Actor->Injuries->OnCast(); }
+    if (!(RequestedSlot == EDMKitSlot::E && bWirePending)) { Actor->Injuries->OnCast(); Actor->MadnessCore->ScheduleEcho(static_cast<uint8>(RequestedSlot)+1, Target, RequestedPoint, EchoStrength, EchoWireStart); }
     M->NoteKitCast(RequestedSlot, *Actor);
     Actor->RecordResources(SlotKey(RequestedSlot));
     RefreshCooldowns();
@@ -214,6 +216,7 @@ bool UDMKitComponent::RequestWire(FVector A, FVector B)
     if (!PlaceWire(GroundA, GroundB)) { bWirePending = bSavedPending; PendingWireStart = Saved; return false; }
     StartCooldown(EDMKitSlot::E, Spec(Self()->Investigator->Kind, EDMKitSlot::E).CooldownTicks);
     Self()->Injuries->OnCast();
+    Self()->MadnessCore->ScheduleEcho(2, nullptr, GroundB, 0, GroundA);
     M->NoteKitCast(EDMKitSlot::E, *Self());
     Self()->RecordResources(SlotKey(EDMKitSlot::E));
     Self()->ForceNetUpdate();

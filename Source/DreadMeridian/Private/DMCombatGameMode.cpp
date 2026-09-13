@@ -44,9 +44,9 @@ void ADMCombatGameMode::ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& 
 {
     Metadata->SetStringField(TEXT("scenario_id"), TEXT("combat-sandbox"));
     Metadata->SetStringField(TEXT("run_kind"), TEXT("combat_sandbox"));
-    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.8.0"));
+    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.9.0"));
     if (UsesEncounterLayout()) { Metadata->SetStringField(TEXT("native_faction"), TEXT("smugglers")); }
-    Metadata->SetStringField(TEXT("combat_rules_version"), TEXT("compulsion-v1"));
+    Metadata->SetStringField(TEXT("combat_rules_version"), TEXT("dissociation-v1"));
     Metadata->SetStringField(TEXT("bot_policy"), TEXT("squad-utility-v4"));
     Metadata->SetStringField(TEXT("test_profile"), bNetworkTest ? TEXT("network_probe") : (SmokeOutcome.IsEmpty() ? TEXT("interactive") : SmokeOutcome));
     Metadata->SetNumberField(TEXT("initial_bot_count"), 4);
@@ -54,7 +54,7 @@ void ADMCombatGameMode::ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& 
     Metadata->SetNumberField(TEXT("logical_step_seconds"), .1);
     TArray<TSharedPtr<FJsonValue>> Omissions;
     // Core Madness is implemented; family content and hidden boss resonance are separate.
-    for (const TCHAR* Missing : { TEXT("ability_evolutions"), TEXT("objectives_htn"), TEXT("dissociation_perception"), TEXT("madness_resonance"),
+    for (const TCHAR* Missing : { TEXT("ability_evolutions"), TEXT("objectives_htn"), TEXT("perception"), TEXT("madness_resonance"),
         TEXT("mythos_boss_encounters"), TEXT("medical_objectives"),
         TEXT("host_migration"), TEXT("deterministic_physics_navigation") })
     { Omissions.Add(MakeShared<FJsonValueString>(Missing)); }
