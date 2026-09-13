@@ -38,6 +38,8 @@ public:
     float BreakMultiplierAgainst(const ADMCombatant* Target) const;
     float SpendMedal(ADMCombatant* Target,const FString& AbilityId,bool bBasic);
     void ClearBreakContributions() { Runtime.Contributions.Reset(); }
+    void Step(int32 Tick);
+    void ShieldSpent(float Amount) { if (Self() && GetOwner()->HasAuthority()) { Runtime.OwnedShield=FMath::Max(0.f,Runtime.OwnedShield-Amount); } }
     FDMRelicControlEvent AcceptedControl;
     FDMRelicBreakEvent AcceptedBreak;
     FDMRelicOverhealEvent ExcessHealing;
@@ -64,4 +66,6 @@ private:
     void OnBreak(ADMCombatant* Source,float Amount,bool bBroke);
     void PromoteThreat(ADMCombatant* Target);
     bool bResolvingKnot=false;
+    int32 LastStepTick=-1;
+    void StoreOverheal(float Amount);
 };

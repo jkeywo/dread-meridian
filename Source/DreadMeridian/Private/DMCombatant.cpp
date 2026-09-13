@@ -213,7 +213,7 @@ bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FS
     const float BaseDamage = Damage * Kit->OutgoingTo(Target) * Target->Progression->IncomingFrom(this) * MadnessCore->Outgoing(Target) * (1 - FMath::Clamp(Target->SpiritProtection, 0.f, .5f)) * Incoming;
     const float ResolvedDamage = BaseDamage * Target->Injuries->Incoming(FMath::Max(0.f, BaseDamage - ShieldBefore), bHazard);
     const float Absorbed = FMath::Min(ShieldBefore, ResolvedDamage);
-    if (Absorbed > 0) { Target->ApplyAttributeDelta(UDMHealthAttributes::GetShieldAttribute(), -Absorbed); }
+    if (Absorbed > 0) { Target->Relics->ShieldSpent(Absorbed); Target->ApplyAttributeDelta(UDMHealthAttributes::GetShieldAttribute(), -Absorbed); }
     Target->ApplyAttributeDelta(UDMHealthAttributes::GetHealthAttribute(), -(ResolvedDamage - Absorbed));
     Target->Threat.Add(EntityId, Before - Target->Health());
     Target->LastDamageTick = Mode->GetCombatTick();
@@ -342,6 +342,7 @@ void ADMCombatant::StepControl(int32 Tick)
     Resolve->Step(Tick);
     Injuries->Step(Tick);
     MadnessCore->Step(Tick);
+    Relics->Step(Tick);
     if (Tick >= StunnedUntilTick) { StunnedUntilTick = 0; }
     if (Tick >= StaggeredUntilTick) { StaggeredUntilTick = 0; }
 }
@@ -492,6 +493,8 @@ void ADMCombatant::RecordResources(const FString& Reason)
 void ADMCombatant::MulticastPresentation_Implementation(uint8 Event, FVector Target)
 { Presentation->Cue(Event, Target); }
 
+void ADMCombatant::RemoveShield(float Amount)
+{ if (HasAuthority() && FMath::IsFinite(Amount) && Amount>0) { ApplyAttributeDelta(UDMHealthAttributes::GetShieldAttribute(),-FMath::Min(Shield(),Amount)); ForceNetUpdate(); } }
 float ADMCombatant::HealHealth(float Amount)
 {
     auto* M = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();

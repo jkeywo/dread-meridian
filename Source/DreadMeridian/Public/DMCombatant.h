@@ -56,6 +56,7 @@ public:
     void ApplySuppression(int32 UntilTick, ADMCombatant* Source);
     /** Shield capped at half MaxHealth (DMHealthAttributes clamps the GE path too). */
     void AddShield(float Amount);
+    void RemoveShield(float Amount);
     float HealHealth(float Amount);
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UDMInjuryComponent> Injuries;
     bool IsBraced() const { return BraceResistance > 0; }

@@ -8,6 +8,7 @@ void UDMRelicComponent::BeginPlay()
     Super::BeginPlay();
     AcceptedControl.AddUObject(this,&UDMRelicComponent::OnControl);
     AcceptedBreak.AddUObject(this,&UDMRelicComponent::OnBreak);
+    ExcessHealing.AddUObject(this,&UDMRelicComponent::StoreOverheal);
 }
 void UDMRelicComponent::PromoteThreat(ADMCombatant* Target)
 {
@@ -54,6 +55,21 @@ float UDMRelicComponent::BreakMultiplierAgainst(const ADMCombatant* Target) cons
         && Holder->Relics->Runtime.Swaggered.Contains(Target->EntityId) ? 1.3f : 1.f;
 }
 ADMCombatant* UDMRelicComponent::Self() const { return Cast<ADMCombatant>(GetOwner()); }
+void UDMRelicComponent::StoreOverheal(float Amount)
+{
+    auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    if (!Self()->HasAuthority() || !M || !Has(EDMRelic::Overheal) || !FMath::IsFinite(Amount) || Amount<=0) { return; }
+    const float Before=Self()->Shield(); Self()->AddShield(Amount);
+    Runtime.OwnedShield+=Self()->Shield()-Before; Runtime.ShieldHoldUntil=M->GetCombatTick()+20;
+}
+void UDMRelicComponent::Step(int32 Tick)
+{
+    auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    if (!Self()->HasAuthority() || !M || !M->IsCombatActive() || Tick<=LastStepTick) { return; } LastStepTick=Tick;
+    Runtime.OwnedShield=FMath::Min(Runtime.OwnedShield,Self()->Shield());
+    if (Runtime.OwnedShield>0 && Tick>=Runtime.ShieldHoldUntil)
+    { const float Decay=FMath::Min(.5f,Runtime.OwnedShield); Runtime.OwnedShield-=Decay; Self()->RemoveShield(Decay); }
+}
 bool UDMRelicComponent::CanAcquire(EDMRelic R) const
 { return Self() && !Self()->bIsEnemy && static_cast<uint8>(R)<static_cast<uint8>(EDMRelic::Count) && !Has(R) && Inventory.Items.Num()<FMath::Clamp(Capacity,1,8); }
 bool UDMRelicComponent::Acquire(EDMRelic R,const FString& AwardId)
@@ -88,7 +104,7 @@ bool UDMRelicComponent::RestoreFull(const FDMRelicSnapshot& S)
     for (const auto& Pair : R.Contributions) { if (Pair.Key.IsEmpty() || !FMath::IsFinite(Pair.Value) || Pair.Value<0) { return false; } }
     for (const auto& Wake : R.Wakes) { if (Wake.Location.ContainsNaN() || Wake.Until<0) { return false; } }
     if (!Restore(S.Inventory)) { return false; }
-    Runtime=R; return true;
+    Runtime=R; LastStepTick=-1; return true;
 }
 FString UDMRelicComponent::Description(EDMRelic R)
 {
