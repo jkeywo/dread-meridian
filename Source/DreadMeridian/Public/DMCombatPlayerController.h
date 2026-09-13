@@ -22,6 +22,9 @@ public:
     UFUNCTION(Exec) void DMSpawnObjective(const FString& TemplateId, int32 Difficulty = 0);
     UFUNCTION(Exec) void DMStartShub();
     UFUNCTION(Server,Reliable) void ServerRelicVote(class ADMRelicDrop* Drop,uint8 Choice);
+    ADMRelicDrop* PendingRelic() const;
+    bool RelicMenuOpen() const { return bRelicOpen; }
+    int32 RelicSelection() const { return RelicCursor; }
     UFUNCTION(Server, Reliable) void ServerEvolve(uint8 Slot, uint8 Node);
     bool EvolutionOpen() const { return bEvolutionOpen; }
     int32 EvolutionCursor() const { return EvolutionSelection; }
@@ -77,7 +80,11 @@ public:
     static constexpr float PingHoldSeconds = .3f;
     static constexpr float PingRadialDeadZone = 28.f;
 private:
-    void ObjectiveUse() { DMObjectiveInteract(); }
+    void ObjectiveUse();
+    void NeedRelic(); void GreedRelic(); void PassRelic();
+    void ChooseRelic(uint8 Choice);
+    bool bRelicOpen=false;
+    int32 RelicCursor=0;
     void BellOne() { DMObjectiveInteract(1); }
     void BellTwo() { DMObjectiveInteract(2); }
     void BellThree() { DMObjectiveInteract(3); }

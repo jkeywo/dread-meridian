@@ -1,6 +1,7 @@
 #include "DMCombatHUD.h"
 #include "DMCombatant.h"
 #include "DMCombatPlayerController.h"
+#include "DMRelicDrop.h"
 #include "DMEncounterLayout.h"
 #include "DMGameState.h"
 #include "DMHudStyle.h"
@@ -96,6 +97,20 @@ void ADMCombatHUD::DrawHUD()
     DrawControls();
     DrawPrimaryFeedback();
     if (Player) { DrawPingRadial(*Player); }
+    if (Pawn) { Label(TEXT("Relics: ")+Pawn->Relics->Summary(),DMHud::Brass,24*S,Canvas->ClipY-220*S,.8f); }
+    if (Player)
+    {
+        if (const auto* Drop=Player->PendingRelic())
+        {
+            const float X=FMath::Max(20.f,(Canvas->ClipX-760*S)*.5f),Y=170*S;
+            Panel(X,Y,760*S,130*S,FLinearColor(.025f,.025f,.035f,.96f));
+            Label(UDMRelicComponent::Name(Drop->Roll.Relic),DMHud::Brass,X+16*S,Y+12*S,1.f);
+            Label(UDMRelicComponent::Description(Drop->Roll.Relic),FLinearColor::White,X+16*S,Y+40*S,.75f);
+            Label(TEXT("N: Need   M: Greed   P: Pass   |   Menu / I: open choices"),FLinearColor::White,X+16*S,Y+66*S,.8f);
+            if (Player->RelicMenuOpen())
+            { const TCHAR* Choices[]={TEXT("Need"),TEXT("Greed"),TEXT("Pass")}; Label(FString(Choices[Player->RelicSelection()])+TEXT(" | Right shoulder: choose | South: confirm | East: close"),DMHud::Brass,X+16*S,Y+94*S,.8f); }
+        }
+    }
 }
 
 // ---------------------------------------------------------------- world layer

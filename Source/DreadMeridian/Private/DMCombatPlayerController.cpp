@@ -38,6 +38,23 @@ void ADMCombatPlayerController::ServerRelicVote_Implementation(ADMRelicDrop* Dro
     auto* A=Cast<ADMCombatant>(GetPawn());
     if (!IsValid(Drop) || Drop->GetWorld()!=GetWorld() || !A || !Drop->Vote(A,static_cast<EDMRelicChoice>(Choice))) { ClientQFeedback(TEXT("Relic choice unavailable")); }
 }
+ADMRelicDrop* ADMCombatPlayerController::PendingRelic() const
+{
+    const auto* A=Cast<ADMCombatant>(GetPawn()); if (!A) { return nullptr; }
+    ADMRelicDrop* First=nullptr;
+    for (TActorIterator<ADMRelicDrop> It(GetWorld());It;++It)
+    {
+        const auto* Vote=It->Roll.Votes.FindByPredicate([&](const FDMRelicVote& V) { return V.EntityId==A->EntityId; });
+        if (!It->Roll.bResolved && Vote && Vote->Choice==EDMRelicChoice::Pending && (!First || It->Roll.AwardId<First->Roll.AwardId)) { First=*It; }
+    }
+    return First;
+}
+void ADMCombatPlayerController::ChooseRelic(uint8 Choice) { if (auto* Drop=PendingRelic()) { ServerRelicVote(Drop,Choice); } bRelicOpen=false; }
+void ADMCombatPlayerController::NeedRelic() { ChooseRelic(static_cast<uint8>(EDMRelicChoice::Need)); }
+void ADMCombatPlayerController::GreedRelic() { ChooseRelic(static_cast<uint8>(EDMRelicChoice::Greed)); }
+void ADMCombatPlayerController::PassRelic() { ChooseRelic(static_cast<uint8>(EDMRelicChoice::Pass)); }
+void ADMCombatPlayerController::ObjectiveUse()
+{ if (PendingRelic()) { bRelicOpen=!bRelicOpen; RelicCursor=0; } else { bRelicOpen=false; DMObjectiveInteract(); } }
 void ADMCombatPlayerController::ServerObjective_Implementation(ADMObjective* O, int32 Symbol, bool bRelease)
 {
     auto* A = Cast<ADMCombatant>(GetPawn());
@@ -85,6 +102,9 @@ void ADMCombatPlayerController::SetupInputComponent()
     BindObjective(EKeys::One,&ADMCombatPlayerController::BellOne);
     BindObjective(EKeys::Two,&ADMCombatPlayerController::BellTwo);
     BindObjective(EKeys::Three,&ADMCombatPlayerController::BellThree);
+    BindObjective(EKeys::N,&ADMCombatPlayerController::NeedRelic);
+    BindObjective(EKeys::M,&ADMCombatPlayerController::GreedRelic);
+    BindObjective(EKeys::P,&ADMCombatPlayerController::PassRelic);
     MoveAction = NewObject<UInputAction>(this);
     MoveAction->ValueType = EInputActionValueType::Axis2D;
     ClickAction = NewObject<UInputAction>(this);
@@ -189,6 +209,7 @@ void ADMCombatPlayerController::Click()
 }
 void ADMCombatPlayerController::Cycle()
 {
+    if (bRelicOpen && PendingRelic()) { RelicCursor=(RelicCursor+1)%3; return; }
     if (bEvolutionOpen) { EvolutionSelection = (EvolutionSelection + 1) % FMath::Max(1, EvolutionChoices().Num()); return; }
     TArray<ADMCombatant*> Targets;
     for (TActorIterator<ADMCombatant> It(GetWorld()); It; ++It)
@@ -205,6 +226,7 @@ void ADMCombatPlayerController::Cycle()
 }
 void ADMCombatPlayerController::Attack()
 {
+    if (bRelicOpen && PendingRelic()) { ChooseRelic(static_cast<uint8>(RelicCursor==0 ? EDMRelicChoice::Need : RelicCursor==1 ? EDMRelicChoice::Greed : EDMRelicChoice::Pass)); return; }
     if (bEvolutionOpen) { ConfirmEvolution(); return; }
     if (bAiming) { ConfirmQ(); return; }
     StartAutoAttack(SelectedTarget.Get());
@@ -551,6 +573,7 @@ void ADMCombatPlayerController::ConfirmQ()
 }
 void ADMCombatPlayerController::CancelQ()
 {
+    if (bRelicOpen) { bRelicOpen=false; return; }
     if (bEvolutionOpen) { bEvolutionOpen = false; return; }
     auto* Actor = Cast<ADMCombatant>(GetPawn());
     // Any client-side cancel must also drop a half-placed wire, or the next E press would use the stale first end.
