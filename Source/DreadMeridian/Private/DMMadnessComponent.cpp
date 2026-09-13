@@ -9,6 +9,7 @@ int32 UDMMadnessComponent::Now() const
 void UDMMadnessComponent::Reset()
 {
     if (!Authority()) { return; }
+    Family = EDMMadnessFamily::None; Cues.Reset(); NextFamilyTick = NextIgnoreTick = 0; bFamilyCrisis = false;
     Settings.Sanitize(); State = FDMMadnessState(); GroundUntil = SymptomUntil = 0;
     SymptomId.Reset(); SymptomText.Reset(); LastSent.Reset(); LastOwner.Reset();
     CastChecked<ADMCombatant>(GetOwner())->Investigator->Madness = 0; Deliver();
@@ -17,6 +18,7 @@ FDMMadnessView UDMMadnessComponent::View() const
 {
     FDMMadnessView V;
     if (!Authority()) { return V; }
+    V.Family = Family; V.Cues = Cues;
     V.EntityId = CastChecked<ADMCombatant>(GetOwner())->EntityId;
     V.Current = State.Current; V.Floor = State.Floor; V.Band = State.Band(Settings);
     V.CrisisUntil = State.CrisisUntil; V.GroundUntil = GroundUntil;
@@ -87,6 +89,7 @@ void UDMMadnessComponent::Step(int32 Tick)
         || FVector::DistSquared2D(GroundPosition, A->GetActorLocation()) > FMath::Square(10.f))) { InterruptGrounding(); }
     if (GroundUntil && Tick >= GroundUntil)
     { GroundUntil = 0; Recover(Settings.GroundRecovery, TEXT("grounding")); }
+    StepFamily(Tick);
     if (SymptomUntil && Tick >= SymptomUntil) { SymptomUntil = 0; SymptomId.Reset(); SymptomText.Reset(); }
     Deliver();
 }

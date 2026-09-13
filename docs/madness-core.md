@@ -48,15 +48,13 @@ overwritten, and cues expire on the logical clock. Threshold crossing alone
 does not choose or manifest a symptom. The owner HUD has a private text slot;
 no shared marker or sound is spawned by this core.
 
-Family assignment, Perception entities, Compulsion urges, Dissociation echoes,
-Obsession fixations, family-specific Crisis advantages, boss resonance, and
-evolution/occult sources of floor growth remain separate work. The core does
-not claim a complete Madness family. No random choice was introduced, so named
-stream IDs, RNG schema 2 and stream positions are unchanged. Future random
-assignment/symptoms must use named streams.
+[Madness families](madness-families.md) adds supported family assignment and content.
+Remaining families are named in capture omissions. Boss resonance and evolution/occult
+sources of floor growth remain separate work. Family assignment and target choices
+use the existing Madness stream; stream IDs and RNG schema 2 stay unchanged, while
+combat rules versions identify intentional gameplay reproducibility changes.
 
-Capture version `0.6.0` and combat rules `madness-core-v1` distinguish this
-implementation. Accepted changes emit `madness.changed`, band changes also emit
+The family captures version their additions separately from `madness-core-v1`. Accepted changes emit `madness.changed`, band changes also emit
 `madness.threshold`, and Crisis entry/exit emit their respective events. Accepted
 manifestations emit `madness.symptom`. These are developer observations, never
 player replication. Rules-state copy tests do not establish host migration or

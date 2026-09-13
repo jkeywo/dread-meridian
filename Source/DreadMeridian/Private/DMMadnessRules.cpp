@@ -1,6 +1,10 @@
 #include "DMMadnessRules.h"
 void FDMMadnessSettings::Sanitize()
 {
+    FamilyInterval = FMath::Clamp(FamilyInterval, 10, 10000); IgnoreTicks = FMath::Clamp(IgnoreTicks, 1, 10000);
+    IgnorePressure = FMath::IsFinite(IgnorePressure) ? FMath::Clamp(IgnorePressure, 0.f, 25.f) : 5;
+    IndulgeRecovery = FMath::IsFinite(IndulgeRecovery) ? FMath::Clamp(IndulgeRecovery, 0.f, 25.f) : 2;
+    FamilyRange = FMath::IsFinite(FamilyRange) ? FMath::Clamp(FamilyRange, 100.f, 3000.f) : 1000;
     Early = FMath::IsFinite(Early) ? FMath::Clamp(Early, 1.f, 97.f) : 25;
     Mid = FMath::IsFinite(Mid) ? FMath::Clamp(Mid, Early + 1, 98.f) : FMath::Max(50.f, Early + 1);
     High = FMath::IsFinite(High) ? FMath::Clamp(High, Mid + 1, 99.f) : FMath::Max(75.f, Mid + 1);
@@ -40,6 +44,9 @@ void FDMMadnessState::Step(int32 Tick, const FDMMadnessSettings& S)
 }
 FString FDMMadnessView::Summary() const
 {
-    return FString::Printf(TEXT("%s|%.2f|%.2f|%d|%d|%d|%s|%s|%d"), *EntityId, Current, Floor, Band,
+    FString Result = FString::Printf(TEXT("%s|%.2f|%.2f|%d|%d|%d|%s|%s|%d"), *EntityId, Current, Floor, Band,
         CrisisUntil, GroundUntil, *SymptomId, *SymptomText, SymptomUntil);
+    Result += FString::Printf(TEXT("|family=%d"), static_cast<int32>(Family));
+    for (const auto& C : Cues) { Result += FString::Printf(TEXT("|%s:%s:%s:%.1f,%.1f:%d:%d/%d"), *C.Id, *C.TargetId, *C.Label, C.Location.X, C.Location.Y, C.Until, C.Progress, C.Goal); }
+    return Result;
 }

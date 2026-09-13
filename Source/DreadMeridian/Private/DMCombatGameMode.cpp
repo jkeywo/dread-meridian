@@ -44,9 +44,9 @@ void ADMCombatGameMode::ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& 
 {
     Metadata->SetStringField(TEXT("scenario_id"), TEXT("combat-sandbox"));
     Metadata->SetStringField(TEXT("run_kind"), TEXT("combat_sandbox"));
-    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.6.0"));
+    Metadata->SetStringField(TEXT("capture_version"), TEXT("0.7.0"));
     if (UsesEncounterLayout()) { Metadata->SetStringField(TEXT("native_faction"), TEXT("smugglers")); }
-    Metadata->SetStringField(TEXT("combat_rules_version"), TEXT("madness-core-v1"));
+    Metadata->SetStringField(TEXT("combat_rules_version"), TEXT("obsession-v1"));
     Metadata->SetStringField(TEXT("bot_policy"), TEXT("squad-utility-v4"));
     Metadata->SetStringField(TEXT("test_profile"), bNetworkTest ? TEXT("network_probe") : (SmokeOutcome.IsEmpty() ? TEXT("interactive") : SmokeOutcome));
     Metadata->SetNumberField(TEXT("initial_bot_count"), 4);
@@ -54,7 +54,7 @@ void ADMCombatGameMode::ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& 
     Metadata->SetNumberField(TEXT("logical_step_seconds"), .1);
     TArray<TSharedPtr<FJsonValue>> Omissions;
     // Core Madness is implemented; family content and hidden boss resonance are separate.
-    for (const TCHAR* Missing : { TEXT("ability_evolutions"), TEXT("objectives_htn"), TEXT("madness_families"), TEXT("madness_resonance"),
+    for (const TCHAR* Missing : { TEXT("ability_evolutions"), TEXT("objectives_htn"), TEXT("compulsion_dissociation_perception"), TEXT("madness_resonance"),
         TEXT("mythos_boss_encounters"), TEXT("medical_objectives"),
         TEXT("host_migration"), TEXT("deterministic_physics_navigation") })
     { Omissions.Add(MakeShared<FJsonValueString>(Missing)); }
@@ -111,6 +111,7 @@ void ADMCombatGameMode::BeginEncounter()
             Actor->AttackIntervalTicks = 100;
             Actor->NextAttackTick = Index == 4 ? 0 : 1000;
         }
+        if (!bEnemy) { Actor->MadnessCore->AssignFamily(static_cast<EDMMadnessFamily>(1 + DrawRandom(EDMRandomStream::Madness) % UDMMadnessComponent::SupportedFamilies)); }
         Combatants.Add(Actor);
         TSharedRef<FJsonObject> Spawn = MakeShared<FJsonObject>();
         Spawn->SetStringField(TEXT("entity_id"), Actor->EntityId);
@@ -679,7 +680,7 @@ void ADMCombatGameMode::CompleteCombat(bool bVictory)
         FString Json;
         FJsonSerializer::Serialize(Expected, TJsonWriterFactory<>::Create(&Json));
         for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-        { if (ADMCombatPlayerController* Player = Cast<ADMCombatPlayerController>(It->Get())) { Player->ClientVerifyCombatState(Json); if (auto* A = Cast<ADMCombatant>(Player->GetPawn())) { Player->ClientVerifyMadness(A->MadnessCore->View()); } } }
+        { if (ADMCombatPlayerController* Player = Cast<ADMCombatPlayerController>(It->Get())) { Player->ClientVerifyCombatState(Json); if (auto* A = Cast<ADMCombatant>(Player->GetPawn())) { Player->ClientMadness(A->MadnessCore->View()); Player->ClientVerifyMadness(A->MadnessCore->View()); } } }
         UE_LOG(LogTemp, Display, TEXT("DREAD_NETWORK_SERVER_COMPLETE"));
         FTimerHandle ExitTimer;
         GetWorldTimerManager().SetTimer(ExitTimer, [] { FPlatformMisc::RequestExit(false); }, 8.f, false);

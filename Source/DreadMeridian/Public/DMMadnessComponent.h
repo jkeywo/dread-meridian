@@ -4,6 +4,7 @@
 #include "DMMadnessRules.h"
 #include "DMMadnessComponent.generated.h"
 class ADMCombatPlayerController;
+class ADMCombatant;
 UCLASS(Config=Game, ClassGroup=(Combat))
 class DREADMERIDIAN_API UDMMadnessComponent : public UActorComponent
 {
@@ -11,6 +12,11 @@ class DREADMERIDIAN_API UDMMadnessComponent : public UActorComponent
 public:
     UPROPERTY(Config, EditAnywhere) FDMMadnessSettings Settings;
     void Reset();
+    static constexpr int32 SupportedFamilies = 1;
+    void AssignFamily(EDMMadnessFamily Value);
+    void OnDamage(ADMCombatant* Target, float HealthLoss);
+    float Outgoing(ADMCombatant* Target) const;
+    void ResolveCrisis(const FString& Reason);
     bool Add(float Amount, const FString& Reason);
     bool Recover(float Amount, const FString& Reason);
     bool RaiseFloor(float Value, const FString& Reason);
@@ -22,6 +28,13 @@ public:
     FDMMadnessView View() const;
 private:
     FDMMadnessState State;
+    EDMMadnessFamily Family = EDMMadnessFamily::None;
+    TArray<FDMMadnessCue> Cues;
+    int32 NextFamilyTick = 0, NextIgnoreTick = 0;
+    bool bFamilyCrisis = false;
+    void StepFamily(int32 Tick);
+    void FamilyEvent(const FString& Action, const FString& Target = TEXT(""));
+    TArray<ADMCombatant*> Candidates() const;
     int32 GroundUntil = 0, SymptomUntil = 0;
     FVector GroundPosition = FVector::ZeroVector;
     FString SymptomId, SymptomText, LastSent;

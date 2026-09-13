@@ -2,6 +2,22 @@
 #include "CoreMinimal.h"
 #include "DMMadnessRules.generated.h"
 
+UENUM(BlueprintType)
+enum class EDMMadnessFamily : uint8 { None, Obsession, Compulsion, Dissociation, Perception };
+
+USTRUCT(BlueprintType)
+struct DREADMERIDIAN_API FDMMadnessCue
+{
+    GENERATED_BODY()
+    UPROPERTY(BlueprintReadOnly) FString Id;
+    UPROPERTY(BlueprintReadOnly) FString TargetId;
+    UPROPERTY(BlueprintReadOnly) FString Label;
+    UPROPERTY(BlueprintReadOnly) FVector Location = FVector::ZeroVector;
+    UPROPERTY(BlueprintReadOnly) int32 Until = 0;
+    UPROPERTY(BlueprintReadOnly) int32 Progress = 0;
+    UPROPERTY(BlueprintReadOnly) int32 Goal = 1;
+};
+
 USTRUCT(BlueprintType)
 struct DREADMERIDIAN_API FDMMadnessSettings
 {
@@ -14,6 +30,11 @@ struct DREADMERIDIAN_API FDMMadnessSettings
     UPROPERTY(EditAnywhere) int32 CrisisRestTicks = 100;
     UPROPERTY(EditAnywhere) int32 GroundTicks = 30;
     UPROPERTY(EditAnywhere) float GroundRecovery = 10;
+    UPROPERTY(EditAnywhere) int32 FamilyInterval = 100;
+    UPROPERTY(EditAnywhere) int32 IgnoreTicks = 40;
+    UPROPERTY(EditAnywhere) float IgnorePressure = 5;
+    UPROPERTY(EditAnywhere) float IndulgeRecovery = 2;
+    UPROPERTY(EditAnywhere) float FamilyRange = 1000;
     void Sanitize();
 };
 
@@ -31,6 +52,8 @@ struct DREADMERIDIAN_API FDMMadnessView
     UPROPERTY(BlueprintReadOnly) FString SymptomId;
     UPROPERTY(BlueprintReadOnly) FString SymptomText;
     UPROPERTY(BlueprintReadOnly) int32 SymptomUntil = 0;
+    UPROPERTY(BlueprintReadOnly) EDMMadnessFamily Family = EDMMadnessFamily::None;
+    UPROPERTY(BlueprintReadOnly) TArray<FDMMadnessCue> Cues;
     FString Summary() const;
 };
 

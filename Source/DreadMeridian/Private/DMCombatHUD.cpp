@@ -478,6 +478,20 @@ void ADMCombatHUD::DrawCondition(const FDMHudModel& Model)
     Label(FString::Printf(TEXT("Grievous %d"), Model.Self.Grievous),
         Model.Self.Grievous > 0 ? DMHud::Danger : DMHud::Bone, X + 120 * S, Y + 26 * S, 1.f);
     if (!Model.Self.Symptom.IsEmpty()) { Label(Model.Self.Symptom, DMHud::Bone, X + 10 * S, Y + 150 * S, .55f); }
+    if (const auto* P = Cast<ADMCombatPlayerController>(PlayerOwner))
+    {
+        const auto V = P->PrivateMadness();
+        Label(StaticEnum<EDMMadnessFamily>()->GetNameStringByValue(static_cast<int64>(V.Family)), DMHud::Bone, X + 130*S, Y + 7*S, .7f);
+        for (const auto& C : V.Cues)
+        {
+            FVector2D Screen;
+            if (P->ProjectWorldLocationToScreen(C.Location + FVector(0,0,120), Screen))
+            {
+                DrawRect(FLinearColor(.65f,.35f,1,.8f), Screen.X-5*S, Screen.Y-5*S, 10*S, 10*S);
+                Label(FString::Printf(TEXT("%s %d/%d"), *C.Label, C.Progress, C.Goal), DMHud::Bone, Screen.X+9*S, Screen.Y-8*S, .7f);
+            }
+        }
+    }
     // Only the local owner receives this private state.
     Bar(X + 10 * S, Y + 48 * S, 110 * S, 8 * S, Model.Self.Madness / 100.f, DMHud::Gap);
     Label(FString::Printf(TEXT("Madness %.0f / floor %.0f | %s"), Model.Self.Madness, Model.Self.MadnessFloor, Model.Self.bCrisis ? TEXT("CRISIS") : Model.Self.bGrounding ? TEXT("Grounding") : TEXT("H: ground")), DMHud::Bone, X + 10 * S, Y + 58 * S, .65f);
