@@ -19,10 +19,6 @@ namespace DMHud
     // Palette lives in DMHudStyle.h so the shell screens draw from the same one.
     static const float CapsuleHalfHeight = 90;
 
-    /** World point projected for a ping marker; keep in sync with PingAnchor in DMCombatPlayerController.cpp. */
-    static FVector PingAnchor(EDMPingKind Kind, const FVector& Location)
-    { return Location + FVector(0, 0, FDMPingBoard::NeedsTarget(Kind) ? 260.f : 30.f); }
-
     static FString Phase(EDMRunPhase Value)
     { return StaticEnum<EDMRunPhase>()->GetNameStringByValue(static_cast<int64>(Value)); }
     static FString Stage(EDMRitualStage Value)
@@ -275,7 +271,7 @@ void ADMCombatHUD::DrawPing(const FDMHudPing& Ping)
     // Subjective pings are "I perceive something here": a dashed ring on the ground, never a target.
     if (Ping.bSubjective) { DrawRing(Ping.Location + FVector(0, 0, 5), 70.f, Ping.Tint, true); }
     FVector2D P;
-    if (!ProjectPoint(DMHud::PingAnchor(Ping.Kind, Ping.Location), P)) { return; }
+    if (!ProjectPoint(FDMPingBoard::MarkerAnchor(Ping.Kind, Ping.Location), P)) { return; }
 
     const float R = (Ping.bMine ? 8.f : 6.f) * S;
     Diamond(P.X, P.Y, R, Ping.Tint, true);

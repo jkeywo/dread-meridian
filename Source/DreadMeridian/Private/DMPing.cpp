@@ -48,6 +48,11 @@ const TCHAR* FDMPingBoard::EndName(EDMPingEnd Reason)
     }
 }
 
+FVector FDMPingBoard::MarkerAnchor(EDMPingKind Kind, const FVector& Location)
+{
+    return Location + FVector(0, 0, NeedsTarget(Kind) ? 260.f : 30.f);
+}
+
 const FDMPing* FDMPingBoard::Find(int32 Id) const { return Pings.FindByPredicate([Id](const FDMPing& P) { return P.Id == Id; }); }
 FDMPing* FDMPingBoard::Find(int32 Id) { return Pings.FindByPredicate([Id](const FDMPing& P) { return P.Id == Id; }); }
 

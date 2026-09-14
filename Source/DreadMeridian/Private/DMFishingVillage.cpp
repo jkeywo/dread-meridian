@@ -1,4 +1,5 @@
 #include "DMFishingVillage.h"
+#include "DMEncounterLayout.h"
 #include "DMObjective.h"
 #include "DMVision.h"
 #include "DMBossArena.h"
@@ -14,6 +15,16 @@
 #include "Materials/MaterialInterface.h"
 #include "Net/UnrealNetwork.h"
 #include "UObject/ConstructorHelpers.h"
+
+namespace
+{
+    /**
+     * Route nodes are kept this far inside the shared movement clamp. A node sitting exactly on the clamp
+     * boundary is not reliably reachable, because a pawn aiming at it is clamped back inside. Expressed as
+     * an inset rather than a literal so the graph follows DMEncounterLayout's extent if that ever moves.
+     */
+    constexpr float RouteInset = 50.f;
+}
 
 ADMFishingVillageGameMode::ADMFishingVillageGameMode() { bFishingVillage=true; }
 ADMFishingVillage::ADMFishingVillage()
@@ -253,7 +264,7 @@ FVector ADMFishingVillage::Waypoint(FVector From,FVector Goal) const
     {
         if (I==0 && bDrained) { continue; } const FBox B=Obstacles[I].ExpandBy(65);
         for (auto P : {FVector(B.Min.X,B.Min.Y,From.Z),FVector(B.Min.X,B.Max.Y,From.Z),FVector(B.Max.X,B.Min.Y,From.Z),FVector(B.Max.X,B.Max.Y,From.Z)})
-        { if (FMath::Abs(P.X)<2850 && FMath::Abs(P.Y)<2350) { RouteNodes.Add(P); } }
+        { if (FMath::Abs(P.X)<DMEncounterLayout::PlayableX-RouteInset && FMath::Abs(P.Y)<DMEncounterLayout::PlayableY-RouteInset) { RouteNodes.Add(P); } }
     }
     TArray<float> Cost; Cost.Init(MAX_flt,RouteNodes.Num()); Cost[0]=0;
     TArray<int32> Parent; Parent.Init(INDEX_NONE,RouteNodes.Num()); TArray<bool> Visited; Visited.Init(false,RouteNodes.Num());

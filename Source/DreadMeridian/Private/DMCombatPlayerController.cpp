@@ -693,9 +693,6 @@ namespace
         for (TActorIterator<ADMCombatant> It(World); It; ++It) { if (It->EntityId == Id) { return *It; } }
         return nullptr;
     }
-    /** World point the HUD projects for a ping marker; keep in sync with PingAnchor in DMCombatHUD.cpp. */
-    FVector PingAnchor(EDMPingKind Kind, const FVector& Location)
-    { return Location + FVector(0, 0, FDMPingBoard::NeedsTarget(Kind) ? 260.f : 30.f); }
 }
 
 const TArray<EDMPingKind>& ADMCombatPlayerController::RadialKinds()
@@ -790,7 +787,7 @@ int32 ADMCombatPlayerController::PingUnderCursor() const
         FVector Location = Ping.Location;
         if (const ADMCombatant* Target = CombatantById(GetWorld(), Ping.TargetId)) { Location = Target->GetActorLocation(); }
         FVector2D Screen;
-        if (!ProjectWorldLocationToScreen(PingAnchor(Ping.Kind, Location), Screen)) { continue; }
+        if (!ProjectWorldLocationToScreen(FDMPingBoard::MarkerAnchor(Ping.Kind, Location), Screen)) { continue; }
         const float Distance = static_cast<float>(FVector2D::DistSquared(Screen, FVector2D(MX, MY)));
         if (Distance < BestDistance) { BestDistance = Distance; Best = Ping.Id; }
     }

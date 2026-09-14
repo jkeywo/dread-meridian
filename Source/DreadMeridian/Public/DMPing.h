@@ -89,6 +89,12 @@ struct DREADMERIDIAN_API FDMPingBoard
     static bool AllowsTarget(EDMPingKind Kind);
     static const TCHAR* KindName(EDMPingKind Kind);
     static const TCHAR* EndName(EDMPingEnd Reason);
+    /**
+     * World point a marker for this ping is drawn at: above the head for the kinds that name a combatant,
+     * just off the ground for the kinds that name a place. The HUD projects it and the cursor hit-tests
+     * against it, so both must read this one rule or clicking a marker stops matching what is drawn.
+     */
+    static FVector MarkerAnchor(EDMPingKind Kind, const FVector& Location);
 
     /** Returns the new ping id, or INDEX_NONE when rejected (cooldown, target rule violated, empty author). */
     int32 Create(EDMPingKind Kind, const FString& AuthorId, bool bAuthorBot, FVector Location, const FString& TargetId, int32 Tick, TArray<FDMPingEnded>& Ended);
