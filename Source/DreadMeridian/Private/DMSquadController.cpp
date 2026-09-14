@@ -95,7 +95,6 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
     S.bCompanionTethered = (Mode.UsesEncounterLayout() || Mode.IsFishingVillage()) && !Self->bIsEnemy && Leader != nullptr;
     S.bCasting = Self->Smuggler->IsCasting();
     S.bRestrained = Self->IsRestrained() || Self->IsStunned();
-    S.bAttackReady = Self->NextAttackTick <= Tick && Self->StaggeredUntilTick <= Tick && Self->Injuries->CanAttack();
     S.bSetPosition = Self->Smuggler->bSetPosition;
     S.bRanged = Self->Smuggler->IsRanged();
     S.Role = Self->Smuggler->Role;
@@ -104,26 +103,18 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
     S.AttackRange = Self->GetAttackRange(); S.AttackDamage = Self->AttackDamage * (Self->bIsEnemy ? 1.f : Self->Progression->Get().BasicMultiplier()); S.AttackInterval = Self->AttackIntervalTicks;
     S.Location = SelfLoc;
     S.Anchor = bPatrolMember ? DMEncounterLayout::PatrolPoint(PatrolWaypoint) + FVector(0, PatrolSlot * 120, 0) : HomePosition;
-    S.EncounterGroup = EncounterGroup; S.PatrolWaypoint = PatrolWaypoint;
     S.Charges = Self->Investigator->Charges; S.ChargeCapacity = UDMInvestigatorComponent::ChargeCapacity;
     S.Satchels = 0; for (ADMAbilityMarker* M : Self->Primary->Satchels) { if (IsValid(M)) { ++S.Satchels; } }
-    S.Bindings = 0; for (ADMAbilityMarker* M : Self->Primary->Bindings) { if (IsValid(M)) { ++S.Bindings; } }
-    S.Momentum = Self->Investigator->Momentum;
     S.bQReady = Self->Primary->IsReady(Tick) && Self->Injuries->CanCast();
     S.QCooldownRemaining = Self->Primary->CooldownRemaining(Tick);
     S.FrameTarget = IndexOf(Self->Primary->FrameTarget.Get());
     S.HeldTarget = IndexOf(Self->Primary->HeldTarget.Get());
     const UDMKitComponent* Kit = Self->Kit;
     S.bWReady = Kit->IsReady(EDMKitSlot::W); S.bEReady = Kit->IsReady(EDMKitSlot::E); S.bRReady = Kit->IsReady(EDMKitSlot::R);
-    S.WCooldownRemaining = Kit->CooldownRemaining(EDMKitSlot::W, Tick);
-    S.ECooldownRemaining = Kit->CooldownRemaining(EDMKitSlot::E, Tick);
-    S.RCooldownRemaining = Kit->CooldownRemaining(EDMKitSlot::R, Tick);
     S.bRActive = Kit->IsRActive(); S.bBraced = Kit->IsBraced(); S.bCharging = Kit->IsCharging(); S.bWirePending = Kit->bWirePending;
-    S.Zones = 0; for (ADMAbilityMarker* M : Kit->Zones) { if (IsValid(M)) { ++S.Zones; } }
     S.Wires = 0; for (ADMAbilityMarker* M : Kit->Wires) { if (IsValid(M)) { ++S.Wires; } }
     S.MaxAttention = 0;
     for (const FDMSubjectResource& Spirit : Self->Investigator->Spirits) { S.MaxAttention = FMath::Max(S.MaxAttention, Spirit.Value); }
-    S.Madness = Self->Investigator->Madness;
     S.bSignatureReady = Self->Smuggler->IsSignatureReady(Tick);
     S.bSignatureSight = false;
 
@@ -142,13 +133,10 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
         if (!DMVision::CanSee(Self,C)) { V.Index=I; V.bEnemy=!Self->bIsEnemy; V.bDown=true; V.bVisible=false; continue; }
         V.Index = I; V.EntityId = C->EntityId;
         V.bEnemy = Self->IsHostileTo(C) ? !Self->bIsEnemy : Self->bIsEnemy; V.bDown = C->IsDown(); V.bRestrained = C->IsRestrained();
-        V.bPlayerControlled = C->IsPlayerControlled(); V.bCommon = C->bCommonEnemy; V.bBreakVulnerable = C->bBreakVulnerable;
+        V.bCommon = C->bCommonEnemy; V.bBreakVulnerable = C->bBreakVulnerable;
         V.bForced = C == Forced; V.bMarked = C == Marked; V.bDiver = C == Diver;
         V.bBoundByMe = Self->Primary->Bindings.ContainsByPredicate([&](const ADMAbilityMarker* M) { return IsValid(M) && M->BoundTarget == C; });
-        V.bHeldByMe = Self->Primary->HeldTarget == C;
         V.bRanged = C->Smuggler->IsRanged();
-        const auto* Bot = Cast<ADMSquadController>(C->GetController());
-        V.EncounterGroup = Bot ? Bot->EncounterGroup : INDEX_NONE;
         V.AttackTargetIndex = IndexOf(C->GetAttackTarget());
         V.Health = C->Health(); V.MaxHealth = C->MaxHealth(); V.Shield = C->Shield();
         V.Distance = FVector::Distance(SelfLoc, Loc);
@@ -163,7 +151,7 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
         V.Velocity2D = C->GetVelocity() * FVector(1, 1, 0);
         V.Location = Loc;
         V.Exposure = Self->Investigator->PeekExposure(C->EntityId);
-        V.bSuppressed = C->bSuppressed; V.bCommitted = C->bTelegraphActive; V.Break = C->Break;
+        V.bSuppressed = C->bSuppressed; V.bCommitted = C->bTelegraphActive;
         V.bGroupEngaged = false; V.bVisible = true;
         const bool bHostile = Self->IsHostileTo(C) && !V.bDown;
         if (S.bLocalEnemy && bHostile)
@@ -210,7 +198,7 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
         MV.Kind = Kind; MV.Location = M->GetActorLocation(); MV.WireEnd = M->WireEnd;
         MV.Direction = M->Direction; MV.HalfAngle = M->HalfAngle; MV.Length = M->Length; MV.Radius = M->Radius;
         MV.bArmed = M->IsArmed(); MV.bTravelling = M->bTravelling; MV.BoundIndex = IndexOf(M->BoundTarget.Get());
-        MV.Attention = M->Attention; MV.Serial = M->Serial; MV.SpiritId = M->SpiritId;
+        MV.Attention = M->Attention; MV.Serial = M->Serial;
     };
     for (const ADMAbilityMarker* M : Self->Primary->Satchels) { AddMarker(M, FDMAIMarkerView::Satchel); }
     for (const ADMAbilityMarker* M : Self->Primary->Bindings) { AddMarker(M, FDMAIMarkerView::Spirit); }
@@ -263,8 +251,6 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
             FDMAIClaimView& CV = Out.Claims.AddDefaulted_GetRef();
             CV.Kind = C.Kind; CV.AuthorIndex = AuthorIndex; CV.TargetIndex = C.TargetIndex;
             CV.Location = C.Location; CV.Location2 = C.Location2;
-            CV.Radius = C.Radius; CV.Magnitude = C.Magnitude;
-            CV.AgeTicks = C.AgeTicks(Tick); CV.ResolveIn = C.ResolveTick - Tick; CV.Serial = C.Serial;
         }
     }
 

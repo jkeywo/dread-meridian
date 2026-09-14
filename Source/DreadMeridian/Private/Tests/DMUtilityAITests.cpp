@@ -163,7 +163,7 @@ bool FDMUtilityAIFocusTest::RunTest(const FString& Parameters)
     {
         FRig R(EDMSmuggler::None, EDMInvestigator::Sapper, false);
         R.C.Self.bCompanionTethered = true;
-        FDMAIActorView& L = R.Add(FVector(0, 1000, 0), false); L.bPlayerControlled = true; R.C.LeaderIndex = L.Index;
+        FDMAIActorView& L = R.Add(FVector(0, 1000, 0), false); R.C.LeaderIndex = L.Index;
         FDMAIActorView& E = R.Add(FVector(600, 0, 0), true);
         TestEqual(TEXT("Tether excludes far from leader and far from self"), R.Focus(), INDEX_NONE);
         E.Location = FVector(400, 0, 0);
@@ -670,7 +670,7 @@ bool FDMUtilityAIPingsTest::RunTest(const FString& Parameters)
     {
         FRig R(EDMSmuggler::None, EDMInvestigator::Medium, false);
         R.C.Self.bCompanionTethered = true;
-        FDMAIActorView& L = R.Add(FVector(0, 800, 0), false); L.bPlayerControlled = true; R.C.LeaderIndex = L.Index;
+        FDMAIActorView& L = R.Add(FVector(0, 800, 0), false); R.C.LeaderIndex = L.Index;
         FDMAIDecision D = R.Step();
         TestTrue(TEXT("Tethered companion follows the leader"), D.Chose(EDMAIAction::FollowLeader));
         const FDMAIPingView& P = R.Ping(EDMPingKind::GoHere, FVector(500, 0, 0));

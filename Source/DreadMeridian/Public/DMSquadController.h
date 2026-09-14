@@ -23,6 +23,7 @@ public:
     int32 GetEncounterGroup() const { return EncounterGroup; }
     int32 GetPatrolWaypoint() const { return PatrolWaypoint; }
     const FDMAIDecision& GetLastDecision() const { return LastDecision; }
+    /** The context the last Think decided from. Retained as the observation seam for the PIE vision tests. */
     const FDMAIContext& GetLastContext() const { return LastContext; }
     const FDMAIMemory& GetMemory() const { return Memory; }
     /** Weights resolved by the game mode (ADMCombatGameMode::ProfileFor); resolved lazily on first Think when unset. */

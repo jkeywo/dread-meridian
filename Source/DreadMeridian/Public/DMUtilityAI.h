@@ -298,14 +298,13 @@ struct DREADMERIDIAN_API FDMAIActorView
 {
     int32 Index = INDEX_NONE;
     FString EntityId;
-    bool bEnemy = false, bDown = false, bRestrained = false, bPlayerControlled = false, bCommon = true, bBreakVulnerable = false;
+    bool bEnemy = false, bDown = false, bRestrained = false, bCommon = true, bBreakVulnerable = false;
     /** Line of sight from self. Only meaningful for hostiles; the context builder traces lazily (see BuildContext). */
     bool bVisible = true;
     /** A living friend in the same encounter group targets or holds threat on this actor. */
     bool bGroupEngaged = false;
     bool bForced = false, bMarked = false, bDiver = false;
-    bool bBoundByMe = false, bHeldByMe = false, bRanged = false;
-    int32 EncounterGroup = INDEX_NONE;
+    bool bBoundByMe = false, bRanged = false;
     /** Roster index this actor is attacking, or INDEX_NONE. */
     int32 AttackTargetIndex = INDEX_NONE;
     float Health = 0, MaxHealth = 0, Shield = 0;
@@ -328,8 +327,6 @@ struct DREADMERIDIAN_API FDMAIActorView
     bool bSuppressed = false;
     /** Mid-telegraph: Perfect Moment and Flashbulb value these higher. */
     bool bCommitted = false;
-    /** Elite Resolve damage banked so far (0..encounter MaxResolve). */
-    float Break = 0;
 };
 
 /** One of the deciding bot's own persistent markers. Enemy hazards stay in FDMAIHazard. */
@@ -350,7 +347,6 @@ struct DREADMERIDIAN_API FDMAIMarkerView
     int32 BoundIndex = INDEX_NONE;
     float Attention = 0;
     int32 Serial = 0;
-    FString SpiritId;
 };
 
 struct DREADMERIDIAN_API FDMAIHazard
@@ -386,12 +382,6 @@ struct DREADMERIDIAN_API FDMAIClaimView
     int32 TargetIndex = INDEX_NONE;
     FVector Location = FVector::ZeroVector;
     FVector Location2 = FVector::ZeroVector;
-    float Radius = 0, Magnitude = 0;
-    /** 0 for a claim made this tick, 1 for last tick's. Stale claims should count for less. */
-    int32 AgeTicks = 0;
-    /** Cast: ticks from now until it lands; negative once it has. */
-    int32 ResolveIn = 0;
-    int32 Serial = 0;
 };
 
 struct DREADMERIDIAN_API FDMAISelfView
@@ -399,26 +389,22 @@ struct DREADMERIDIAN_API FDMAISelfView
     int32 Index = INDEX_NONE;
     FString EntityId;
     bool bEnemy = false, bProfileRange = false, bLocalEnemy = false, bPatrolMember = false, bCompanionTethered = false;
-    bool bCasting = false, bRestrained = false, bAttackReady = false, bSetPosition = false, bRanged = false;
+    bool bCasting = false, bRestrained = false, bSetPosition = false, bRanged = false;
     EDMSmuggler Role = EDMSmuggler::None;
     EDMInvestigator Kind = EDMInvestigator::None;
     float Health = 0, MaxHealth = 0, AttackRange = 0, AttackDamage = 0;
     int32 AttackInterval = 10;
     FVector Location = FVector::ZeroVector, Anchor = FVector::ZeroVector;
-    int32 EncounterGroup = INDEX_NONE, PatrolWaypoint = 0;
-    int32 Charges = 0, ChargeCapacity = 3, Satchels = 0, Bindings = 0;
-    float Momentum = 0;
+    int32 Charges = 0, ChargeCapacity = 3, Satchels = 0;
     bool bQReady = false;
     int32 QCooldownRemaining = 0;
     int32 FrameTarget = INDEX_NONE, HeldTarget = INDEX_NONE;
     // Named kits. Ready flags mirror UDMKitComponent::IsReady; the windows mirror its replicated *UntilTick fields.
     bool bWReady = false, bEReady = false, bRReady = false;
-    int32 WCooldownRemaining = 0, ECooldownRemaining = 0, RCooldownRemaining = 0;
     bool bRActive = false, bBraced = false, bCharging = false, bWirePending = false;
-    int32 Zones = 0, Wires = 0;
+    int32 Wires = 0;
     /** Highest Attention across this Medium's bound spirits. */
     float MaxAttention = 0;
-    float Madness = 0;
     bool bSignatureReady = false;
     /** Sight to the focus for the signature; the builder evaluates it only when bSignatureReady and a focus exists. */
     bool bSignatureSight = false;
