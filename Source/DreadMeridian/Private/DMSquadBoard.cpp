@@ -42,7 +42,7 @@ void FDMSquadBoard::Gather(EDMClaimKind Kind, const FString& ExceptAuthor, int32
 {
     for (const FDMSquadClaim& C : Claims)
     {
-        if (C.Kind != Kind || C.AuthorId == ExceptAuthor || C.AgeTicks(Tick) >= LifetimeTicks) { continue; }
+        if (C.Kind != Kind || !Audible(C, ExceptAuthor, Tick)) { continue; }
         Out.Add(C);
     }
 }
@@ -54,7 +54,7 @@ int32 FDMSquadBoard::FocusCount(int32 TargetIndex, const FString& ExceptAuthor, 
     for (const FDMSquadClaim& C : Claims)
     {
         if (C.Kind != EDMClaimKind::Focus || C.TargetIndex != TargetIndex) { continue; }
-        if (C.AuthorId == ExceptAuthor || C.AgeTicks(Tick) >= LifetimeTicks) { continue; }
+        if (!Audible(C, ExceptAuthor, Tick)) { continue; }
         ++Count;
     }
     return Count;
@@ -66,7 +66,7 @@ const FDMSquadClaim* FDMSquadBoard::FindOnTarget(EDMClaimKind Kind, int32 Target
     for (const FDMSquadClaim& C : Claims)
     {
         if (C.Kind != Kind || C.TargetIndex != TargetIndex) { continue; }
-        if (C.AuthorId == ExceptAuthor || C.AgeTicks(Tick) >= LifetimeTicks) { continue; }
+        if (!Audible(C, ExceptAuthor, Tick)) { continue; }
         return &C;
     }
     return nullptr;

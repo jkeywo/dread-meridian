@@ -245,7 +245,7 @@ void ADMSquadController::BuildContext(ADMCombatGameMode& Mode, FDMAIContext& Out
         // intent back would reinforce whatever it already chose, which is not coordination but an echo.
         for (const FDMSquadClaim& C : Mode.GetSquadBoard().Claims)
         {
-            if (C.AuthorId == Self->EntityId || C.AgeTicks(Tick) >= FDMSquadBoard::LifetimeTicks) { continue; }
+            if (!FDMSquadBoard::Audible(C, Self->EntityId, Tick)) { continue; }
             const int32 AuthorIndex = IndexOfId(C.AuthorId);
             if (!Roster.IsValidIndex(AuthorIndex) || Roster[AuthorIndex]->IsDown()) { continue; }
             FDMAIClaimView& CV = Out.Claims.AddDefaulted_GetRef();

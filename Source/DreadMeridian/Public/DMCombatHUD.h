@@ -54,7 +54,7 @@ protected:
     void DrawInvestigator(const FDMHudModel& Model);
     void DrawMinimap(const FDMHudModel& Model);
     void DrawControls();
-    void DrawPrimaryFeedback();
+    void DrawPrimaryFeedback(const FDMHudModel& Model);
 
     void Panel(float X, float Y, float W, float H, FLinearColor Border);
     void Bar(float X, float Y, float W, float H, float Fraction, FLinearColor Fill, float ShieldFraction = 0);

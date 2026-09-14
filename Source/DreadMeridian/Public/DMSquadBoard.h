@@ -72,6 +72,14 @@ struct DREADMERIDIAN_API FDMSquadBoard
 
     static const TCHAR* KindName(EDMClaimKind Kind);
 
+    /**
+     * Whether a listener hears this claim: it is still live, and they did not say it themselves. A bot reading
+     * its own intent back would treat its own plan as corroboration, so every reader applies this one rule --
+     * the board's own queries and ADMSquadController when it builds the pure claim views.
+     */
+    static bool Audible(const FDMSquadClaim& Claim, const FString& Listener, int32 Tick)
+    { return Claim.AuthorId != Listener && Claim.AgeTicks(Tick) < LifetimeTicks; }
+
     /** Replaces the author's previous claim of this kind, so a bot speaks once per kind and never floods. */
     void Publish(const FDMSquadClaim& Claim);
     /** Drops claims older than LifetimeTicks. Authors that stop publishing simply age out. */

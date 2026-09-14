@@ -94,7 +94,7 @@ void ADMCombatHUD::DrawHUD()
     DrawInvestigator(Model);
     DrawMinimap(Model);
     DrawControls();
-    DrawPrimaryFeedback();
+    DrawPrimaryFeedback(Model);
     if (Player) { DrawPingRadial(*Player); }
     if (Pawn) { Label(TEXT("Relics: ")+Pawn->Relics->Summary(),DMHud::Brass,24*S,Canvas->ClipY-220*S,.8f); }
     if (Player)
@@ -705,7 +705,7 @@ void ADMCombatHUD::DrawControls()
     Label(TEXT("G ping (hold: radial)"), DMHud::Muted, X, Y + 50 * S, .85f);
 }
 
-void ADMCombatHUD::DrawPrimaryFeedback()
+void ADMCombatHUD::DrawPrimaryFeedback(const FDMHudModel& Model)
 {
     const auto* Player = Cast<ADMCombatPlayerController>(GetOwningPlayerController());
     const auto* Actor = Player ? Cast<ADMCombatant>(Player->GetPawn()) : nullptr;
@@ -741,7 +741,8 @@ void ADMCombatHUD::DrawPrimaryFeedback()
         Label(Failure.IsEmpty() ? TEXT("Confirm: ") + Player->AimName() : Failure, Color, X - 120 * S, Y - 22 * S, 1.f);
     }
     else { Label(Player->QFeedback(), DMHud::Brass, X - 120 * S, Y - 22 * S, 1.f); }
-    for (const FDMHudUnit& Unit : FDMHudModel::Build(GetWorld(), Actor, nullptr).Enemies)
+    // The model this frame already lists every enemy; rebuilding it here cost a second world sweep and sort.
+    for (const FDMHudUnit& Unit : Model.Enemies)
     {
         const auto* Enemy = Unit.Actor.Get();
         if (Enemy && Enemy->bTelegraphActive) { DrawRing(Unit.Location - FVector(0, 0, 80), 65, DMHud::Danger, false); }
