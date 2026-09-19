@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Generate', 'GenerateMap', 'GenerateVillage', 'VillagePreview', 'GenerateShellMap', 'GenerateAIProfiles', 'Python', 'Build', 'Test', 'EditorTest', 'Smoke', 'CombatSmoke', 'SmugglerSmoke', 'SwampSmoke', 'ShellSmoke', 'Editor', 'Play', 'Shell', 'NetworkTest')]
+    [ValidateSet('Generate', 'GenerateMap', 'GenerateArena', 'Arena', 'ArenaSmoke', 'GenerateVillage', 'VillagePreview', 'GenerateShellMap', 'GenerateAIProfiles', 'Python', 'Build', 'Test', 'EditorTest', 'Smoke', 'CombatSmoke', 'SmugglerSmoke', 'SwampSmoke', 'ShellSmoke', 'Editor', 'Play', 'Shell', 'NetworkTest')]
     [string]$Action = 'Build',
     [string]$EngineRoot = $env:UE_ROOT,
     [int]$Seed = 1927,
@@ -46,6 +46,11 @@ if ($Action -eq 'GenerateVillage') {
 }
 
 $cmdEditor = Join-Path $EngineRoot 'Engine\Binaries\Win64\UnrealEditor-Cmd.exe'
+if ($Action -in @('GenerateArena', 'Arena', 'ArenaSmoke')) {
+    & $cmdEditor $projectFile -run=pythonscript "-script=$PSScriptRoot\generate_arena.py" -unattended -nop4 -nullrhi -nosound
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $projectRoot 'Content\DreadMeridian\Maps\L_TestArena.umap'))) { throw 'Test arena generation failed.' }
+    if ($Action -eq 'GenerateArena') { exit 0 }
+}
 if ($Action -eq 'Python') {
     if (-not $Script -or -not (Test-Path -LiteralPath $Script -PathType Leaf)) { throw 'Python action requires -Script pointing to an existing Python file.' }
     $resolvedScript = (Resolve-Path -LiteralPath $Script).Path
@@ -131,12 +136,19 @@ if ($Action -eq 'VillagePreview' -or ($Action -in @('Play','Editor') -and -not $
 if ($Action -eq 'Smoke') { $map = '/Engine/Maps/Entry?game=/Script/DreadMeridian.DMGameMode' }
 # The shell opens the front end; the sandbox streams in when the lobby launches.
 if ($Action -in @('Shell', 'ShellSmoke')) { $map = '/Game/DreadMeridian/Maps/L_Shell' }
+if ($Action -in @('Arena', 'ArenaSmoke')) { $map = '/Game/DreadMeridian/Maps/L_TestArena' }
 $launchArgs = @($projectFile, $map, '-PlaytraceCapture', "-DMInvestigator=$Investigator", "-DMSeed=$Seed",
     "-DMGameRevision=$revision", "-DMSourceDigest=$sourceDigest", "-DMGDDDigest=$gddDigest")
 if ($status) { $launchArgs += '-DMDirty' }
 if ($SwampEnemies -or $Action -eq 'SwampSmoke') { $launchArgs += '-DMSwampProbe' }
 
-if ($Action -eq 'VillagePreview') {
+if ($Action -eq 'ArenaSmoke') {
+    $arenaLog = Join-Path $projectRoot ('Saved\Logs\arena-' + [guid]::NewGuid().ToString('N') + '.log')
+    [string[]]$arenaRender = @(if ($RenderOffscreen) { '-RenderOffscreen'; '-ResX=1440'; '-ResY=900' } else { '-nullrhi' })
+    & $cmdEditor @launchArgs -game -unattended -nop4 -nosplash -nosound @arenaRender -DMArenaProbe "-abslog=$arenaLog"
+    if ($LASTEXITCODE -ne 0 -or -not (Select-String -LiteralPath $arenaLog -SimpleMatch 'DREAD_ARENA_SMOKE_PASSED' -Quiet)) { throw "Arena smoke failed: $arenaLog" }
+    Write-Output "Arena smoke passed. Captures and checks: $arenaLog"
+} elseif ($Action -eq 'VillagePreview') {
     & $cmdEditor @launchArgs -game -RenderOffscreen -DMVillagePreview -ResX=1440 -ResY=1200 -unattended -nop4 -nosound
     if ($LASTEXITCODE -ne 0) { throw 'Village preview failed.' }
 } elseif ($Action -eq 'NetworkTest') {
@@ -173,7 +185,7 @@ if ($Action -eq 'VillagePreview') {
     }
     Write-Output "Smoke passed. Capture path is in $smokeLog. Use Play Trace validate-telemetry for combat; tools/validate_capture.py for the foundation."
 } else {
-    if ($Action -in @('Play', 'Shell')) { $launchArgs += @('-game', '-windowed', '-ResX=1280', '-ResY=800') }
+    if ($Action -in @('Play', 'Shell', 'Arena')) { $launchArgs += @('-game', '-windowed', '-ResX=1280', '-ResY=800') }
     # This visible editor is the explicitly selected interactive action.
     & (Join-Path $EngineRoot 'Engine\Binaries\Win64\UnrealEditor.exe') @launchArgs
 }

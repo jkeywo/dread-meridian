@@ -1,4 +1,4 @@
-"""Validate the v1 foundation-harness evidence contract. Python 3.12+, stdlib only.
+"""Validate foundation-harness and local test-arena evidence. Python 3.12+, stdlib only.
 
 This is a game-owned export check, not a Play Trace ingestion adapter.
 """
@@ -61,10 +61,12 @@ def validate_capture(path: Path) -> dict:
     require(events[-1]['event_type'] == 'run.ended', 'Capture is incomplete: no final run.ended')
     meta = events[0]['data']
     require(meta.get('project_id') == 'dread-meridian', 'Wrong project')
-    require(meta.get('scenario_id') == 'foundation-harness' and meta.get('run_kind') == 'foundation_harness',
-            'This validator supports only the foundation harness')
-    require(meta.get('production_bots') == 0 and meta.get('investigator_slots') == 4,
-            'Harness roster metadata is invalid')
+    arena = meta.get('scenario_id') == 'test-arena-v1' and meta.get('run_kind') == 'test_arena'
+    if not arena:
+        require(meta.get('scenario_id') == 'foundation-harness' and meta.get('run_kind') == 'foundation_harness',
+                'This validator supports only foundation harness and test arena captures')
+        require(meta.get('production_bots') == 0 and meta.get('investigator_slots') == 4,
+                'Harness roster metadata is invalid')
     require(integer(meta.get('seed')) and -(2**31) <= meta['seed'] < 2**31, 'Invalid seed')
     require(meta.get('rng_schema_version') in (1, 2), 'Unsupported RNG schema')
     tuning = meta.get('ritual_points_per_stage')
@@ -79,6 +81,9 @@ def validate_capture(path: Path) -> dict:
         require(isinstance(value, str) and (value == 'unrecorded' or re.fullmatch(pattern, value) is not None),
                 f'Invalid {key}')
         provenance_complete &= value != 'unrecorded'
+
+    if arena:
+        return validate_arena_events(events, provenance_complete)
 
     phase, stage, progress = 'Briefing', 0, 0
     for event in events[1:-1]:
@@ -122,6 +127,68 @@ def validate_capture(path: Path) -> dict:
                         'Recorded source digests identify inputs; retain those inputs separately.',
                         'Wall-clock event timing is not deterministic simulation time.'],
     }
+
+
+def validate_arena_events(events: list[dict], provenance_complete: bool) -> dict:
+    """Validate arena setup/lifecycle evidence, not reproduce combat or AI outcomes."""
+    meta = events[0]['data']
+    heroes = {'Sapper', 'Photographer', 'Medium', 'Smuggler'}
+    types = {'Gunman', 'Bruiser', 'Lookout', 'Bomber', 'Gang Boss',
+             'Crawler', 'Lurker', 'Spitter', 'Grasper', 'Old Thing'}
+    player, companions = meta.get('controlled_investigator'), meta.get('arena_companions')
+    require(player in heroes and isinstance(companions, list) and all(isinstance(c, str) and c in heroes for c in companions),
+            'Invalid arena party')
+    require(len(set([player] + companions)) == 1 + len(companions) <= 4, 'Duplicate or oversized arena party')
+    require(meta.get('investigator_slots') == 1 + len(companions)
+            and meta.get('initial_bot_count') == len(companions), 'Incorrect arena roster metadata')
+    require(meta.get('arena_config_version') == 1, 'Unsupported arena configuration')
+    phase, restored, combat_tick = 'Setup', False, -1
+    transitions = {'Setup': {'Fighting'}, 'Fighting': {'Paused', 'Victory', 'Defeat'}, 'Paused': {'Fighting'}}
+    for event in events[1:-1]:
+        if event['event_type'] != 'arena.setup':
+            continue
+        data = event['data']
+        tick = data.get('tick')
+        require(integer(tick) and tick >= combat_tick, 'Invalid arena combat tick')
+        combat_tick = tick
+        require(data.get('player') == player and data.get('seed') == meta['seed'], 'Setup disagrees with run metadata')
+        placements = data.get('placements')
+        require(isinstance(placements, list) and len(placements) <= 32, 'Invalid arena placements')
+        for p in placements:
+            require(isinstance(p, dict) and p.get('type') in types, 'Unknown arena enemy')
+            require(integer(p.get('batch')) and p['batch'] >= 0, 'Invalid placement batch')
+            for axis, extent in (('x', 2800), ('y', 2300)):
+                value = p.get(axis)
+                require(type(value) in (int, float) and math.isfinite(value) and abs(value) <= extent,
+                        'Placement outside arena')
+        action, target = data.get('action'), data.get('phase')
+        if action == 'restored':
+            require(not restored and target == 'Setup' and tick == 0, 'Invalid arena startup')
+            restored = True
+        else:
+            require(restored, 'Arena action before restored setup')
+            if action in ('phase_changed', 'completed'):
+                require(target in transitions.get(phase, set()), 'Illegal arena transition')
+                require(bool(placements), 'Fight without enemies')
+                require((action == 'completed') == (target in ('Victory', 'Defeat')), 'Incorrect completion action')
+                phase = target
+            else:
+                require(target == phase, 'Setup action changed phase')
+                require(action in ('placed', 'undone', 'cleared', 'placement_failed', 'reset', 'probe_complete'), 'Unknown arena action')
+                if action in ('undone', 'cleared'):
+                    require(phase == 'Setup', 'Removal after combat began')
+                if action in ('placed', 'placement_failed'):
+                    require(phase in ('Setup', 'Paused'), 'Placement during live combat')
+    require(restored, 'Missing arena setup')
+    outcome = events[-1]['data'].get('outcome')
+    require((outcome == 'victory' and phase == 'Victory') or (outcome == 'defeat' and phase == 'Defeat')
+            or (outcome == 'aborted' and phase in ('Setup', 'Fighting', 'Paused')), 'Arena outcome contradicts phase')
+    return {'contract': 'dread-meridian.test-arena-capture.v1', 'run_id': events[0]['run_id'],
+            'outcome': outcome, 'event_count': len(events), 'provenance_complete': provenance_complete,
+            'working_tree_dirty': meta['working_tree_dirty'], 'evidence_scope': 'local_test_arena_only',
+            'supports_gameplay_balance_claims': False,
+            'limitations': ['Validates setup and lifecycle; does not replay or validate combat outcomes.',
+                            'No multiplayer, deterministic gameplay replay, or Play Trace ingestion claim.']}
 
 
 def main() -> int:

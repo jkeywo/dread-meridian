@@ -1,5 +1,8 @@
 # Sandbox encounters
 
+For selectable parties and manually placed enemies or groups, use the separate
+[test arena](test-arena.md). The fixed encounters below continue to serve normal play.
+
 Interactive play contains three camps of three smugglers and a two-person patrol.
 Camps sit south, east and north of the central route; the squad starts west.
 Camp signs, supply crates and a dashed patrol circuit mark the layout.

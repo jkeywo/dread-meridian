@@ -240,24 +240,85 @@ void ADMCombatGameMode::AttachBot(ADMCombatant* Actor)
     Actor->ForceNetUpdate();
 }
 
-void ADMCombatGameMode::AssignInvestigator(APlayerController* Player)
+FString ADMCombatGameMode::PreferredInvestigator() const
 {
-    if (!Player || Player->GetPawn() || Cast<ADMCombatant>(Player->GetViewTarget()) || !bCombatActive) { return; }
     FString Preferred;
     FParse::Value(FCommandLine::Get(), TEXT("DMInvestigator="), Preferred);
 #if WITH_EDITOR
     // The toolbar owns PIE selection, including when the editor was launched with a CLI default.
     if (GetWorld()->WorldType == EWorldType::PIE) { Preferred = DMEditorPlaySelection::Load(); }
 #endif
-    const TArray<FString> Names = { TEXT("Sapper"), TEXT("Photographer"), TEXT("Medium"), TEXT("Smuggler") };
-    const int32 Start = FMath::Max(0, Names.IndexOfByPredicate([&](const FString& Name) { return Name.Equals(Preferred, ESearchCase::IgnoreCase); }));
-    for (int32 Offset = 0; Offset < 4; ++Offset)
+    return Preferred;
+}
+
+ADMCombatant* ADMCombatGameMode::CreateFixtureCombatant(const FString& Id, FVector Position, EDMInvestigator Kind, EDMSmuggler EnemyRole, uint8 SwampRole)
+{
+    if (!HasAuthority() || FindCombatant(Id)) { return nullptr; }
+    FActorSpawnParameters P; P.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    auto* A = GetWorld()->SpawnActor<ADMCombatant>(Position, FRotator::ZeroRotator, P);
+    if (!A) { return nullptr; }
+    const bool bEnemy = Kind == EDMInvestigator::None;
+    A->InitializeCombatant(Id, bEnemy, bEnemy ? (SwampRole == 5 ? 350.f : 90.f) : 100.f, bEnemy ? (SwampRole == 5 ? 14.f : 8.f) : 12.f, bEnemy ? 0.f : 20.f);
+    if (EnemyRole != EDMSmuggler::None)
     {
-        if (Combatants.Num() < 4) { return; }
-        ADMCombatant* Actor = Combatants[(Start + Offset) % 4];
+        A->Smuggler->Initialize(EnemyRole);
+        A->InitializeCombatant(Id, true, A->Smuggler->BaseHealth(), A->Smuggler->BaseDamage());
+    }
+    if (SwampRole) { A->Swamp->Initialize(static_cast<EDMSwampThing>(SwampRole)); }
+    if (!bEnemy)
+    {
+        A->InitializeInvestigator(Kind, false);
+        A->MadnessCore->AssignFamily(static_cast<EDMMadnessFamily>(1 + DrawRandom(EDMRandomStream::Madness) % UDMMadnessComponent::SupportedFamilies));
+    }
+    Combatants.Add(A);
+    auto Data = MakeShared<FJsonObject>();
+    Data->SetStringField(TEXT("entity_id"), Id);
+    Data->SetStringField(TEXT("team"), bEnemy ? TEXT("enemy") : TEXT("investigator"));
+    Data->SetStringField(TEXT("display_name"), A->DisplayName());
+    Data->SetStringField(TEXT("control"), TEXT("bot"));
+    Data->SetNumberField(TEXT("health"), A->Health());
+    Data->SetNumberField(TEXT("shield"), A->Shield());
+    Data->SetNumberField(TEXT("attack_damage"), A->AttackDamage);
+    Data->SetNumberField(TEXT("attack_range"), A->GetAttackRange());
+    Data->SetNumberField(TEXT("attack_interval_ticks"), A->AttackIntervalTicks);
+    Data->SetNumberField(TEXT("initial_next_attack_tick"), A->NextAttackTick);
+    Emit(TEXT("combat.spawned"), Data);
+    AttachBot(A);
+    return A;
+}
+
+void ADMCombatGameMode::RemoveFixtureCombatant(ADMCombatant* Actor)
+{
+    if (!HasAuthority() || !Actor || !Actor->bIsEnemy || !Combatants.Contains(Actor)) { return; }
+    auto Data=MakeShared<FJsonObject>(); Data->SetStringField(TEXT("entity_id"),Actor->EntityId); Emit(TEXT("arena.removed"),Data);
+    if (auto* Controller = Actor->GetController()) { Controller->UnPossess(); Controller->Destroy(); }
+    Combatants.Remove(Actor);
+    Actor->Destroy();
+}
+
+void ADMCombatGameMode::ActivateFixture()
+{
+    bCombatActive = true;
+    Summon();
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It) { AssignInvestigator(It->Get()); }
+    GetWorldTimerManager().SetTimer(CombatTimer, this, &ADMCombatGameMode::StepCombat, .1f, true);
+}
+
+void ADMCombatGameMode::AssignInvestigator(APlayerController* Player)
+{
+    if (!Player || Player->GetPawn() || Cast<ADMCombatant>(Player->GetViewTarget()) || !bCombatActive) { return; }
+    const FString Preferred = PreferredInvestigator();
+    const TArray<FString> Names = { TEXT("Sapper"), TEXT("Photographer"), TEXT("Medium"), TEXT("Smuggler") };
+    const int32 Kind = 1 + FMath::Max(0, Names.IndexOfByPredicate([&](const FString& Name) { return Name.Equals(Preferred, ESearchCase::IgnoreCase); }));
+    TArray<ADMCombatant*> Investigators;
+    for (ADMCombatant* Actor : Combatants) { if (Actor && !Actor->bIsEnemy) { Investigators.Add(Actor); } }
+    const int32 Start = FMath::Max(0, Investigators.IndexOfByPredicate([&](const ADMCombatant* A) { return static_cast<int32>(A->Investigator->Kind) == Kind; }));
+    for (int32 Offset = 0; Offset < Investigators.Num(); ++Offset)
+    {
+        ADMCombatant* Actor = Investigators[(Start + Offset) % Investigators.Num()];
         if (Actor->bIsEnemy || Actor->IsPlayerControlled()) { continue; }
 #if WITH_EDITOR
-        if (GetWorld()->WorldType == EWorldType::PIE && DMEditorPlaySelection::LoadBotControl())
+        if (AllowEditorBotControl() && GetWorld()->WorldType == EWorldType::PIE && DMEditorPlaySelection::LoadBotControl())
         {
             // Keep the real squad controller in charge; this player only observes.
             Player->SetViewTarget(Actor);
@@ -278,7 +339,7 @@ void ADMCombatGameMode::AssignInvestigator(APlayerController* Player)
         Emit(TEXT("control.changed"), Data);
         return;
     }
-    Player->ClientMessage(TEXT("All four investigator slots are occupied."));
+    Player->ClientMessage(TEXT("All investigator slots are occupied."));
 }
 void ADMCombatGameMode::RestartPlayer(AController* Player) { AssignInvestigator(Cast<APlayerController>(Player)); }
 void ADMCombatGameMode::PostLogin(APlayerController* Player) { Super::PostLogin(Player); AssignInvestigator(Player); }
@@ -735,6 +796,7 @@ void ADMCombatGameMode::StepCombat()
     {
         if (!Actor->IsDown()) { if (Actor->bIsEnemy) { bEnemiesUp = true; } else { bInvestigatorsUp = true; } }
     }
+    if (HandleCustomOutcome(bInvestigatorsUp, bEnemiesUp)) { return; }
     if (Village)
     { if (!bInvestigatorsUp) { CompleteCombat(false); return; } Village->StepScenario(); return; }
     if (bBossOutcome) { return; }
