@@ -77,10 +77,11 @@ void ADMCombatGameMode::ConfigureCaptureMetadata(const TSharedRef<FJsonObject>& 
         Metadata->SetStringField(TEXT("scenario_id"),TEXT("fishing-village-fixed-v1"));
         Metadata->SetStringField(TEXT("run_kind"),TEXT("fixed_scenario"));
         Metadata->SetStringField(TEXT("capture_version"),TEXT("0.15.0"));
-        Metadata->SetStringField(TEXT("combat_rules_version"),TEXT("fishing-village-v1"));
+        Metadata->SetStringField(TEXT("combat_rules_version"),TEXT("fishing-village-ritual-v2"));
         Metadata->SetNumberField(TEXT("boss_selection_version"),2);
+        Metadata->SetNumberField(TEXT("ritual_ticks_per_point"),ADMFishingVillage::RitualTicksPerPoint);
         TArray<TSharedPtr<FJsonValue>> Missing;
-        for (const TCHAR* S : {TEXT("htn_generation"),TEXT("timed_ritual_escalation"),TEXT("nyarlathotep_scenario"),TEXT("host_migration"),TEXT("full_map_fog")}) { Missing.Add(MakeShared<FJsonValueString>(S)); }
+        for (const TCHAR* S : {TEXT("htn_generation"),TEXT("ritual_director_intrusions"),TEXT("nyarlathotep_scenario"),TEXT("host_migration"),TEXT("full_map_fog")}) { Missing.Add(MakeShared<FJsonValueString>(S)); }
         Metadata->SetArrayField(TEXT("omissions"),Missing);
     }
 }

@@ -33,7 +33,7 @@ bool ADMObjective::ConfigureAuthored(const FString& TemplateId, FVector Origin, 
     FDMObjectiveDefinition D;
     auto* M = GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
     if (!HasAuthority() || !M || !DMObjectiveCatalogue::Build(TemplateId,Origin,InDifficulty,D) || !Configure(InstanceId,D.Title,D.Steps,D.Reward)) { return false; }
-    bDisruption = D.bDisruption; Difficulty = InDifficulty;
+    bDisruption = D.bDisruption; Difficulty = InDifficulty; AuthoredTemplate=TemplateId; AuthoredOrigin=Origin;
     Targets.SetNum(Steps.Num());
     for (int32 I=0; I<Steps.Num(); ++I)
     { if (Steps[I].Verb == EDMObjectiveVerb::Destroy) { Targets[I] = M->SpawnEncounterActor(InstanceId + FString::Printf(TEXT(".idol.%d"),I),Steps[I].Location + FVector(0,0,80),150,0,true); } }
@@ -124,7 +124,7 @@ void ADMObjective::Step(int32 Tick)
     else if (S.Verb == EDMObjectiveVerb::Escort)
     {
         if (Contested(PublicState.PayloadLocation)) { return; }
-        PublicState.PayloadLocation = FMath::VInterpConstantTo(PublicState.PayloadLocation,S.Destination,.1f,100.f);
+        PublicState.PayloadLocation = FMath::VInterpConstantTo(PublicState.PayloadLocation,S.Destination,.1f,100.f/(1.f+Difficulty*.15f));
         if (FVector::DistSquared2D(PublicState.PayloadLocation,S.Destination) <= FMath::Square(15.f)) { Advance(); }
     }
     else if (S.Verb != EDMObjectiveVerb::Sequence && (S.Verb != EDMObjectiveVerb::Defend || !Contested(S.Location)))
@@ -164,9 +164,34 @@ bool ADMObjective::Repair(const TArray<FDMObjectiveStep>& Replacement, const FSt
     PublicState.State = EDMObjectiveState::Repaired; RepairExplanation = Explanation; PublicState.PayloadLocation = Current()->Location;
     Publish(TEXT("repaired")); return true;
 }
+bool ADMObjective::Escalate(int32 NewDifficulty)
+{
+    if (!HasAuthority() || IsTerminal() || NewDifficulty<=Difficulty || NewDifficulty>4 || !Current()) { return false; }
+    const int32 Increase=NewDifficulty-Difficulty;
+    // Append later ward/bell sites from the authored variant, retaining established history.
+    FDMObjectiveDefinition Variant;
+    if (bDisruption && DMObjectiveCatalogue::Build(AuthoredTemplate,AuthoredOrigin,NewDifficulty,Variant))
+    {
+        for (int32 I=Steps.Num();I<Variant.Steps.Num();++I) { Steps.Add(Variant.Steps[I]); }
+        Targets.SetNum(Steps.Num());
+        DisplayTitle=Variant.Title;
+    }
+    for (int32 I=PublicState.Step;I<Steps.Num();++I)
+    {
+        auto& S=Steps[I]; S.WorkTicks+=Increase*10;
+        if (S.Verb==EDMObjectiveVerb::Sequence)
+        {
+            // Preserve accepted input; replay the longer sequence before accepting more.
+            for (int32 N=Difficulty;N<NewDifficulty;++N) { S.Sequence.Add(N%2 ? 3 : 2); }
+        }
+    }
+    Difficulty=NewDifficulty; SequenceStarted=-1; bSequenceReady=false; ObservedSymbol=0;
+    Publish(TEXT("escalated")); return true;
+}
 bool ADMObjective::ConvertApocalypse()
 {
     if (!HasAuthority() || IsTerminal() || PublicState.bApocalypse || !Current()) { return false; }
+    Escalate(4);
     PublicState.bApocalypse = true; PublicState.State = EDMObjectiveState::ApocalypseConverted;
     Publish(TEXT("apocalypse_converted")); return true;
 }

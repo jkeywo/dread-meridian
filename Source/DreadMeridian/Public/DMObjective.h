@@ -57,6 +57,7 @@ public:
     bool Fail();
     bool Repair(const TArray<FDMObjectiveStep>& Replacement, const FString& Explanation);
     bool ConvertApocalypse();
+    bool Escalate(int32 NewDifficulty);
     bool Restore(const FDMObjectiveSnapshot& Snapshot);
     FDMObjectiveSnapshot Capture() const { return PublicState; }
     bool IsInteracting(const ADMCombatant* Actor) const;
@@ -78,6 +79,8 @@ public:
     bool bDisruption = false;
     int32 XPReward = 100;
 private:
+    FString AuthoredTemplate;
+    FVector AuthoredOrigin = FVector::ZeroVector;
     UPROPERTY() TObjectPtr<class UStaticMeshComponent> Mesh;
     UPROPERTY() TObjectPtr<class UTextRenderComponent> Label;
     TWeakObjectPtr<ADMCombatant> Participant;

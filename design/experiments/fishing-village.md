@@ -1,7 +1,7 @@
 # Fixed fishing-village scenario
 
-User-authorized integration: fixed enemy placement and automatic boss summoning
-after the core objectives, without waiting for a timed Ritual system or HTN.
+Fixed enemy placement, timed Ritual pressure and explicit or premature manifestation.
+This is a fixed scenario integration, without HTN.
 The GDD remains unchanged. Locations, durations, health and encounter counts are
 provisional scenario tuning.
 
@@ -17,19 +17,45 @@ The fixed chain is Impossible Catch -> Waterworks -> Main Pump -> Counter-Sigil.
 Only the current core stage is spawned. Completing the pump removes the flooded
 basin's collision and visual surface, exposing the mudflat and ritual stones.
 The three required Disruptions are Bell Sequence, Counter-Ritualist and Marsh
-Idols. Completing all four core stages and all three Disruptions summons the
-existing Shub encounter once. Shub's death wins; a team wipe loses even before
-manifestation. Clearing ordinary enemies does not win the scenario.
+Idols. Completing all four core stages and all three Disruptions unlocks
+Force Manifestation at the basin: approach and press I to channel for three
+seconds, or continue preparing. This summons the existing Shub encounter once.
+Shub's death wins after mandatory work; a team wipe loses even before manifestation. Clearing ordinary enemies does not win the scenario.
 
 The lighthouse, surgery and smuggler cache are optional. They grant their native
 vision, treatment and shared relic rewards. Food has fixed authored locations.
-These opportunities have no time-pressure tradeoff until Ritual escalation exists.
+These opportunities now compete with the advancing Ritual for time.
 
 The run stays in Expedition during objective work, then enters Apocalypse at
 manifestation. Shub is fixed before Madness resonance assignment. The named boss
 draw is still consumed; scenario metadata records boss selection version 2 and
-combat rules `fishing-village-v1`. No timed escalation or random mission planner
-is implied by the underlying run-state scaffold.
+combat rules `fishing-village-ritual-v2`.
+
+## Ritual integration (provisional v2)
+
+The server advances one Ritual point per 30 accepted combat ticks (three seconds).
+At the default 100 points per stage this gives five minutes per stage and natural
+Apocalypse after twenty minutes. Paused simulation does not advance the clock.
+Repeated/out-of-order clock calls add nothing; excess ticks carry forward.
+
+Unfinished mandatory objectives become harder with the public stage: longer work,
+longer real bell sequences, slower escort travel, additional authored ward/bell
+sites, and the existing surviving-idol protection aura. Completed steps and rewards
+stay complete. Failed mandatory work is repaired with twenty extra work ticks per
+remaining step and ten Ritual points, once per failure; this is a fixed repair,
+not a generated HTN replacement. No deadlines are added by this integration.
+
+Natural Apocalypse manifests Shub even with the basin flooded. In that case the
+boss arena uses the dry southern approach; the pump still needs completing to
+open the basin. Existing and subsequently spawned core objectives become harder
+Apocalypse versions. The objective HUD continues to show mandatory work and
+explains that Shub endures until it is complete. Provisional damage gating keeps
+Shub at at least one health while mandatory work remains, preserving active boss
+pressure and preventing a premature victory. Completed rites release that gate.
+The five-stage Ritual HUD remains visible throughout the scenario.
+
+This step does not implement the full encounter director, mixed candidate-boss
+intrusions, stage-driven scenery transformation or a random mission planner.
 
 ## Movement and presentation
 
@@ -55,11 +81,13 @@ village. The existing ShellSmoke deliberately retains its compact sandbox probe.
 
 `DreadMeridian.Editor.FishingVillage` loads the real map and drives accepted
 objective interactions, checking order, optional rewards, all required gates,
-actual collision removal, routing, one-time manifestation and boss victory.
+actual collision removal, routing, clock boundaries, failed-objective repair,
+explicit summon choice, premature manifestation, future objective conversion,
+mandatory-work boss gating, one-time manifestation and both routes to boss victory.
 It relocates/pauses actors and applies test damage: it is an integration test,
 not a four-bot playthrough, balance result or proof of natural traversal.
 
-Full-map fog, dynamic Ritual escalation, generated/repairable HTN plans, the
+Full-map fog, Ritual encounter direction, generated/repairable HTN plans, the
 Nyarlathotep scenario, final environment art and full-run migration remain
 outside this step. Test evidence must be reported separately after execution.
 
@@ -70,3 +98,8 @@ map and materials are in the main project. The retained overview is an actual
 Unreal render. The integration test drives accepted interactions and test damage;
 the networking and shell regression runs use their existing sandbox fixtures,
 so they do not establish a two-client village playthrough or autonomous victory.
+
+Ritual v2 validation is recorded in `ritual-scenario-validation.json`. The current
+Win64 project built directly under Unreal 5.8.2; both village routes and the
+objective catalogue passed PIE integration tests. The earlier isolated-build
+record above describes the original village integration only.

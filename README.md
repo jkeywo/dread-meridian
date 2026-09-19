@@ -6,9 +6,11 @@ The [master GDD](gdd/Mythos_PvE_MOBA_Master_GDD_v0.3.md) remains canonical.
 The [fixed fishing-village scenario](design/experiments/fishing-village.md) is
 `L_FishingVillage`. It assembles the existing systems into a greybox map with
 fixed enemy placements, a four-stage core chain, three required Disruptions,
-optional rewards, a drainable basin and Shub. Completing the required objectives
-summons Shub; defeating Shub wins. This version has no timed Ritual escalation,
-generated HTN plan or Nyarlathotep scenario.
+optional rewards, a drainable basin and Shub. The Ritual advances over time and
+hardens unfinished objectives. Completing the required rites unlocks an optional
+summon interaction at the basin; otherwise Apocalypse manifests Shub early.
+Finish the outstanding rites and defeat Shub to win. Timing is provisional;
+generated HTN plans and the Nyarlathotep scenario remain unimplemented.
 
 ## Play the fishing village
 
@@ -64,7 +66,7 @@ assets with C++ defaults. It is a per-bot combat policy, not the GDD team planne
 [Injuries](docs/injuries.md) now use recent Health loss, six named effects,
 Grievous overflow and finite treatment; food heals over time.
 Capture omissions are specific to the launch profile. The village integrates
-objectives, Shub and boss resonance; HTN, timed Ritual escalation, matchmaking
+objectives, timed Ritual pressure, Shub and boss resonance; HTN, the full Ritual encounter director, matchmaking
 and host migration remain unimplemented. Break/CC uses configurable Resolve and bounded control windows; see [Break/CC](docs/break-cc.md).
 [Madness core](docs/madness-core.md) provides current/floor, Crisis recovery and private delivery.
 All four [Madness families](docs/madness-families.md) now have playable sandbox effects. Sandbox and smoke-profile values are provisional tuning.

@@ -429,14 +429,6 @@ void ADMCombatHUD::DrawRitual(const FDMHudModel& Model)
     const float W = 476 * S, H = 62 * S;
     const float X = (Canvas->ClipX - W) * .5f, Y = 14 * S;
     Panel(X, Y, W, H, DMHud::BrassDim);
-    for (TActorIterator<ADMFishingVillage> It(GetWorld());It;++It)
-    {
-        int32 Done=It->CoreStage; for (ADMObjective* O : It->Disruptions) { Done+=O && O->PublicState.State==EDMObjectiveState::Completed; }
-        Label(It->bManifested?TEXT("ELDER ONE MANIFESTED"):TEXT("COMPLETE THE CORE OBJECTIVES"),DMHud::Brass,X+14*S,Y+8*S,.95f);
-        Label(FString::Printf(TEXT("%d / 7"),Done),DMHud::Bone,X+W-65*S,Y+8*S,.95f);
-        DrawRect(DMHud::BrassDim,X+20*S,Y+38*S,W-40*S,6*S);
-        DrawRect(DMHud::Brass,X+20*S,Y+38*S,(W-40*S)*FMath::Clamp(Done/7.f,0.f,1.f),6*S); return;
-    }
     Label(TEXT("RITUAL"), DMHud::Muted, X + 14 * S, Y + 8 * S, .9f);
     const FString Stage = DMHud::Stage(Model.RitualStage).ToUpper();
     Label(Stage, DMHud::Brass, X + (W - TextWidth(Stage, 1.2f)) * .5f, Y + 6 * S, 1.2f);
@@ -502,9 +494,9 @@ void ADMCombatHUD::DrawEncounter(const FDMHudModel& Model)
         int32 Done=0; for (ADMObjective* O : It->Disruptions) { Done+=O && O->PublicState.State==EDMObjectiveState::Completed; }
         Label(FString::Printf(TEXT("Core %d/4 | Disruptions %d/3 | %s"),It->CoreStage,Done,It->bDrained?TEXT("Basin drained"):TEXT("Basin flooded")),DMHud::Bone,X+12*S,Y+29*S,.8f);
         const auto* O=It->NextObjective();
-        Label(It->bManifested?TEXT("Defeat Shub-Niggurath"):O?O->DisplayTitle:TEXT("Preparing manifestation"),DMHud::Brass,X+12*S,Y+50*S,.85f);
+        Label(O?O->DisplayTitle:TEXT("Defeat Shub-Niggurath"),DMHud::Brass,X+12*S,Y+50*S,.85f);
         Label(O && O->Current()?O->Current()->Instruction:TEXT("Control growths and escape corruption"),DMHud::Muted,X+12*S,Y+71*S,.7f);
-        Label(TEXT("Gold map markers: objectives | I: interact"),DMHud::Muted,X+12*S,Y+91*S,.75f); return;
+        Label(It->bManifested && !It->MandatoryComplete()?TEXT("Shub endures until all required rites are complete"):TEXT("Gold map markers: objectives | I: interact"),DMHud::Muted,X+12*S,Y+91*S,.75f); return;
     }
     const float W = 300 * S, H = 78 * S;
     const float X = Canvas->ClipX - W - 20 * S, Y = 16 * S;

@@ -15,7 +15,7 @@ public:
     ADMFishingVillageGameMode();
 };
 
-/** Fixed, provisional scenario composition. No HTN or timed Ritual escalation. */
+/** Fixed, provisional scenario composition with authoritative Ritual pressure. No HTN. */
 UCLASS()
 class DREADMERIDIAN_API ADMFishingVillage : public AActor
 {
@@ -24,6 +24,10 @@ public:
     ADMFishingVillage();
     void StartScenario();
     void StepScenario();
+    void StepRitual(int32 Tick);
+    bool MandatoryComplete() const;
+    // Provisional: one point per 3 seconds, 5 minutes per default stage.
+    static constexpr int32 RitualTicksPerPoint = 30;
     bool DriveBot(ADMCombatant* Hero);
     FVector Waypoint(FVector From,FVector Goal) const;
     bool RouteClear(FVector From,FVector To) const;
@@ -42,6 +46,7 @@ public:
     UPROPERTY(ReplicatedUsing=OnRep_Drained) bool bDrained=false;
     UPROPERTY(Replicated) bool bManifested=false;
     UPROPERTY(Replicated) TObjectPtr<ADMObjective> Core;
+    UPROPERTY(Replicated) TObjectPtr<ADMObjective> Manifestation;
     UPROPERTY(Replicated) TArray<TObjectPtr<ADMObjective>> Disruptions;
     UPROPERTY(Replicated) TArray<TObjectPtr<ADMObjective>> Optional;
     UPROPERTY() TObjectPtr<ADMShubEncounter> Encounter;
@@ -51,6 +56,9 @@ private:
     UPROPERTY() TObjectPtr<UStaticMeshComponent> Flood;
     TArray<FBox> Obstacles;
     bool bStarted=false;
+    int32 LastRitualTick=0;
+    int32 AppliedRitualStage=0;
+    void Manifest(bool bDeliberate);
     ADMObjective* SpawnObjective(const FString& Id,FVector Location);
     void SpawnCore();
     UFUNCTION() void OnRep_Drained();

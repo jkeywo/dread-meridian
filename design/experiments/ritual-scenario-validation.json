@@ -1,0 +1,49 @@
+{
+  "date": "2026-09-19",
+  "engine": "5.8.2",
+  "platform": "Win64",
+  "rules_version": "fishing-village-ritual-v2",
+  "foundation": {
+    "command": "tools/Unreal.ps1 -Action Test",
+    "passed": 37,
+    "failed": 0,
+    "report": "Saved/Automation/18ae2cc3733a41518c46f68880d4e74d/index.json"
+  },
+  "editor": {
+    "command": "tools/Unreal.ps1 -Action EditorTest -Filter DreadMeridian.Editor.FishingVillage+DreadMeridian.Editor.ObjectiveCatalogue",
+    "passed": 2,
+    "failed": 0,
+    "report": "Saved/Automation/686f0968d1394d988a5d85c340ac8eca/index.json"
+  },
+  "smoke": {
+    "command": "tools/Unreal.ps1 -Action Smoke",
+    "passed": true,
+    "log": "Saved/Logs/smoke-5280c303492d4d4f8123d63257742888.log",
+    "capture": "Saved/Playtrace/5cfbab82-4076-e313-7a23-828fcc327fc5/events.jsonl",
+    "require_provenance_passed": true,
+    "scope": "foundation_harness_only"
+  },
+  "python": {
+    "command": "python -m unittest discover -s tests -v",
+    "passed": 14
+  },
+  "checked": [
+    "Clock boundaries, remainder, duplicate and old ticks",
+    "All five stages and repeated stage-effect protection",
+    "Fixed mandatory failure repair and one-time pressure penalty",
+    "Deliberate summon interaction after all prerequisites",
+    "Natural Apocalypse with flooded basin and unfinished mandatory work",
+    "Harder multi-site disruptions and subsequent core conversion",
+    "Boss survives until mandatory work completes",
+    "Accepted objective interactions, drainage collision and one-time manifestation",
+    "Both village routes end in boss victory",
+    "Existing objective catalogue regression"
+  ],
+  "limitations": [
+    "PIE fixture relocates actors, disables movement and uses test damage; this is not a natural four-bot playthrough.",
+    "No multiplayer village acceptance run or balance validation.",
+    "Full Ritual encounter director, candidate-boss intrusions, scenery transformation and HTN remain outside this integration.",
+    "Only Win64 build and runtime were verified."
+  ],
+  "fix_found_by_validation": "Moved the bell sequence origin so its later authored site no longer intersects the church."
+}

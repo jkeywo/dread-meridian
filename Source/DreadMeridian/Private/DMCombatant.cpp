@@ -1,4 +1,6 @@
 #include "DMCombatant.h"
+#include "DMFishingVillage.h"
+#include "DMShubEncounter.h"
 #include "DMCombatPresentation.h"
 #include "DMHealthAttributes.h"
 #include "DMRelicComponent.h"
@@ -227,7 +229,9 @@ bool ADMCombatant::DealCombatDamage(ADMCombatant* Target, float Damage, const FS
     const float ShieldBefore = Target->Shield();
     const float Incoming = Target->IncomingUntilTick > Mode->GetCombatTick() ? FMath::Clamp(Target->IncomingMultiplier, 0.f, 2.f) : 1.f;
     const float BaseDamage = Damage * Kit->OutgoingTo(Target) * Target->Progression->IncomingFrom(this) * Target->Relics->IncomingMultiplier() * MadnessCore->Outgoing(Target) * (1 - FMath::Clamp(Target->SpiritProtection, 0.f, .5f)) * Incoming;
-    const float ResolvedDamage = BaseDamage * Target->Injuries->Incoming(FMath::Max(0.f, BaseDamage - ShieldBefore), bHazard);
+    float ResolvedDamage = BaseDamage * Target->Injuries->Incoming(FMath::Max(0.f, BaseDamage - ShieldBefore), bHazard);
+    if (Mode->Village && Mode->Village->Encounter && Mode->Village->Encounter->Boss==Target && !Mode->Village->MandatoryComplete())
+    { ResolvedDamage=FMath::Min(ResolvedDamage,ShieldBefore+FMath::Max(0.f,Before-1.f)); }
     const float Absorbed = FMath::Min(ShieldBefore, ResolvedDamage);
     if (Absorbed > 0) { Target->Relics->ShieldSpent(Absorbed); Target->ApplyAttributeDelta(UDMHealthAttributes::GetShieldAttribute(), -Absorbed); }
     Target->ApplyAttributeDelta(UDMHealthAttributes::GetHealthAttribute(), -(ResolvedDamage - Absorbed));

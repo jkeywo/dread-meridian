@@ -80,7 +80,13 @@ ADMObjective* ADMFishingVillage::SpawnObjective(const FString& Id,FVector Locati
 {
     auto* O=GetWorld()->SpawnActor<ADMObjective>();
     if (!O || !O->ConfigureAuthored(Id,Location,0,TEXT("village.")+Id)) { if (O) { O->Destroy(); } return nullptr; }
-    O->bAlwaysRelevant=true; return O;
+    O->bAlwaysRelevant=true;
+    if (auto* G=GetWorld()->GetGameState<ADMGameState>())
+    {
+        O->Escalate(static_cast<int32>(G->GetRunState().RitualStage));
+        if (G->GetRunState().Phase==EDMRunPhase::Apocalypse) { O->ConvertApocalypse(); }
+    }
+    return O;
 }
 void ADMFishingVillage::SpawnCore()
 {
@@ -91,8 +97,9 @@ void ADMFishingVillage::SpawnCore()
 void ADMFishingVillage::StartScenario()
 {
     auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>(); if (!HasAuthority() || !M || bStarted) { return; } bStarted=true;
+    LastRitualTick=M->GetCombatTick();
     SpawnCore();
-    Disruptions={SpawnObjective(TEXT("bell_sequence"),FVector(-600,1150,20)),SpawnObjective(TEXT("counter_ritualist"),FVector(-1500,1000,20)),SpawnObjective(TEXT("marsh_idols"),FVector(300,-1900,20))};
+    Disruptions={SpawnObjective(TEXT("bell_sequence"),FVector(-950,850,20)),SpawnObjective(TEXT("counter_ritualist"),FVector(-1500,1000,20)),SpawnObjective(TEXT("marsh_idols"),FVector(300,-1900,20))};
     Optional={SpawnObjective(TEXT("lighthouse"),FVector(-2400,1150,20)),SpawnObjective(TEXT("surgery"),FVector(-1600,-500,20)),SpawnObjective(TEXT("smuggler_cache"),FVector(-250,-1150,20))};
     struct FEnemy { FVector At; EDMSwampThing Swamp; EDMSmuggler Smuggler; };
     const FEnemy Enemies[]={
@@ -123,11 +130,21 @@ void ADMFishingVillage::OnRep_Drained() { Flood->SetVisibility(!bDrained); Flood
 ADMObjective* ADMFishingVillage::NextObjective() const
 {
     if (Core && !Core->IsTerminal()) { return Core; }
-    for (ADMObjective* O : Disruptions) { if (O && !O->IsTerminal()) { return O; } } return nullptr;
+    for (ADMObjective* O : Disruptions) { if (O && !O->IsTerminal()) { return O; } } return !bManifested && Manifestation && !Manifestation->IsTerminal() ? Manifestation.Get() : nullptr;
 }
 void ADMFishingVillage::StepScenario()
 {
-    auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>(); if (!M || !M->IsCombatActive() || bManifested) { return; }
+    auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>(); if (!HasAuthority() || !M || !M->IsCombatActive()) { return; }
+    StepRitual(M->GetCombatTick());
+    auto Repair=[&](ADMObjective* O)
+    {
+        if (!O || O->PublicState.State!=EDMObjectiveState::Failed) { return; }
+        TArray<FDMObjectiveStep> Remaining;
+        for (int32 I=O->PublicState.Step;I<O->Steps.Num();++I)
+        { auto S=O->Steps[I]; S.WorkTicks+=20; Remaining.Add(S); }
+        if (O->Repair(Remaining,TEXT("Rite interrupted: repeat the remaining work under increased Ritual pressure."))) { M->AdvanceRitual(10); }
+    };
+    Repair(Core); for (ADMObjective* O : Disruptions) { Repair(O); }
     if (Core && Core->PublicState.State==EDMObjectiveState::Completed && CoreStage<4)
     {
         if (Core->bBasinDrained) { Drain(); }
@@ -137,17 +154,73 @@ void ADMFishingVillage::StepScenario()
     const int32 Done=Disruptions.FilterByPredicate([](const ADMObjective* O){return O && O->PublicState.State==EDMObjectiveState::Completed;}).Num();
     if (auto* G=GetWorld()->GetGameState<ADMGameState>())
     { G->SetEncounterObjective(FString::Printf(TEXT("Fishing Village | Core %d/4 | Disruptions %d/3 | %s"),CoreStage,Done,NextObjective()?*NextObjective()->DisplayTitle:TEXT("Manifestation"))); }
-    if (CoreStage==4 && Done==3 && bDrained)
+    auto* G=GetWorld()->GetGameState<ADMGameState>();
+    const bool Apocalypse=G && G->GetRunState().Phase==EDMRunPhase::Apocalypse;
+    if (Apocalypse)
     {
-        auto* Arena=GetWorld()->SpawnActor<ADMBossArena>(); Arena->BuildFixture(Basin());
-        Encounter=GetWorld()->SpawnActor<ADMShubEncounter>();
-        if (Encounter->Begin(Arena)) { bManifested=true; M->Summon(); auto D=MakeShared<FJsonObject>(); D->SetStringField(TEXT("trigger"),TEXT("core_and_disruptions_complete")); M->Emit(TEXT("village.manifested"),D); }
-        else { Encounter->Destroy(); Arena->Destroy(); Encounter=nullptr; }
+        if (Core) { Core->ConvertApocalypse(); }
+        for (ADMObjective* O : Disruptions) { if (O) { O->ConvertApocalypse(); } }
+        Manifest(false);
+    }
+    else if (MandatoryComplete())
+    {
+        if (!Manifestation)
+        {
+            Manifestation=GetWorld()->SpawnActor<ADMObjective>();
+            if (Manifestation)
+            {
+                FDMObjectiveStep S; S.Verb=EDMObjectiveVerb::Operate; S.Location=Basin()+FVector(0,-350,20);
+                S.Instruction=TEXT("Press I at the sigil to summon now, or keep preparing"); S.WorkTicks=30;
+                Manifestation->XPReward=0; Manifestation->bAlwaysRelevant=true;
+                Manifestation->Configure(TEXT("village.manifestation"),TEXT("Force Manifestation"),{S},EDMObjectiveReward::None);
+            }
+        }
+        if (Manifestation && Manifestation->PublicState.State==EDMObjectiveState::Completed) { Manifest(true); }
     }
 }
+bool ADMFishingVillage::MandatoryComplete() const
+{
+    if (CoreStage!=4 || !bDrained || Disruptions.Num()!=3) { return false; }
+    for (const ADMObjective* O : Disruptions) { if (!O || O->PublicState.State!=EDMObjectiveState::Completed) { return false; } }
+    return true;
+}
+void ADMFishingVillage::StepRitual(int32 Tick)
+{
+    auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    auto* G=GetWorld()->GetGameState<ADMGameState>();
+    if (!HasAuthority() || !bStarted || !M || !G || !M->IsCombatActive()) { return; }
+    if (Tick>LastRitualTick && G->GetRunState().Phase==EDMRunPhase::Expedition)
+    {
+        const int32 Points=(Tick-LastRitualTick)/RitualTicksPerPoint;
+        if (Points>0 && M->AdvanceRitual(Points)) { LastRitualTick+=Points*RitualTicksPerPoint; }
+    }
+    const int32 Stage=static_cast<int32>(G->GetRunState().RitualStage);
+    if (Stage<=AppliedRitualStage) { return; }
+    if (Core) { Core->Escalate(Stage); }
+    for (ADMObjective* O : Disruptions) { if (O) { O->Escalate(Stage); } }
+    AppliedRitualStage=Stage;
+}
+void ADMFishingVillage::Manifest(bool bDeliberate)
+{
+    auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>();
+    if (!HasAuthority() || !M || bManifested) { return; }
+    // Premature manifestation uses the dry approach until the pump drains the basin.
+    auto* Arena=GetWorld()->SpawnActor<ADMBossArena>(); if (!Arena) { return; }
+    Arena->BuildFixture(bDrained ? Basin() : FVector(1550,-1750,0));
+    Encounter=GetWorld()->SpawnActor<ADMShubEncounter>();
+    if (Encounter && Encounter->Begin(Arena))
+    {
+        bManifested=true; if (bDeliberate) { M->Summon(); }
+        if (Manifestation) { Manifestation->Destroy(); Manifestation=nullptr; }
+        auto D=MakeShared<FJsonObject>(); D->SetStringField(TEXT("trigger"),bDeliberate ? TEXT("deliberate_interaction") : TEXT("ritual_apocalypse")); M->Emit(TEXT("village.manifested"),D);
+        ForceNetUpdate();
+    }
+    else { if (Encounter) { Encounter->Destroy(); } Arena->Destroy(); Encounter=nullptr; }
+}
+
 bool ADMFishingVillage::DriveBot(ADMCombatant* Hero)
 {
-    auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>(); if (!M || bManifested || Hero->bIsEnemy || Hero->IsDown()) { return false; }
+    auto* M=GetWorld()->GetAuthGameMode<ADMCombatGameMode>(); if (!M || (bManifested && MandatoryComplete()) || Hero->bIsEnemy || Hero->IsDown()) { return false; }
     for (ADMCombatant* A : M->GetCombatants())
     { if (!A->bIsEnemy && A->IsPlayerControlled() && !A->IsDown()) { return false; }
       if (A->bIsEnemy && !A->IsDown() && DMVision::CanSee(Hero,A) && FVector::DistSquared2D(A->GetActorLocation(),Hero->GetActorLocation())<FMath::Square(800.f)) { return false; } }
@@ -215,4 +288,4 @@ FVector ADMFishingVillage::ClampToNavigable(FVector From,FVector To) const
     return From;
 }
 void ADMFishingVillage::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{ Super::GetLifetimeReplicatedProps(OutLifetimeProps); DOREPLIFETIME(ADMFishingVillage,CoreStage); DOREPLIFETIME(ADMFishingVillage,bDrained); DOREPLIFETIME(ADMFishingVillage,bManifested); DOREPLIFETIME(ADMFishingVillage,Core); DOREPLIFETIME(ADMFishingVillage,Disruptions); DOREPLIFETIME(ADMFishingVillage,Optional); }
+{ Super::GetLifetimeReplicatedProps(OutLifetimeProps); DOREPLIFETIME(ADMFishingVillage,CoreStage); DOREPLIFETIME(ADMFishingVillage,bDrained); DOREPLIFETIME(ADMFishingVillage,bManifested); DOREPLIFETIME(ADMFishingVillage,Core); DOREPLIFETIME(ADMFishingVillage,Manifestation); DOREPLIFETIME(ADMFishingVillage,Disruptions); DOREPLIFETIME(ADMFishingVillage,Optional); }
